@@ -54,3 +54,17 @@ def test_stale_bar_is_not_sent(monkeypatch, tmp_path):
 
     assert signal_scan.run(now=now, state_path=tmp_path / "state.json") == []
     assert sent == []
+
+
+def test_dry_run_does_not_persist_dedupe_state(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 13, 42, tzinfo=dt.timezone.utc)
+    mod = LiveModule("GOLD_NY_ORB_TREND", "XAUUSD", "5m", 1.0, 48,
+                     lambda df: Signal(1, 4225, 4214, 4247))
+    monkeypatch.setattr(signal_scan, "_load_modules", lambda: [mod])
+    monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
+    monkeypatch.setattr(signal_scan.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    state = tmp_path / "state.json"
+
+    assert len(signal_scan.run(now=now, state_path=state, dry_run=True)) == 1
+    assert not state.exists()

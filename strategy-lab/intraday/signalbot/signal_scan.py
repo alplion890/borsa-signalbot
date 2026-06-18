@@ -175,7 +175,8 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
         messages.append(message)
         sent_state[mod.name] = item["fingerprint"]
 
-    _save_state(state, path)
+    if not dry_run:
+        _save_state(state, path)
     return messages
 
 
