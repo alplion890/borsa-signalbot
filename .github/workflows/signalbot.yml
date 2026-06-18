@@ -37,6 +37,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    environment: telegram bot token
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +62,8 @@ jobs:
       - name: Yedi stratejiyi tara
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Environment secret eklenirken bu adla kaydedilmis.
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PHASE: challenge
           ACCOUNT_BALANCE: "5000"
