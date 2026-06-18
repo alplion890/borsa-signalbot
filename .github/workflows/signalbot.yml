@@ -16,6 +16,16 @@ on:
         required: false
         default: false
         type: boolean
+      test_finnhub:
+        description: "Finnhub sembollerini canli test et"
+        required: false
+        default: false
+        type: boolean
+      test_telegram:
+        description: "Telegram'a test mesaji yolla"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -52,11 +62,16 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PHASE: challenge
           ACCOUNT_BALANCE: "5000"
           SIGNALBOT_STATE_PATH: .signalbot/state.json
         run: |
-          if [ "${{ inputs.dry_run || false }}" = "true" ]; then
+          if [ "${{ inputs.test_finnhub || false }}" = "true" ]; then
+            python run_bot.py --test-finnhub
+          elif [ "${{ inputs.test_telegram || false }}" = "true" ]; then
+            python run_bot.py --test-telegram
+          elif [ "${{ inputs.dry_run || false }}" = "true" ]; then
             python run_bot.py --dry-run
           elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
             echo "Telegram Secrets henuz eklenmedi; tarama beklemede."

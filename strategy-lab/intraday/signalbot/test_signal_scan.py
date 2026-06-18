@@ -27,6 +27,7 @@ def test_sends_every_distinct_setup_and_dedupes_same_bar(monkeypatch, tmp_path):
     monkeypatch.setattr(signal_scan, "_load_modules", lambda: modules)
     monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: _df(now))
     monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
+    monkeypatch.setattr(signal_scan.finnhub_live, "collect_quotes", lambda *a, **k: {})
     sent = []
     monkeypatch.setattr(signal_scan.telegram_notify, "send", sent.append)
     state = tmp_path / "state.json"
@@ -47,6 +48,7 @@ def test_stale_bar_is_not_sent(monkeypatch, tmp_path):
     stale = _df(now - dt.timedelta(hours=2))
     monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: stale)
     monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
+    monkeypatch.setattr(signal_scan.finnhub_live, "collect_quotes", lambda *a, **k: {})
     sent = []
     monkeypatch.setattr(signal_scan.telegram_notify, "send", sent.append)
 

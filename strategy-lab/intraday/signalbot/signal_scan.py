@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import free_data, sessions, telegram_notify
+from . import finnhub_live, free_data, sessions, telegram_notify
 from .btc_absorption import module as btc_module
 from .message import format_signal
 from .risk import risk_plan, tier_of
@@ -85,6 +85,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
     sent_state = state.setdefault("sent", {})
     scanned_state = state.setdefault("scanned", {})
     messages: list[str] = []
+    pending: list[dict] = []
 
     for mod in _load_modules():
         if not sessions.is_active(mod.name, now):
@@ -135,20 +136,44 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 module_weight=mod.weight, symbol_key=mod.symbol_key,
                 entry=sig.entry, sl=sig.sl,
             )
-            message = format_signal(
-                tier=tier_of(mod.name), module=mod.name, symbol_key=mod.symbol_key,
-                direction=sig.direction, entry=sig.entry, sl=sig.sl, tp=sig.tp,
-                lot=plan.normal_lot, risk_usd=plan.normal_usd, risk_plan=plan,
-                trt_time=sessions.to_trt(now),
-                expected_delay_minutes=resolve(mod.symbol_key).expected_delay_minutes,
+            pending.append(
+                {
+                    "mod": mod,
+                    "sig": sig,
+                    "bar_time": bar_time,
+                    "fingerprint": fingerprint,
+                    "plan": plan,
+                }
             )
-            if dry_run:
-                print(message)
-            else:
-                telegram_notify.send(message)
-            messages.append(message)
-            sent_state[mod.name] = fingerprint
         scanned_state[mod.name] = df.index[closed_positions[-1]].isoformat()
+
+    quotes = finnhub_live.collect_quotes(
+        {item["mod"].symbol_key for item in pending}
+    )
+    for item in pending:
+        mod = item["mod"]
+        sig = item["sig"]
+        bar_time = item["bar_time"]
+        plan = item["plan"]
+        bar_dt = bar_time.to_pydatetime()
+        if bar_dt.tzinfo is None:
+            bar_dt = bar_dt.replace(tzinfo=dt.timezone.utc)
+        signal_age = max(0.0, (now - bar_dt).total_seconds() / 60.0)
+        message = format_signal(
+            tier=tier_of(mod.name), module=mod.name, symbol_key=mod.symbol_key,
+            direction=sig.direction, entry=sig.entry, sl=sig.sl, tp=sig.tp,
+            lot=plan.normal_lot, risk_usd=plan.normal_usd, risk_plan=plan,
+            trt_time=sessions.to_trt(now),
+            expected_delay_minutes=resolve(mod.symbol_key).expected_delay_minutes,
+            signal_age_minutes=signal_age,
+            live_quote=quotes.get(mod.symbol_key),
+        )
+        if dry_run:
+            print(message)
+        else:
+            telegram_notify.send(message)
+        messages.append(message)
+        sent_state[mod.name] = item["fingerprint"]
 
     _save_state(state, path)
     return messages
@@ -157,7 +182,26 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--test-finnhub", action="store_true")
+    parser.add_argument("--test-telegram", action="store_true")
     args = parser.parse_args()
+    if args.test_finnhub:
+        keys = {"XAUUSD", "NASDAQ100", "SP500", "EURUSD", "GBPUSD", "BTC"}
+        quotes = finnhub_live.collect_quotes(keys, timeout_seconds=12.0)
+        for key in sorted(keys):
+            quote = quotes.get(key)
+            if quote is None:
+                print(f"{key}: CANLI FIYAT GELMEDI ({finnhub_live.provider_symbol(key)})")
+            else:
+                print(f"{key}: {quote.price:g} ({quote.provider_symbol})")
+        return
+    if args.test_telegram:
+        telegram_notify.send(
+            "Borsa sinyal botu test mesaji. Telegram baglantisi calisiyor. "
+            "Bot uygun her setupi sinir koymadan bildirecek."
+        )
+        print("Telegram test mesaji gonderildi.")
+        return
     run(dry_run=args.dry_run)
 
 

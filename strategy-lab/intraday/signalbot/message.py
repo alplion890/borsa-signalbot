@@ -1,5 +1,8 @@
 """Telegram mesaji — sade Turkce duz yazi, emoji/sembol yigini yok."""
 from __future__ import annotations
+import datetime as dt
+
+from .finnhub_live import LiveQuote
 from .risk import RiskPlan, Tier
 
 _HUMAN = {
@@ -17,7 +20,9 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   entry: float, sl: float, tp: float, lot: float,
                   risk_usd: float, trt_time: str,
                   risk_plan: RiskPlan | None = None,
-                  expected_delay_minutes: int = 0) -> str:
+                  expected_delay_minutes: int = 0,
+                  signal_age_minutes: float | None = None,
+                  live_quote: LiveQuote | None = None) -> str:
     yon = "long" if direction == 1 else "short"
     ad = _HUMAN.get(module, module)
     if risk_plan is None:
@@ -37,12 +42,32 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
         f"{risk_text} Saat {trt_time}. Acik islemin varsa veya fiyat giristen "
         "uzaklastiysa alma."
     )
-    if expected_delay_minutes > 0:
-        max_drift = abs(entry - sl) * 0.25
+    if expected_delay_minutes > 0 or signal_age_minutes is not None:
+        age = signal_age_minutes if signal_age_minutes is not None else expected_delay_minutes
         common_tail += (
-            f" Veri yaklasik {expected_delay_minutes} dakika gecikmeli. Maven "
-            f"grafiginde canli fiyati kontrol et. Fiyat giristen {max_drift:g} "
-            "puandan fazla uzaksa bu sinyali pas gec."
+            f" Setup verisi yaklasik {age:.0f} dakika onceki kapanmis mumdan."
+        )
+    if live_quote is not None:
+        risk_distance = abs(entry - sl)
+        drift = live_quote.price - entry
+        drift_r = drift / risk_distance if risk_distance > 0 else 0.0
+        direction_text = (
+            "long yonune ilerlemis" if direction * drift > 0
+            else "setup yonunun tersine gitmis" if direction * drift < 0
+            else "giris seviyesinde"
+        )
+        quote_time = dt.datetime.fromtimestamp(
+            live_quote.timestamp_ms / 1000, tz=dt.timezone.utc
+        ).astimezone(dt.timezone(dt.timedelta(hours=3)))
+        common_tail += (
+            f" Finnhub anlik fiyat {live_quote.price:g}. Girise gore "
+            f"{drift:+g} yani {drift_r:+.2f}R, fiyat {direction_text}. "
+            f"Canli fiyat saati {quote_time.hour:02d} {quote_time.minute:02d}."
+        )
+    elif expected_delay_minutes > 0:
+        common_tail += (
+            " Finnhub canli fiyat gelmedi. Sinyal yine gecerli aday olarak "
+            "gonderildi, Maven grafiginden mevcut fiyati kontrol et."
         )
     if tier is Tier.LIVE:
         return (

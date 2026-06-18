@@ -1,4 +1,5 @@
 from intraday.signalbot.message import format_signal
+from intraday.signalbot.finnhub_live import LiveQuote
 from intraday.signalbot.risk import Tier
 
 
@@ -54,6 +55,27 @@ def test_delayed_futures_message_has_live_price_guard():
         trt_time="16 45",
         expected_delay_minutes=10,
     )
-    assert "10 dakika gecikmeli" in msg
-    assert "2.5 puandan fazla" in msg
+    assert "10 dakika onceki" in msg
+    assert "Finnhub canli fiyat gelmedi" in msg
     assert "Maven" in msg
+
+
+def test_live_quote_is_compared_in_r_units():
+    msg = format_signal(
+        tier=Tier.LIVE,
+        module="GOLD_NY_ORB_TREND",
+        symbol_key="XAUUSD",
+        direction=1,
+        entry=3000,
+        sl=2990,
+        tp=3010,
+        lot=0.07,
+        risk_usd=75,
+        trt_time="16 45",
+        signal_age_minutes=15,
+        live_quote=LiveQuote("XAUUSD", "OANDA:XAU_USD", 3003, 1781800000000),
+    )
+    assert "15 dakika onceki" in msg
+    assert "Finnhub anlik fiyat 3003" in msg
+    assert "+0.30R" in msg
+    assert "long yonune ilerlemis" in msg
