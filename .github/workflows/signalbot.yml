@@ -1,0 +1,68 @@
+name: borsa-signalbot
+
+on:
+  schedule:
+    # Hafta ici aktif seanslarda 15 dakikada bir. Scanner aradaki 5m barlari da tarar.
+    - cron: "*/15 7-21 * * 1-5"
+    # Hafta ici gece ve hafta sonu BTC saatlik kontrol.
+    - cron: "0 0-6,22-23 * * 1-5"
+    - cron: "0 * * * 0,6"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Telegram'a yollamadan tara"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: borsa-signalbot
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Bagimliliklari kur
+        run: pip install -r strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Onceki sinyal durumunu yukle
+        uses: actions/cache/restore@v4
+        with:
+          path: .signalbot
+          key: signalbot-state-${{ github.run_id }}
+          restore-keys: |
+            signalbot-state-
+
+      - name: Yedi stratejiyi tara
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PHASE: challenge
+          ACCOUNT_BALANCE: "5000"
+          SIGNALBOT_STATE_PATH: .signalbot/state.json
+        run: |
+          if [ "${{ inputs.dry_run || false }}" = "true" ]; then
+            python run_bot.py --dry-run
+          else
+            python run_bot.py
+          fi
+
+      - name: Sinyal durumunu sakla
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .signalbot
+          key: signalbot-state-${{ github.run_id }}
