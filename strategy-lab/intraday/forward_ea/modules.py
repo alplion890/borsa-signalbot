@@ -90,7 +90,8 @@ def _orb_detector(case: ORBCase, adx_min: float):
 
 
 def _london_detector(case: LondonCase, adx_min: float = 0.0,
-                     adx_max: float = 0.0, dow: int | None = None):
+                     adx_max: float = 0.0, dow: int | None = None,
+                     range_regime: str | None = None):
     """Genel London breakout dedektoru (EUR/GBP).
 
     Filtreler final ledger'dan birebir geri cikarildi:
@@ -104,6 +105,21 @@ def _london_detector(case: LondonCase, adx_min: float = 0.0,
         i = -1
         if dow is not None and df.index[i].dayofweek != dow:
             return None
+        if range_regime is not None:
+            h = df.index.hour + df.index.minute / 60.0
+            in_range = (h >= case.range_start) & (h < case.range_end)
+            daily_hi = df["high"].where(in_range).groupby(df.index.date).transform("max")
+            daily_lo = df["low"].where(in_range).groupby(df.index.date).transform("min")
+            range_pct = (daily_hi - daily_lo) / df["close"]
+            daily_range = range_pct.groupby(df.index.date).last()
+            rank = daily_range.rolling(20, min_periods=10).rank(pct=True).iloc[-1]
+            current_regime = (
+                "tight_range" if rank <= 0.33
+                else "normal_range" if rank <= 0.67
+                else "wide_range"
+            )
+            if pd.isna(rank) or current_regime != range_regime:
+                return None
         adx_val = _adx(df, 14).iloc[i]
         if adx_min > 0 and not (adx_val > adx_min):
             return None
@@ -117,7 +133,7 @@ def _london_detector(case: LondonCase, adx_min: float = 0.0,
     return detect
 
 
-def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.5):
+def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0):
     """NQ sweep core canli dedektoru (geri yuklenen adx_lab ile birebir).
 
     VWAP trend + ADX>thresh + likidite sweep. TP swing seviyesi; RR ATR rejimine
@@ -128,6 +144,8 @@ def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.5):
 
     def detect(df: pd.DataFrame) -> Signal | None:
         if len(df) < 520:
+            return None
+        if df.index[-1].dayofweek == 2:  # quality_11: Carsamba kesin kapali
             return None
         le, se, lsl, ltp, ssl, stp, a = _make_signals(df, adx_thresh)
         i = -1
@@ -196,15 +214,23 @@ def _es_div_detector(lookback: int = 40, rr: float = 3.0, buf_mult: float = 0.25
         i = -1
         swept_low = (nq["low"].iloc[i] < rlo.iloc[i]) and (nq["close"].iloc[i] > rlo.iloc[i])
         swept_high = (nq["high"].iloc[i] > rhi.iloc[i]) and (nq["close"].iloc[i] < rhi.iloc[i])
-        div_long = swept_low and (es["low"].iloc[i] >= rlo_es.iloc[i])
-        div_short = swept_high and (es["high"].iloc[i] <= rhi_es.iloc[i])
+        div_long_series = (
+            (nq["low"] < rlo) & (nq["close"] > rlo) & (es["low"] >= rlo_es)
+            & (trend > 0)
+        )
+        div_short_series = (
+            (nq["high"] > rhi) & (nq["close"] < rhi) & (es["high"] <= rhi_es)
+            & (trend < 0)
+        )
+        div_long = bool(div_long_series.iloc[i]) and not bool(div_long_series.shift(1).fillna(False).iloc[i])
+        div_short = bool(div_short_series.iloc[i]) and not bool(div_short_series.shift(1).fillna(False).iloc[i])
         entry = float(nq["close"].iloc[i])
-        if div_long and trend.iloc[i] > 0:
+        if div_long:
             sl = float(nq["low"].iloc[i] - buf.iloc[i]); risk = entry - sl
             if risk <= 0:
                 return None
             return Signal(1, entry, sl, entry + rr * risk)
-        if div_short and trend.iloc[i] < 0:
+        if div_short:
             sl = float(nq["high"].iloc[i] + buf.iloc[i]); risk = sl - entry
             if risk <= 0:
                 return None
@@ -233,17 +259,17 @@ def default_modules() -> list[LiveModule]:
     return [
         LiveModule("GOLD_NY_ORB_TREND", "XAUUSD", "5m", 1.0, 48, _gold_orb_detector()),
         LiveModule("NQ_ORB_STRONG_TREND", "NASDAQ100", "5m", 1.0, 48,
-                   _orb_detector(nq_orb, adx_min=30.0)),
+                   _orb_detector(nq_orb, adx_min=28.0)),
         LiveModule("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", "15m", 1.0, 480,
                    _sweep_core_detector()),
         LiveModule("EUR_LONDON_FADE_EMA", "EURUSD", "5m", 1.0, 48,
                    _london_detector(
                        LondonCase("EURUSD", 2.0, 7.0, 11.0, "none", 1.5, "other_side", 1.0, 48),
-                       adx_max=20.0, dow=3)),
+                       adx_max=18.0, dow=3)),
         LiveModule("GBP_LONDON_STRONG_TREND", "GBPUSD", "5m", 0.25, 48,
                    _london_detector(
                        LondonCase("GBPUSD", 0.0, 7.0, 11.0, "ema", 1.5, "other_side", 1.0, 48),
-                       dow=3)),
+                       dow=3, range_regime="normal_range")),
         LiveModule("SWEEP_ES_DIV", "NASDAQ100", "15m", 2.0, 480, _es_div_detector()),
     ]
 

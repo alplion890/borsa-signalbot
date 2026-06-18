@@ -6,9 +6,9 @@ on:
     - cron: "*/5 13-16 * * 1-5"
     # London ve NY seansinin kalan kismi: 15 dakikada bir.
     - cron: "*/15 7-10,17-20 * * 1-5"
-    # Hafta ici gece ve hafta sonu BTC iki saatte bir.
-    - cron: "0 0-6/2,21-23/2 * * 1-5"
-    - cron: "0 */2 * * 0,6"
+    # BTC 1H setup: ana seanslar disinda her saat.
+    - cron: "0 0-6,11-12,21-23 * * 1-5"
+    - cron: "0 * * * 0,6"
   workflow_dispatch:
     inputs:
       dry_run:
