@@ -10,6 +10,8 @@ import os
 import time
 from dataclasses import dataclass
 
+import requests
+
 _DEFAULT_SYMBOLS = {
     "XAUUSD": "OANDA:XAU_USD",
     "NASDAQ100": "OANDA:NAS100_USD",
@@ -60,6 +62,9 @@ def collect_quotes(symbol_keys: set[str], *, api_key: str | None = None,
                 payload = json.loads(ws.recv())
             except TimeoutError:
                 break
+            if payload.get("type") == "error":
+                print(f"Finnhub WebSocket hatasi: {payload.get('msg', payload)}")
+                break
             if payload.get("type") != "trade":
                 continue
             for item in payload.get("data", []):
@@ -83,3 +88,35 @@ def collect_quotes(symbol_keys: set[str], *, api_key: str | None = None,
             except Exception:
                 pass
     return quotes
+
+
+def diagnose_api(*, api_key: str | None = None) -> dict:
+    """Validate the key and discover likely OANDA symbols without exposing it."""
+    token = api_key or os.environ.get("FINNHUB_API_KEY")
+    if not token:
+        return {"key_present": False, "error": "FINNHUB_API_KEY eksik"}
+    result = {"key_present": True}
+    try:
+        response = requests.get(
+            "https://finnhub.io/api/v1/forex/symbol",
+            params={"exchange": "oanda", "token": token},
+            timeout=15,
+        )
+        result["http_status"] = response.status_code
+        data = response.json()
+        if isinstance(data, dict):
+            result["error"] = data.get("error", str(data))
+            return result
+        symbols = {
+            str(item.get("symbol", ""))
+            for item in data
+            if isinstance(item, dict)
+        }
+        result["oanda_symbol_count"] = len(symbols)
+        wanted = ("XAU", "EUR_USD", "GBP_USD", "NAS", "SPX", "US100", "US500")
+        result["matches"] = sorted(
+            symbol for symbol in symbols if any(term in symbol.upper() for term in wanted)
+        )
+    except Exception as exc:
+        result["error"] = f"{type(exc).__name__}: {exc}"
+    return result

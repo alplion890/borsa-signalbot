@@ -41,3 +41,16 @@ def test_collects_websocket_quote(monkeypatch):
     quotes = finnhub_live.collect_quotes({"XAUUSD"}, api_key="test")
     assert quotes["XAUUSD"].price == 3012.5
     assert socket.sent == [{"type": "subscribe", "symbol": "OANDA:XAU_USD"}]
+
+
+def test_diagnose_reports_api_error(monkeypatch):
+    class _Response:
+        status_code = 401
+
+        def json(self):
+            return {"error": "Invalid API key"}
+
+    monkeypatch.setattr(finnhub_live.requests, "get", lambda *a, **k: _Response())
+    result = finnhub_live.diagnose_api(api_key="bad")
+    assert result["http_status"] == 401
+    assert result["error"] == "Invalid API key"
