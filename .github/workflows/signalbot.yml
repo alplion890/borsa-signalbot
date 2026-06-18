@@ -64,7 +64,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # Environment secret eklenirken bu adla kaydedilmis.
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          # Environment secret eklenirken tek N ile kaydedilmis.
+          FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
           PHASE: challenge
           ACCOUNT_BALANCE: "5000"
           SIGNALBOT_STATE_PATH: .signalbot/state.json
