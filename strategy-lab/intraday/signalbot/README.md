@@ -29,9 +29,16 @@ Repository `Settings > Secrets and variables > Actions` bölümüne:
 eklenir. Ardından Actions sekmesindeki `borsa-signalbot` workflow'u
 `Run workflow` ile bir kez çalıştırılır.
 
-Workflow private repository ücretsiz kotasına uygun şekilde aktif seanslarda
-15 dakikada bir çalışır. Tarayıcı arada kapanan tüm 5 dakikalık barları sırayla
-kontrol eder. Aynı bardaki aynı sinyal ikinci kez gönderilmez.
+Workflow private repository ücretsiz kotasına uygun şekilde Gold/NQ ana
+penceresinde 5 dakikada, diğer aktif seanslarda 15 dakikada bir çalışır.
+Tarayıcı arada kapanan tüm 5 dakikalık barları sırayla kontrol eder.
+Aynı bardaki aynı sinyal ikinci kez gönderilmez.
+
+Yahoo, GC/NQ/ES futures verisini yaklaşık 10 dakika gecikmeli verir. Bu
+modüllerin Telegram mesajı gecikmeyi ve izin verilen maksimum fiyat sapmasını
+özellikle yazar. Kullanıcı Maven grafiğindeki canlı fiyat sapma sınırını
+aşmışsa sinyali almaz. EUR/GBP Yahoo metadata gecikmesi 0 dakika, BTC ise
+Binance public API üzerinden gerçek zamana yakındır.
 
 ## Lokal test
 

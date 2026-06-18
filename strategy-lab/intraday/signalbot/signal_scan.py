@@ -18,11 +18,12 @@ from . import free_data, sessions, telegram_notify
 from .btc_absorption import module as btc_module
 from .message import format_signal
 from .risk import risk_plan, tier_of
+from .symbols import resolve
 
 STATE_PATH = Path(os.environ.get("SIGNALBOT_STATE_PATH", ".signalbot/state.json"))
 MIN_BARS = {"5m": 200, "15m": 520, "1H": 220}
-FRESHNESS = {"5m": dt.timedelta(minutes=24), "15m": dt.timedelta(minutes=34),
-             "1H": dt.timedelta(minutes=79)}
+FRESHNESS = {"5m": dt.timedelta(minutes=24), "15m": dt.timedelta(minutes=49),
+             "1H": dt.timedelta(minutes=89)}
 BAR_LENGTH = {"5m": dt.timedelta(minutes=5), "15m": dt.timedelta(minutes=15),
               "1H": dt.timedelta(hours=1)}
 
@@ -139,6 +140,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 direction=sig.direction, entry=sig.entry, sl=sig.sl, tp=sig.tp,
                 lot=plan.normal_lot, risk_usd=plan.normal_usd, risk_plan=plan,
                 trt_time=sessions.to_trt(now),
+                expected_delay_minutes=resolve(mod.symbol_key).expected_delay_minutes,
             )
             if dry_run:
                 print(message)

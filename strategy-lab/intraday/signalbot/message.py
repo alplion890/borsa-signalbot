@@ -16,7 +16,8 @@ _HUMAN = {
 def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   entry: float, sl: float, tp: float, lot: float,
                   risk_usd: float, trt_time: str,
-                  risk_plan: RiskPlan | None = None) -> str:
+                  risk_plan: RiskPlan | None = None,
+                  expected_delay_minutes: int = 0) -> str:
     yon = "long" if direction == 1 else "short"
     ad = _HUMAN.get(module, module)
     if risk_plan is None:
@@ -36,6 +37,13 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
         f"{risk_text} Saat {trt_time}. Acik islemin varsa veya fiyat giristen "
         "uzaklastiysa alma."
     )
+    if expected_delay_minutes > 0:
+        max_drift = abs(entry - sl) * 0.25
+        common_tail += (
+            f" Veri yaklasik {expected_delay_minutes} dakika gecikmeli. Maven "
+            f"grafiginde canli fiyati kontrol et. Fiyat giristen {max_drift:g} "
+            "puandan fazla uzaksa bu sinyali pas gec."
+        )
     if tier is Tier.LIVE:
         return (
             f"{ad} {yon} sinyali geldi. Yaklasik {entry:g} ten gir, "

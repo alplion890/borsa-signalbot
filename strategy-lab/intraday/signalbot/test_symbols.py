@@ -6,6 +6,7 @@ def test_resolve_xauusd():
     spec = resolve("XAUUSD")
     assert spec.source == Source.YFINANCE
     assert spec.ticker == "GC=F"
+    assert spec.expected_delay_minutes == 10
 
 
 def test_resolve_btc():

@@ -38,3 +38,22 @@ def test_paper_eur_message():
     )
     assert "paper" in msg.lower()
     assert ("teyit" in msg.lower()) or ("kontrol" in msg.lower())
+
+
+def test_delayed_futures_message_has_live_price_guard():
+    msg = format_signal(
+        tier=Tier.LIVE,
+        module="GOLD_NY_ORB_TREND",
+        symbol_key="XAUUSD",
+        direction=1,
+        entry=3000,
+        sl=2990,
+        tp=3010,
+        lot=0.07,
+        risk_usd=75,
+        trt_time="16 45",
+        expected_delay_minutes=10,
+    )
+    assert "10 dakika gecikmeli" in msg
+    assert "2.5 puandan fazla" in msg
+    assert "Maven" in msg

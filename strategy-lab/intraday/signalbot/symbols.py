@@ -13,12 +13,13 @@ class Source(str, Enum):
 class SymbolSpec:
     source: Source
     ticker: str
+    expected_delay_minutes: int = 0
 
 
 _MAP: dict[str, SymbolSpec] = {
-    "XAUUSD":    SymbolSpec(Source.YFINANCE, "GC=F"),
-    "NASDAQ100": SymbolSpec(Source.YFINANCE, "NQ=F"),
-    "SP500":     SymbolSpec(Source.YFINANCE, "ES=F"),
+    "XAUUSD":    SymbolSpec(Source.YFINANCE, "GC=F", 10),
+    "NASDAQ100": SymbolSpec(Source.YFINANCE, "NQ=F", 10),
+    "SP500":     SymbolSpec(Source.YFINANCE, "ES=F", 10),
     "EURUSD":    SymbolSpec(Source.YFINANCE, "EURUSD=X"),
     "GBPUSD":    SymbolSpec(Source.YFINANCE, "GBPUSD=X"),
     "BTC":       SymbolSpec(Source.BINANCE, "BTCUSDT"),

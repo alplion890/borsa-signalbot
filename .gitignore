@@ -3,3 +3,4 @@ strategy-lab/intraday/signalbot/.env
 .signalbot/
 __pycache__/
 *.pyc
+.pytest_tmp/
