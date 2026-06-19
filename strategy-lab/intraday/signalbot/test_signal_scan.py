@@ -40,7 +40,7 @@ def test_sends_every_distinct_setup_and_dedupes_same_bar(monkeypatch, tmp_path):
     assert second == []
 
 
-def test_stale_bar_is_not_sent(monkeypatch, tmp_path):
+def test_delayed_bar_is_still_sent(monkeypatch, tmp_path):
     now = dt.datetime(2026, 6, 18, 13, 42, tzinfo=dt.timezone.utc)
     mod = LiveModule("GOLD_NY_ORB_TREND", "XAUUSD", "5m", 1.0, 48,
                      lambda df: Signal(1, 4225, 4214, 4247))
@@ -52,8 +52,10 @@ def test_stale_bar_is_not_sent(monkeypatch, tmp_path):
     sent = []
     monkeypatch.setattr(signal_scan.telegram_notify, "send", sent.append)
 
-    assert signal_scan.run(now=now, state_path=tmp_path / "state.json") == []
-    assert sent == []
+    messages = signal_scan.run(now=now, state_path=tmp_path / "state.json")
+    assert len(messages) == 1
+    assert len(sent) == 1
+    assert "onceki kapanmis mumdan" in messages[0]
 
 
 def test_dry_run_does_not_persist_dedupe_state(monkeypatch, tmp_path):

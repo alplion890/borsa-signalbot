@@ -22,8 +22,6 @@ from .symbols import resolve
 
 STATE_PATH = Path(os.environ.get("SIGNALBOT_STATE_PATH", ".signalbot/state.json"))
 MIN_BARS = {"5m": 200, "15m": 520, "1H": 220}
-FRESHNESS = {"5m": dt.timedelta(minutes=24), "15m": dt.timedelta(minutes=49),
-             "1H": dt.timedelta(minutes=89)}
 BAR_LENGTH = {"5m": dt.timedelta(minutes=5), "15m": dt.timedelta(minutes=15),
               "1H": dt.timedelta(hours=1)}
 
@@ -58,13 +56,6 @@ def _prepare_es_div_feeds() -> None:
     from ..forward_ea import modules
     modules._ESDIV_CACHE["es"] = free_data.ohlcv("SP500", "15m", days=59)
     modules._ESDIV_CACHE["h1"] = free_data.ohlcv("NASDAQ100", "1H", days=59)
-
-
-def _is_fresh(bar_time, now: dt.datetime, tf: str) -> bool:
-    bar_dt = bar_time.to_pydatetime()
-    if bar_dt.tzinfo is None:
-        bar_dt = bar_dt.replace(tzinfo=dt.timezone.utc)
-    return dt.timedelta(0) <= now - bar_dt <= FRESHNESS[tf]
 
 
 def _is_closed(bar_time, now: dt.datetime, tf: str) -> bool:
@@ -113,7 +104,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                     previous_ts = previous_ts.tz_convert(df.index.tz)
                 candidate_positions = [
                     i for i in closed_positions
-                    if df.index[i] > previous_ts and _is_fresh(df.index[i], now, mod.tf)
+                    if df.index[i] > previous_ts
                 ]
             else:
                 candidate_positions = [closed_positions[-1]]
@@ -123,8 +114,6 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             continue
         for position in candidate_positions:
             bar_time = df.index[position]
-            if not _is_fresh(bar_time, now, mod.tf):
-                continue
             try:
                 sig = mod.detect(df.iloc[: position + 1])
             except Exception as exc:

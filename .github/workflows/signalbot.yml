@@ -4,11 +4,8 @@ on:
   schedule:
     # Gold/NQ ana penceresi: Yahoo gecikmesini azaltmak icin 5 dakikada bir.
     - cron: "2,7,12,17,22,27,32,37,42,47,52,57 13-16 * * 1-5"
-    # London ve NY seansinin kalan kismi: 15 dakikada bir.
-    - cron: "7,22,37,52 7-10,17-20 * * 1-5"
-    # BTC 1H setup: ana seanslar disinda her saat.
-    - cron: "17 0-6,11-12,21-23 * * 1-5"
-    - cron: "17 * * * 0,6"
+    # GitHub sub-hour cronlari geciktirirse tum piyasalar icin saatlik guvenli yedek.
+    - cron: "19 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
