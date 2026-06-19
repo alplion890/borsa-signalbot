@@ -86,10 +86,13 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
     scanned_state = state.setdefault("scanned", {})
     messages: list[str] = []
     pending: list[dict] = []
+    active_modules = 0
+    data_errors = 0
 
     for mod in _load_modules():
         if not sessions.is_active(mod.name, now):
             continue
+        active_modules += 1
         try:
             if mod.name == "SWEEP_ES_DIV":
                 _prepare_es_div_feeds()
@@ -115,6 +118,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             else:
                 candidate_positions = [closed_positions[-1]]
         except Exception as exc:
+            data_errors += 1
             print(f"{mod.name}: tarama hatasi: {type(exc).__name__}: {exc}")
             continue
         for position in candidate_positions:
@@ -124,6 +128,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             try:
                 sig = mod.detect(df.iloc[: position + 1])
             except Exception as exc:
+                data_errors += 1
                 print(f"{mod.name}: detector hatasi: {type(exc).__name__}: {exc}")
                 continue
             if sig is None:
@@ -177,6 +182,10 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
 
     if not dry_run:
         _save_state(state, path)
+    print(
+        f"Tarama tamamlandi. Aktif modul {active_modules}, "
+        f"yeni setup {len(messages)}, hata {data_errors}."
+    )
     return messages
 
 
