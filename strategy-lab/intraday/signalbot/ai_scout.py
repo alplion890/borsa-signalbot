@@ -1,0 +1,483 @@
+"""DeepSeek destekli bagimsiz piyasa firsat tarayicisi.
+
+Ana strateji tarayicisini asla bloke etmez. GitHub Actions icinde ana bot
+tamamlandiktan sonra ayri bir adim olarak calisir ve ayni Telegram kanalina
+AI IZLE / AI FIRSAT / AI RISK etiketli mesajlar yollar.
+"""
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import math
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import requests
+
+from ..edge_lab import _adx
+from ..indicators import atr, daily_vwap, ema, prev_day_levels
+from . import finnhub_live, free_data, sessions, telegram_notify
+
+API_URL = "https://api.deepseek.com/chat/completions"
+STATE_PATH = Path(os.environ.get("AI_SCOUT_STATE_PATH", ".signalbot/ai_state.json"))
+MONTHLY_BUDGET_USD = float(os.environ.get("AI_MONTHLY_BUDGET_USD", "2.0"))
+MIN_RUN_INTERVAL_MINUTES = int(os.environ.get("AI_MIN_RUN_INTERVAL_MINUTES", "9"))
+MAX_DAILY_OPPORTUNITIES = int(os.environ.get("AI_MAX_DAILY_OPPORTUNITIES", "4"))
+FLASH_MODEL = os.environ.get("AI_FLASH_MODEL", "deepseek-v4-flash")
+PRO_MODEL = os.environ.get("AI_PRO_MODEL", "deepseek-v4-pro")
+
+_MODEL_PRICES = {
+    "deepseek-v4-flash": {"hit": 0.0028, "miss": 0.14, "output": 0.28},
+    "deepseek-v4-pro": {"hit": 0.003625, "miss": 0.435, "output": 0.87},
+}
+_SPECS = {
+    "XAUUSD": "15m",
+    "NASDAQ100": "15m",
+    "SP500": "15m",
+    "EURUSD": "15m",
+    "GBPUSD": "15m",
+    "BTC": "1H",
+}
+_HUMAN = {
+    "XAUUSD": "Gold",
+    "NASDAQ100": "NQ",
+    "SP500": "ES",
+    "EURUSD": "EURUSD",
+    "GBPUSD": "GBPUSD",
+    "BTC": "BTC",
+}
+_ALLOWED_STATUS = {"none", "watch", "opportunity", "risk"}
+_ALLOWED_DIRECTION = {"long", "short", "neutral"}
+
+
+@dataclass(frozen=True)
+class ModelReply:
+    data: dict[str, Any]
+    cost_usd: float
+
+
+def _load_state(path: Path = STATE_PATH) -> dict[str, Any]:
+    if not path.exists():
+        return {"month": "", "spent_usd": 0.0, "calls": 0, "sent": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _save_state(state: dict[str, Any], path: Path = STATE_PATH) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _reset_month(state: dict[str, Any], now: dt.datetime) -> None:
+    month = now.strftime("%Y-%m")
+    if state.get("month") != month:
+        state["month"] = month
+        state["spent_usd"] = 0.0
+        state["calls"] = 0
+
+
+def _parse_time(value: str | None) -> dt.datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
+    except ValueError:
+        return None
+
+
+def _run_due(state: dict[str, Any], now: dt.datetime) -> bool:
+    previous = _parse_time(state.get("last_run_utc"))
+    if previous is None:
+        return True
+    return (now - previous).total_seconds() >= MIN_RUN_INTERVAL_MINUTES * 60
+
+
+def _active_symbols(now: dt.datetime) -> list[str]:
+    """Yalnizca o saatte anlamli piyasalari modele gonder."""
+    if now.weekday() >= 5:
+        return ["BTC"]
+    hour = now.hour + now.minute / 60
+    symbols = ["BTC"]
+    if 6.5 <= hour < 12:
+        symbols += ["XAUUSD", "EURUSD", "GBPUSD"]
+    if 12.5 <= hour < 21:
+        symbols += ["XAUUSD", "NASDAQ100", "SP500", "EURUSD", "GBPUSD"]
+    return list(dict.fromkeys(symbols))
+
+
+def _last_number(series: pd.Series) -> float | None:
+    value = series.iloc[-1]
+    return None if pd.isna(value) or not math.isfinite(float(value)) else round(float(value), 8)
+
+
+def build_snapshot(symbol: str, df: pd.DataFrame, now: dt.datetime,
+                   live_price: float | None = None) -> dict[str, Any]:
+    """Ham mumlari modele tasimadan kompakt, hesaplanabilir piyasa ozeti olustur."""
+    if df is None or len(df) < 60:
+        raise ValueError(f"{symbol}: yetersiz veri")
+    frame = df.iloc[-220:].copy()
+    a = atr(frame, 14)
+    adx = _adx(frame, 14)
+    fast = ema(frame["close"], 20)
+    slow = ema(frame["close"], 50)
+    vwap = daily_vwap(frame)
+    pdh, pdl = prev_day_levels(frame)
+    close = float(frame["close"].iloc[-1])
+    atr_value = max(float(a.iloc[-1]), abs(close) * 1e-8)
+    recent = frame.iloc[-20:]
+    returns = frame["close"].pct_change()
+    volume = frame["volume"].astype(float)
+    volume_mean = float(volume.iloc[-21:-1].mean()) if len(volume) >= 21 else 0.0
+    volume_ratio = float(volume.iloc[-1] / volume_mean) if volume_mean > 0 else 0.0
+    bar_time = frame.index[-1].to_pydatetime()
+    if bar_time.tzinfo is None:
+        bar_time = bar_time.replace(tzinfo=dt.timezone.utc)
+
+    return {
+        "symbol": symbol,
+        "timeframe": _SPECS[symbol],
+        "bar_time_utc": bar_time.isoformat(),
+        "data_age_minutes": round(max(0.0, (now - bar_time).total_seconds() / 60), 1),
+        "close": round(close, 8),
+        "live_price": round(float(live_price), 8) if live_price else None,
+        "atr14": round(atr_value, 8),
+        "adx14": round(float(adx.iloc[-1]), 2),
+        "ema20": round(float(fast.iloc[-1]), 8),
+        "ema50": round(float(slow.iloc[-1]), 8),
+        "vwap": round(float(vwap.iloc[-1]), 8),
+        "prev_day_high": _last_number(pdh),
+        "prev_day_low": _last_number(pdl),
+        "recent_20_high": round(float(recent["high"].max()), 8),
+        "recent_20_low": round(float(recent["low"].min()), 8),
+        "return_1_bar_pct": round(float(returns.iloc[-1] * 100), 4),
+        "return_4_bar_pct": round(float((close / frame["close"].iloc[-5] - 1) * 100), 4),
+        "volume_ratio_20": round(volume_ratio, 2),
+        "last_bars": [
+            {
+                "o": round(float(row.open), 8),
+                "h": round(float(row.high), 8),
+                "l": round(float(row.low), 8),
+                "c": round(float(row.close), 8),
+                "v": round(float(row.volume), 2),
+            }
+            for row in frame.iloc[-8:].itertuples()
+        ],
+    }
+
+
+_SYSTEM_PROMPT = """You are a cautious institutional intraday market scout.
+Analyze only the supplied numerical market data. Never invent news, prices or indicators.
+Look for liquidity sweep and reclaim, ORB retest, trend pullback, failed breakout,
+VWAP reclaim/rejection, momentum continuation, divergence and absorption-like structures.
+Prefer no trade over a weak trade. Account for stale data. Return strict json only.
+An opportunity requires confidence >=75 and projected reward/risk >=1.5.
+A watch requires confidence >=65. Risk means conditions are dangerous, not a trade.
+Use exactly this shape:
+{"ideas":[{"symbol":"XAUUSD","status":"none|watch|opportunity|risk",
+"direction":"long|short|neutral","confidence":0,"setup":"short name",
+"entry_low":0,"entry_high":0,"stop":0,"target":0,
+"invalidation":"short text","reason":"short text","risk_flags":["text"]}]}
+Return one object for every supplied symbol."""
+
+
+def _usage_cost(model: str, usage: dict[str, Any]) -> float:
+    prices = _MODEL_PRICES.get(model, _MODEL_PRICES["deepseek-v4-pro"])
+    hit = int(usage.get("prompt_cache_hit_tokens", 0) or 0)
+    miss = usage.get("prompt_cache_miss_tokens")
+    if miss is None:
+        miss = max(0, int(usage.get("prompt_tokens", 0) or 0) - hit)
+    output = int(usage.get("completion_tokens", 0) or 0)
+    return (
+        hit * prices["hit"] + int(miss) * prices["miss"] + output * prices["output"]
+    ) / 1_000_000
+
+
+def _estimated_request_cost(model: str, payload: dict[str, Any], max_tokens: int) -> float:
+    prices = _MODEL_PRICES.get(model, _MODEL_PRICES["deepseek-v4-pro"])
+    input_tokens = max(1, len(json.dumps(payload, ensure_ascii=False)) // 4)
+    return (input_tokens * prices["miss"] + max_tokens * prices["output"]) / 1_000_000
+
+
+def _call_deepseek(*, model: str, messages: list[dict[str, str]],
+                   max_tokens: int, thinking: bool, api_key: str) -> ModelReply:
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+        "stream": False,
+    }
+    payload["thinking"] = {"type": "enabled" if thinking else "disabled"}
+    if thinking:
+        payload["reasoning_effort"] = "high"
+    else:
+        payload["temperature"] = 0.1
+    response = requests.post(
+        API_URL,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=45,
+    )
+    response.raise_for_status()
+    body = response.json()
+    content = body["choices"][0]["message"]["content"]
+    return ModelReply(json.loads(content), _usage_cost(model, body.get("usage", {})))
+
+
+def _number(value: Any) -> float | None:
+    try:
+        number = float(value)
+        return number if math.isfinite(number) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    """Model seviyelerini piyasa verisine karsi deterministik olarak dogrula."""
+    symbol = str(raw.get("symbol", "")).upper()
+    if symbol not in snapshots:
+        return None
+    status = str(raw.get("status", "none")).lower()
+    direction = str(raw.get("direction", "neutral")).lower()
+    if status not in _ALLOWED_STATUS or direction not in _ALLOWED_DIRECTION:
+        return None
+    confidence = int(max(0, min(100, _number(raw.get("confidence")) or 0)))
+    if status == "opportunity" and confidence < 75:
+        status = "watch"
+    if status == "watch" and confidence < 65:
+        status = "none"
+    snap = snapshots[symbol]
+    current = float(snap.get("live_price") or snap["close"])
+    atr_value = max(float(snap["atr14"]), abs(current) * 1e-8)
+    entry_low = _number(raw.get("entry_low"))
+    entry_high = _number(raw.get("entry_high"))
+    stop = _number(raw.get("stop"))
+    target = _number(raw.get("target"))
+
+    if status in {"watch", "opportunity"}:
+        if direction not in {"long", "short"} or None in {entry_low, entry_high, stop, target}:
+            return None
+        entry_low, entry_high = sorted((float(entry_low), float(entry_high)))
+        midpoint = (entry_low + entry_high) / 2
+        if abs(midpoint - current) > 4 * atr_value:
+            return None
+        risk = midpoint - float(stop) if direction == "long" else float(stop) - midpoint
+        reward = float(target) - midpoint if direction == "long" else midpoint - float(target)
+        if risk <= 0 or reward <= 0:
+            return None
+        rr = reward / risk
+        if status == "opportunity" and rr < 1.5:
+            status = "watch"
+    else:
+        rr = 0.0
+
+    return {
+        "symbol": symbol,
+        "status": status,
+        "direction": direction,
+        "confidence": confidence,
+        "setup": str(raw.get("setup", ""))[:80],
+        "entry_low": entry_low,
+        "entry_high": entry_high,
+        "stop": stop,
+        "target": target,
+        "rr": round(rr, 2),
+        "invalidation": str(raw.get("invalidation", ""))[:180],
+        "reason": str(raw.get("reason", ""))[:240],
+        "risk_flags": [str(x)[:100] for x in raw.get("risk_flags", [])[:4]]
+        if isinstance(raw.get("risk_flags", []), list) else [],
+        "data_age_minutes": snap["data_age_minutes"],
+    }
+
+
+def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
+                 api_key: str, state: dict[str, Any]) -> dict[str, Any] | None:
+    messages = [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                "Review this candidate independently. Return strict json with one idea. "
+                "Reject it by using status none if structure, levels, stale data or reward/risk "
+                "are weak. Do not increase confidence without clear numerical evidence.\n"
+                + json.dumps({"candidate": idea, "market": snapshot}, separators=(",", ":"))
+            ),
+        },
+    ]
+    estimate = _estimated_request_cost(PRO_MODEL, {"messages": messages}, 1400)
+    if float(state.get("spent_usd", 0.0)) + estimate > MONTHLY_BUDGET_USD:
+        return None
+    reply = _call_deepseek(
+        model=PRO_MODEL, messages=messages, max_tokens=1400, thinking=True, api_key=api_key
+    )
+    state["spent_usd"] = float(state.get("spent_usd", 0.0)) + reply.cost_usd
+    state["calls"] = int(state.get("calls", 0)) + 1
+    ideas = reply.data.get("ideas", [])
+    if not isinstance(ideas, list) or not ideas:
+        return None
+    return validate_idea(ideas[0], {idea["symbol"]: snapshot})
+
+
+def _fingerprint(idea: dict[str, Any], snapshot: dict[str, Any]) -> str:
+    atr_value = max(float(snapshot["atr14"]), 1e-12)
+    entry = float(idea.get("entry_low") or snapshot["close"])
+    bucket = round(entry / atr_value)
+    raw = (
+        f"{idea['symbol']}|{idea['status']}|{idea['direction']}|"
+        f"{idea['setup'].lower()}|{bucket}"
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
+
+def _message(idea: dict[str, Any], now: dt.datetime) -> str:
+    label = {
+        "watch": "AI IZLE",
+        "opportunity": "AI FIRSAT",
+        "risk": "AI RISK",
+    }[idea["status"]]
+    symbol = _HUMAN[idea["symbol"]]
+    if idea["status"] == "risk":
+        return (
+            f"{label} {symbol}. {idea['reason']} "
+            f"Guven {idea['confidence']}. Veri yasi {idea['data_age_minutes']:.0f} dakika. "
+            f"Saat {sessions.to_trt(now)}."
+        )
+    flags = ", ".join(idea["risk_flags"]) if idea["risk_flags"] else "belirgin ek risk yok"
+    return (
+        f"{label} {symbol} {idea['direction']} adayi. Setup {idea['setup']}. "
+        f"Giris bolgesi {idea['entry_low']:g} ile {idea['entry_high']:g}, "
+        f"stop {idea['stop']:g}, hedef {idea['target']:g}, yaklasik {idea['rr']:.2f}R. "
+        f"Guven {idea['confidence']}. {idea['reason']} "
+        f"Gecersizlik {idea['invalidation']}. Riskler {flags}. "
+        f"Veri yasi {idea['data_age_minutes']:.0f} dakika. Saat {sessions.to_trt(now)}. "
+        "Bu AI adayidir, fiyat giris bolgesine gelmeden islem alma."
+    )
+
+
+def run(*, now: dt.datetime | None = None, dry_run: bool = False,
+        state_path: Path | None = None, api_key: str | None = None) -> list[str]:
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=dt.timezone.utc)
+    key = api_key or os.environ.get("DEEPSEEK_API_KEY")
+    if not key:
+        print("AI scout beklemede: DEEPSEEK_API_KEY eksik.")
+        return []
+
+    path = state_path or STATE_PATH
+    state = _load_state(path)
+    _reset_month(state, now)
+    if not _run_due(state, now):
+        print("AI scout atlandi: minimum tarama araligi dolmadi.")
+        return []
+    if float(state.get("spent_usd", 0.0)) >= MONTHLY_BUDGET_USD:
+        print("AI scout atlandi: aylik butce tavani doldu.")
+        return []
+
+    symbols = _active_symbols(now)
+    quotes = finnhub_live.collect_quotes(set(symbols), timeout_seconds=5.0)
+    snapshots: dict[str, dict[str, Any]] = {}
+    for symbol in symbols:
+        try:
+            frame = free_data.ohlcv(symbol, _SPECS[symbol], days=59)
+            quote = quotes.get(symbol)
+            snapshots[symbol] = build_snapshot(
+                symbol, frame, now, live_price=quote.price if quote else None
+            )
+        except Exception as exc:
+            print(f"AI scout {symbol} veri hatasi: {type(exc).__name__}: {exc}")
+    if not snapshots:
+        return []
+
+    messages = [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": "Scan these markets and return strict json.\n"
+            + json.dumps({"asof_utc": now.isoformat(), "markets": list(snapshots.values())},
+                         separators=(",", ":")),
+        },
+    ]
+    estimate = _estimated_request_cost(FLASH_MODEL, {"messages": messages}, 1800)
+    if float(state.get("spent_usd", 0.0)) + estimate > MONTHLY_BUDGET_USD:
+        print("AI scout atlandi: bu istek aylik butceyi asabilir.")
+        return []
+
+    try:
+        reply = _call_deepseek(
+            model=FLASH_MODEL, messages=messages, max_tokens=1800,
+            thinking=False, api_key=key,
+        )
+    except Exception as exc:
+        print(f"AI scout API hatasi: {type(exc).__name__}: {exc}")
+        return []
+    state["spent_usd"] = float(state.get("spent_usd", 0.0)) + reply.cost_usd
+    state["calls"] = int(state.get("calls", 0)) + 1
+    state["last_run_utc"] = now.isoformat()
+
+    raw_ideas = reply.data.get("ideas", [])
+    valid = [
+        idea for raw in raw_ideas if isinstance(raw, dict)
+        if (idea := validate_idea(raw, snapshots)) is not None
+        and idea["status"] != "none"
+    ] if isinstance(raw_ideas, list) else []
+
+    date_key = now.strftime("%Y-%m-%d")
+    daily = state.setdefault("daily", {})
+    daily_entry = daily.setdefault(date_key, {"opportunities": 0})
+    remaining_opportunities = max(
+        0, MAX_DAILY_OPPORTUNITIES - int(daily_entry.get("opportunities", 0))
+    )
+    final_ideas: list[dict[str, Any]] = []
+    for idea in sorted(valid, key=lambda x: x["confidence"], reverse=True):
+        if idea["status"] == "opportunity":
+            if remaining_opportunities <= 0:
+                idea = {**idea, "status": "watch"}
+            else:
+                confirmed = _pro_confirm(
+                    idea, snapshots[idea["symbol"]], api_key=key, state=state
+                )
+                if confirmed is None or confirmed["status"] == "none":
+                    continue
+                idea = confirmed
+                if idea["status"] == "opportunity":
+                    remaining_opportunities -= 1
+        final_ideas.append(idea)
+
+    sent = state.setdefault("sent", {})
+    cutoff = now - dt.timedelta(hours=24)
+    state["sent"] = {
+        key_: value for key_, value in sent.items()
+        if (_parse_time(value) or now) >= cutoff
+    }
+    sent = state["sent"]
+    output: list[str] = []
+    for idea in final_ideas:
+        fingerprint = _fingerprint(idea, snapshots[idea["symbol"]])
+        if fingerprint in sent:
+            continue
+        text = _message(idea, now)
+        if dry_run:
+            print(text)
+        else:
+            telegram_notify.send(text)
+        output.append(text)
+        sent[fingerprint] = now.isoformat()
+        if idea["status"] == "opportunity":
+            daily_entry["opportunities"] = int(daily_entry.get("opportunities", 0)) + 1
+
+    # Dry-run da gercek API tokeni tuketir; harcama tavani her durumda saklanir.
+    _save_state(state, path)
+    print(
+        f"AI scout tamamlandi. Piyasa {len(snapshots)}, mesaj {len(output)}, "
+        f"aylik tahmini harcama {float(state.get('spent_usd', 0.0)):.4f} dolar."
+    )
+    return output

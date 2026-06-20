@@ -4,8 +4,12 @@ on:
   schedule:
     # Gold/NQ ana penceresi: Yahoo gecikmesini azaltmak icin 5 dakikada bir.
     - cron: "2,7,12,17,22,27,32,37,42,47,52,57 13-16 * * 1-5"
-    # GitHub sub-hour cronlari geciktirirse tum piyasalar icin saatlik guvenli yedek.
-    - cron: "19 * * * *"
+    # Londra: ana bot + AI scout 15 dakikada bir.
+    - cron: "2,17,32,47 7-11 * * 1-5"
+    # NY seansinin ikinci yarisi: 30 dakikada bir.
+    - cron: "7,37 17-20 * * 1-5"
+    # BTC ve geciken cronlar icin dort saatlik guvenli yedek.
+    - cron: "19 */4 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -77,6 +81,27 @@ jobs:
             echo "Telegram Secrets henuz eklenmedi; tarama beklemede."
           else
             python run_bot.py
+          fi
+
+      - name: DeepSeek AI scout
+        if: ${{ !inputs.test_finnhub && !inputs.test_telegram && !inputs.dry_run }}
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+          FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          AI_SCOUT_STATE_PATH: .signalbot/ai_state.json
+          AI_MONTHLY_BUDGET_USD: "2.0"
+          AI_MAX_DAILY_OPPORTUNITIES: "4"
+          AI_MIN_RUN_INTERVAL_MINUTES: "9"
+        run: |
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "DeepSeek API secret henuz eklenmedi; AI scout beklemede."
+          elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram Secrets eksik; AI scout beklemede."
+          else
+            python run_bot.py --ai-scout
           fi
 
       - name: Sinyal durumunu sakla

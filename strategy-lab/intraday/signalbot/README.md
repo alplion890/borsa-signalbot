@@ -55,3 +55,31 @@ public API üzerinden gelir.
 python -m pytest strategy-lab/intraday/signalbot -q
 python run_bot.py --dry-run
 ```
+
+## DeepSeek AI scout
+
+AI scout ana strateji botundan bagimsiz calisir. Ana bot setup mesajini once
+gonderir; ardindan DeepSeek piyasayi tarar ve ayni Telegram sohbetine
+`AI IZLE`, `AI FIRSAT` veya `AI RISK` etiketiyle ayri mesaj yollar.
+
+GitHub Environment secret olarak sunu ekle:
+
+- `DEEPSEEK_API_KEY`
+
+Varsayilan aylik API butcesi 2 dolar, gunluk AI firsat tavani 4'tur. Flash model
+butun aktif piyasalari tek istekte tarar. Yalnizca 75 ve uzeri firsat adaylari
+Pro model tarafindan ikinci kez kontrol edilir. AI seviyeleri kod tarafinda
+ATR, yon ve minimum 1.5R kurallariyla yeniden dogrulanir.
+
+Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik
+10 dakika, NY seansinin ikinci yarisinda 30 dakika ve diger zamanlarda dort
+saattir. Ana botun 5 dakikalik NY taramasi degismez.
+
+Lokal kuru test:
+
+```powershell
+python run_bot.py --ai-scout --dry-run
+```
+
+Not: AI dry-run Telegram'a mesaj yollamaz ama gercek DeepSeek API tokeni
+kullanir; bu nedenle harcama state dosyasina yine kaydedilir.

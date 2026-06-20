@@ -183,7 +183,12 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--test-finnhub", action="store_true")
     parser.add_argument("--test-telegram", action="store_true")
+    parser.add_argument("--ai-scout", action="store_true")
     args = parser.parse_args()
+    if args.ai_scout:
+        from .ai_scout import run as run_ai_scout
+        run_ai_scout(dry_run=args.dry_run)
+        return
     if args.test_finnhub:
         keys = {"XAUUSD", "NASDAQ100", "SP500", "EURUSD", "GBPUSD", "BTC"}
         print(f"Finnhub API tani: {json.dumps(finnhub_live.diagnose_api(), ensure_ascii=False)}")
