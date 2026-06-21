@@ -194,8 +194,16 @@ def summary(records: list[dict[str, Any]], limit: int = 8) -> dict[str, Any]:
     patterns.sort(key=lambda x: (x["samples"], abs(x["avg_r"])), reverse=True)
     all_results = [float(item["result_r"]) for item in resolved]
     return {
+        "total_records": len(records),
         "resolved_samples": len(resolved),
+        "wins": sum(float(item["result_r"]) > 0 for item in resolved),
+        "losses": sum(float(item["result_r"]) <= 0 for item in resolved),
+        "win_rate": round(
+            sum(float(item["result_r"]) > 0 for item in resolved) / len(resolved), 3
+        ) if resolved else None,
         "open_samples": sum(item.get("outcome") == "open" for item in records),
+        "not_triggered_samples": sum(item.get("outcome") == "not_triggered" for item in records),
+        "ambiguous_samples": sum(item.get("outcome") == "ambiguous" for item in records),
         "overall_avg_r": round(sum(all_results) / len(all_results), 3) if all_results else None,
         "patterns": patterns[:limit],
         "instruction": (
@@ -203,3 +211,28 @@ def summary(records: list[dict[str, Any]], limit: int = 8) -> dict[str, Any]:
             "Historical statistics may reduce confidence but never justify invalid levels."
         ),
     }
+
+
+def report(path: Path = LEDGER_PATH) -> str:
+    records = load(path)
+    data = summary(records)
+    lines = [
+        "AI PERFORMANCE REPORT",
+        f"Toplam kayit {data['total_records']}",
+        f"Sonuclanmis {data['resolved_samples']}",
+        f"Kazanan {data['wins']} kaybeden {data['losses']}",
+        f"Win rate {data['win_rate'] * 100:.1f}%"
+        if data["win_rate"] is not None else "Win rate icin henuz sonuclanmis ornek yok",
+        f"Ortalama R {data['overall_avg_r']:+.3f}"
+        if data["overall_avg_r"] is not None else "Ortalama R henuz yok",
+        f"Acik {data['open_samples']} tetiklenmeyen {data['not_triggered_samples']} "
+        f"belirsiz {data['ambiguous_samples']}",
+    ]
+    for item in records[-20:]:
+        lines.append(
+            f"{item.get('created_utc')} {item.get('symbol')} {item.get('direction')} "
+            f"{item.get('setup')} plan {item.get('planned_rr')}R "
+            f"sonuc {item.get('outcome')} R {item.get('result_r')} "
+            f"MFE {item.get('mfe_r')} MAE {item.get('mae_r')}"
+        )
+    return "\n".join(lines)

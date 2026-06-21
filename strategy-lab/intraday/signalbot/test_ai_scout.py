@@ -51,7 +51,7 @@ def test_validate_idea_rejects_wrong_side_stop():
     assert ai_scout.validate_idea(raw, {"XAUUSD": snapshot}) is None
 
 
-def test_validate_idea_downgrades_low_rr_to_watch():
+def test_validate_idea_rejects_below_two_rr():
     now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
     snapshot = ai_scout.build_snapshot("XAUUSD", _df(now), now)
     raw = {
@@ -66,12 +66,12 @@ def test_validate_idea_downgrades_low_rr_to_watch():
         "target": 101,
         "reason": "trend",
         "invalidation": "vwap kaybi",
+        "evidence": ["trend", "location", "trigger"],
         "risk_flags": [],
     }
 
     idea = ai_scout.validate_idea(raw, {"XAUUSD": snapshot})
-    assert idea is not None
-    assert idea["status"] == "watch"
+    assert idea is None
 
 
 def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path):
@@ -100,6 +100,7 @@ def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path)
         "target": 104,
         "reason": "VWAP ustunde reclaim",
         "invalidation": "98 alti kapanis",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
         "risk_flags": ["veri gecikmesi"],
     }
     calls = []
@@ -145,7 +146,9 @@ def test_high_impact_calendar_downgrades_macro_opportunity(monkeypatch, tmp_path
         "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
         "confidence": 85, "setup": "reclaim", "entry_low": 99.8,
         "entry_high": 100.2, "stop": 98, "target": 104,
-        "reason": "trend", "invalidation": "98 alti", "risk_flags": [],
+        "reason": "trend", "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
     }
     calls = []
 
@@ -159,6 +162,46 @@ def test_high_impact_calendar_downgrades_macro_opportunity(monkeypatch, tmp_path
     )
 
     assert calls == [ai_scout.FLASH_MODEL]
-    assert messages[0].startswith("AI IZLE")
-    assert "yuksek etkili veri" in messages[0]
+    assert messages == []
     assert (tmp_path / "ai_ledger.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_same_symbol_direction_is_suppressed_during_cooldown(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD"])
+    monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [], "economic_calendar": [],
+            "trade_risk": "normal", "imminent_high_impact_count": 0,
+        },
+    )
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 85, "setup": "sweep reclaim", "entry_low": 99.8,
+        "entry_high": 100.2, "stop": 98, "target": 104,
+        "reason": "structured asymmetric trade", "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+    monkeypatch.setattr(
+        ai_scout, "_call_deepseek",
+        lambda **kwargs: ai_scout.ModelReply({"ideas": [raw]}, 0.001),
+    )
+    sent = []
+    monkeypatch.setattr(ai_scout.telegram_notify, "send", sent.append)
+    state = tmp_path / "ai.json"
+
+    first = ai_scout.run(now=now, state_path=state, api_key="key")
+    second = ai_scout.run(
+        now=now + dt.timedelta(minutes=10), state_path=state, api_key="key"
+    )
+
+    assert len(first) == 1
+    assert second == []
+    assert len(sent) == 1
+    assert "symbol_direction_cooldown" in (
+        tmp_path / "ai_audit.jsonl"
+    ).read_text(encoding="utf-8")

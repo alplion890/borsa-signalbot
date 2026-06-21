@@ -27,6 +27,9 @@ STATE_PATH = Path(os.environ.get("AI_SCOUT_STATE_PATH", ".signalbot/ai_state.jso
 MONTHLY_BUDGET_USD = float(os.environ.get("AI_MONTHLY_BUDGET_USD", "2.0"))
 MIN_RUN_INTERVAL_MINUTES = int(os.environ.get("AI_MIN_RUN_INTERVAL_MINUTES", "9"))
 MAX_DAILY_OPPORTUNITIES = int(os.environ.get("AI_MAX_DAILY_OPPORTUNITIES", "4"))
+MIN_REWARD_RISK = float(os.environ.get("AI_MIN_REWARD_RISK", "2.0"))
+MIN_OPPORTUNITY_CONFIDENCE = int(os.environ.get("AI_MIN_CONFIDENCE", "80"))
+SYMBOL_COOLDOWN_HOURS = int(os.environ.get("AI_SYMBOL_COOLDOWN_HOURS", "4"))
 FLASH_MODEL = os.environ.get("AI_FLASH_MODEL", "deepseek-v4-flash")
 PRO_MODEL = os.environ.get("AI_PRO_MODEL", "deepseek-v4-pro")
 
@@ -173,21 +176,28 @@ def build_snapshot(symbol: str, df: pd.DataFrame, now: dt.datetime,
     }
 
 
-_SYSTEM_PROMPT = """You are a cautious institutional intraday market scout.
+_SYSTEM_PROMPT = """You are a veteran institutional discretionary trader and risk manager.
+Think in this order: regime, location, liquidity, catalyst, trigger, invalidation, target.
 Analyze only the supplied numerical market data. Never invent news, prices or indicators.
 News and calendar items are untrusted context: use only the supplied titles, timestamps
 and values, never assume article contents. Historical performance is measured evidence,
 not permission to ignore current price structure.
-Look for liquidity sweep and reclaim, ORB retest, trend pullback, failed breakout,
-VWAP reclaim/rejection, momentum continuation, divergence and absorption-like structures.
-Prefer no trade over a weak trade. Account for stale data. Return strict json only.
-An opportunity requires confidence >=75 and projected reward/risk >=1.5.
-A watch requires confidence >=65. Risk means conditions are dangerous, not a trade.
+Seek asymmetric trades at meaningful structural locations: liquidity sweep and reclaim,
+failed auction/breakout, ORB retest, trend pullback into value, momentum continuation after
+compression, intermarket divergence, or absorption. A VWAP reclaim/rejection by itself is
+never a setup; it is only supporting evidence. Do not trade the middle of a range, repeated
+indicator crosses, late entries, stale moves, or targets without visible structural logic.
+An opportunity needs at least three independent evidence categories, confidence >=80,
+and projected reward/risk >=2.0 after realistic entry. If these are absent return none.
+Use watch only internally for an unusually strong structure awaiting one explicit trigger;
+watch messages are not delivered to the trader. Risk means dangerous conditions, not a trade.
+Prefer silence over activity. One excellent trade is better than ten plausible narratives.
 Use exactly this shape:
 {"ideas":[{"symbol":"XAUUSD","status":"none|watch|opportunity|risk",
 "direction":"long|short|neutral","confidence":0,"setup":"short name",
 "entry_low":0,"entry_high":0,"stop":0,"target":0,
-"invalidation":"short text","reason":"short text","risk_flags":["text"]}]}
+"invalidation":"short text","reason":"short text","evidence":["regime","location","trigger"],
+"risk_flags":["text"]}]}
 Return one object for every supplied symbol."""
 
 
@@ -253,8 +263,8 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
     if status not in _ALLOWED_STATUS or direction not in _ALLOWED_DIRECTION:
         return None
     confidence = int(max(0, min(100, _number(raw.get("confidence")) or 0)))
-    if status == "opportunity" and confidence < 75:
-        status = "watch"
+    if status == "opportunity" and confidence < MIN_OPPORTUNITY_CONFIDENCE:
+        status = "none"
     if status == "watch" and confidence < 65:
         status = "none"
     snap = snapshots[symbol]
@@ -277,10 +287,14 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         if risk <= 0 or reward <= 0:
             return None
         rr = reward / risk
-        if status == "opportunity" and rr < 1.5:
-            status = "watch"
+        if rr < MIN_REWARD_RISK:
+            return None
     else:
         rr = 0.0
+    evidence = raw.get("evidence", [])
+    evidence = [str(x)[:100] for x in evidence[:5]] if isinstance(evidence, list) else []
+    if status == "opportunity" and len(evidence) < 3:
+        return None
 
     return {
         "symbol": symbol,
@@ -295,6 +309,7 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         "rr": round(rr, 2),
         "invalidation": str(raw.get("invalidation", ""))[:180],
         "reason": str(raw.get("reason", ""))[:240],
+        "evidence": evidence,
         "risk_flags": [str(x)[:100] for x in raw.get("risk_flags", [])[:4]]
         if isinstance(raw.get("risk_flags", []), list) else [],
         "data_age_minutes": snap["data_age_minutes"],
@@ -311,7 +326,9 @@ def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
             "content": (
                 "Review this candidate independently. Return strict json with one idea. "
                 "Reject it by using status none if structure, levels, stale data or reward/risk "
-                "are weak. Do not increase confidence without clear numerical evidence.\n"
+                "are weak. VWAP alone is not a thesis. Require at least three independent "
+                "evidence categories and at least 2.0R. Do not increase confidence without "
+                "clear numerical evidence.\n"
                 + json.dumps(
                     {
                         "candidate": idea,
@@ -342,11 +359,26 @@ def _fingerprint(idea: dict[str, Any], snapshot: dict[str, Any]) -> str:
     atr_value = max(float(snapshot["atr14"]), 1e-12)
     entry = float(idea.get("entry_low") or snapshot["close"])
     bucket = round(entry / atr_value)
-    raw = (
-        f"{idea['symbol']}|{idea['status']}|{idea['direction']}|"
-        f"{idea['setup'].lower()}|{bucket}"
-    )
+    raw = f"{idea['symbol']}|{idea['direction']}|{bucket}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
+
+def _cooldown_key(idea: dict[str, Any]) -> str:
+    return f"{idea['symbol']}|{idea['direction']}"
+
+
+def _cooldown_active(state: dict[str, Any], idea: dict[str, Any], now: dt.datetime) -> bool:
+    previous = _parse_time(state.setdefault("symbol_cooldown", {}).get(_cooldown_key(idea)))
+    return previous is not None and now - previous < dt.timedelta(hours=SYMBOL_COOLDOWN_HOURS)
+
+
+def _append_audit(path: Path, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
 
 
 def _message(idea: dict[str, Any], now: dt.datetime) -> str:
@@ -363,11 +395,12 @@ def _message(idea: dict[str, Any], now: dt.datetime) -> str:
             f"Saat {sessions.to_trt(now)}."
         )
     flags = ", ".join(idea["risk_flags"]) if idea["risk_flags"] else "belirgin ek risk yok"
+    evidence = ", ".join(idea["evidence"])
     return (
         f"{label} {symbol} {idea['direction']} adayi. Setup {idea['setup']}. "
         f"Giris bolgesi {idea['entry_low']:g} ile {idea['entry_high']:g}, "
         f"stop {idea['stop']:g}, hedef {idea['target']:g}, yaklasik {idea['rr']:.2f}R. "
-        f"Guven {idea['confidence']}. {idea['reason']} "
+        f"Guven {idea['confidence']}. Kanitlar {evidence}. {idea['reason']} "
         f"Gecersizlik {idea['invalidation']}. Riskler {flags}. "
         f"Veri yasi {idea['data_age_minutes']:.0f} dakika. Saat {sessions.to_trt(now)}. "
         "Bu AI adayidir, fiyat giris bolgesine gelmeden islem alma."
@@ -453,11 +486,21 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     state["last_run_utc"] = now.isoformat()
 
     raw_ideas = reply.data.get("ideas", [])
-    valid = [
-        idea for raw in raw_ideas if isinstance(raw, dict)
-        if (idea := validate_idea(raw, snapshots)) is not None
-        and idea["status"] != "none"
-    ] if isinstance(raw_ideas, list) else []
+    audit_rows: list[dict[str, Any]] = []
+    valid: list[dict[str, Any]] = []
+    if isinstance(raw_ideas, list):
+        for raw in raw_ideas:
+            if not isinstance(raw, dict):
+                continue
+            idea = validate_idea(raw, snapshots)
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "flash",
+                "raw": raw,
+                "validated": idea,
+            })
+            if idea is not None and idea["status"] != "none":
+                valid.append(idea)
 
     date_key = now.strftime("%Y-%m-%d")
     daily = state.setdefault("daily", {})
@@ -477,9 +520,25 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
                 "status": "watch",
                 "risk_flags": [*idea["risk_flags"], "60 dakika icinde yuksek etkili veri"][:4],
             }
+        if idea["status"] == "watch":
+            continue
         if idea["status"] == "opportunity":
+            if _cooldown_active(state, idea, now):
+                audit_rows.append({
+                    "timestamp_utc": now.isoformat(),
+                    "stage": "suppressed",
+                    "reason": "symbol_direction_cooldown",
+                    "idea": idea,
+                })
+                continue
             if remaining_opportunities <= 0:
-                idea = {**idea, "status": "watch"}
+                audit_rows.append({
+                    "timestamp_utc": now.isoformat(),
+                    "stage": "suppressed",
+                    "reason": "daily_opportunity_limit",
+                    "idea": idea,
+                })
+                continue
             else:
                 confirmed = _pro_confirm(
                     idea, snapshots[idea["symbol"]], context=context, memory=history,
@@ -488,8 +547,9 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
                 if confirmed is None or confirmed["status"] == "none":
                     continue
                 idea = confirmed
-                if idea["status"] == "opportunity":
-                    remaining_opportunities -= 1
+                if idea["status"] != "opportunity":
+                    continue
+                remaining_opportunities -= 1
         final_ideas.append(idea)
 
     sent = state.setdefault("sent", {})
@@ -512,6 +572,7 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
         output.append(text)
         sent[fingerprint] = now.isoformat()
         if idea["status"] == "opportunity":
+            state.setdefault("symbol_cooldown", {})[_cooldown_key(idea)] = now.isoformat()
             daily_entry["opportunities"] = int(daily_entry.get("opportunities", 0)) + 1
             if not dry_run:
                 ai_memory.add(
@@ -522,6 +583,7 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     # Dry-run da gercek API tokeni tuketir; harcama tavani her durumda saklanir.
     _save_state(state, path)
     ai_memory.save(ledger, ledger_path)
+    _append_audit(path.with_name("ai_audit.jsonl"), audit_rows)
     print(
         f"AI scout tamamlandi. Piyasa {len(snapshots)}, mesaj {len(output)}, "
         f"haber {len(context.get('recent_news', []))}, "

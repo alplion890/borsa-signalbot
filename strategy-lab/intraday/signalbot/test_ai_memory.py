@@ -69,3 +69,20 @@ def test_summary_groups_measured_results():
     assert result["resolved_samples"] == 2
     assert result["patterns"][0]["samples"] == 2
     assert result["patterns"][0]["avg_r"] == 0.5
+    assert result["win_rate"] == 0.5
+    assert result["wins"] == 1
+    assert result["losses"] == 1
+
+
+def test_report_contains_recent_trade_results(tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    winner = _record(now)
+    winner.update({"outcome": "target", "result_r": 2.0, "mfe_r": 2.2})
+    path = tmp_path / "ledger.jsonl"
+    ai_memory.save([winner], path)
+
+    text = ai_memory.report(path)
+
+    assert "Win rate 100.0%" in text
+    assert "Ortalama R +2.000" in text
+    assert "liquidity sweep reclaim" in text

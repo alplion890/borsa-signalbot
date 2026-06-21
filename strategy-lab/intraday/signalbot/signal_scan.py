@@ -184,7 +184,12 @@ def main() -> None:
     parser.add_argument("--test-finnhub", action="store_true")
     parser.add_argument("--test-telegram", action="store_true")
     parser.add_argument("--ai-scout", action="store_true")
+    parser.add_argument("--ai-report", action="store_true")
     args = parser.parse_args()
+    if args.ai_report:
+        from .ai_memory import report
+        print(report(Path(os.environ.get("AI_LEDGER_PATH", ".signalbot/ai_ledger.jsonl"))))
+        return
     if args.ai_scout:
         from .ai_scout import run as run_ai_scout
         run_ai_scout(dry_run=args.dry_run)
