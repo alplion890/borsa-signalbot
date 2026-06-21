@@ -38,6 +38,41 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
             f"Onceki kapanan islem kazandiysa {risk_plan.winner_usd:g} dolar "
             f"lot {risk_plan.winner_lot:g}."
         )
+    if risk_plan is not None:
+        if not risk_plan.real_money_allowed:
+            risk_text = (
+                "Funded hesapta bu PAPER modul icin gercek risk sifir. "
+                "Sadece izle ve performans defterine yaz."
+            )
+        if risk_plan.profile_key == "bnpl_challenge":
+            risk_text += (
+                f" Hizli challenge kilidi: ayni anda tek islem ve toplam acik risk "
+                f"en fazla yuzde {risk_plan.max_open_risk_pct * 100:g}. "
+                f"Gun zarari yuzde {risk_plan.daily_stop_pct * 100:g} olursa dur."
+            )
+        else:
+            risk_text += (
+                f" Funded kilidi: toplam acik risk en fazla yuzde "
+                f"{risk_plan.max_open_risk_pct * 100:g}. Gun zarari yuzde "
+                f"{risk_plan.daily_stop_pct * 100:g}, hafta zarari yuzde "
+                f"{risk_plan.weekly_stop_pct * 100:g} olursa dur. "
+                "Kazanc sonrasi risk artirma."
+            )
+            if risk_plan.daily_profit_cap_pct is not None:
+                risk_text += (
+                    f" Gun kari yuzde {risk_plan.daily_profit_cap_pct * 100:g} "
+                    "olunca yeni islem acma."
+                )
+            if risk_plan.consistency_day_share_pct is not None:
+                risk_text += (
+                    f" Tek gun kari toplam payout karinin yuzde "
+                    f"{risk_plan.consistency_day_share_pct * 100:g} ini gecmesin."
+                )
+            if risk_plan.payout_buffer_pct is not None:
+                risk_text += (
+                    f" Payout icin once en az yuzde "
+                    f"{risk_plan.payout_buffer_pct * 100:g} kar tamponu biriktir."
+                )
     common_tail = (
         f"{risk_text} Saat {trt_time}. Acik islemin varsa veya fiyat giristen "
         "uzaklastiysa alma."

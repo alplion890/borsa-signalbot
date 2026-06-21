@@ -227,12 +227,15 @@ def collect(now: dt.datetime, *, api_key: str | None = None) -> dict[str, Any]:
                 sources.append("Finnhub news")
         except Exception as exc:
             print(f"AI haber Finnhub hatasi: {type(exc).__name__}: {exc}")
-        try:
-            calendar = _finnhub_calendar(now, token)
-            if calendar:
-                sources.append("Finnhub calendar")
-        except Exception as exc:
-            print(f"AI takvim Finnhub hatasi: {type(exc).__name__}: {exc}")
+        # Finnhub free plan bu endpointte 403 donuyor. Varsayilan olarak resmi,
+        # ucretsiz BLS takvimi kullan; sadece acikca etkinlestirilirse dene.
+        if os.environ.get("FINNHUB_CALENDAR_ENABLED", "").lower() in {"1", "true", "yes"}:
+            try:
+                calendar = _finnhub_calendar(now, token)
+                if calendar:
+                    sources.append("Finnhub calendar")
+            except Exception as exc:
+                print(f"AI takvim Finnhub hatasi: {type(exc).__name__}: {exc}")
 
     if not news:
         for url in (FED_RSS_URL, BEA_RSS_URL):

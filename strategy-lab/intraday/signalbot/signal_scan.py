@@ -69,7 +69,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
         balance: float | None = None, dry_run: bool = False,
         state_path: Path | None = None) -> list[str]:
     now = now or dt.datetime.now(dt.timezone.utc)
-    phase = phase or os.environ.get("PHASE", "challenge")
+    phase = phase or os.environ.get("PHASE", "bnpl_challenge")
     balance = balance if balance is not None else float(os.environ.get("ACCOUNT_BALANCE", "5000"))
     path = state_path or STATE_PATH
     state = _load_state(path)

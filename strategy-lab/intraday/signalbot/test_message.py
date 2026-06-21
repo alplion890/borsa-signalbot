@@ -1,6 +1,7 @@
 from intraday.signalbot.message import format_signal
 from intraday.signalbot.finnhub_live import LiveQuote
 from intraday.signalbot.risk import Tier
+from intraday.signalbot.risk import risk_plan
 
 
 def test_live_gold_message():
@@ -79,3 +80,36 @@ def test_live_quote_is_compared_in_r_units():
     assert "Finnhub anlik fiyat 3003" in msg
     assert "+0.30R" in msg
     assert "long yonune ilerlemis" in msg
+
+
+def test_funded_message_contains_locked_stops_and_consistency():
+    plan = risk_plan(
+        phase="bnpl_funded", balance=5000, module_name="GOLD_NY_ORB_TREND",
+        module_weight=1.0, symbol_key="XAUUSD", entry=3000, sl=2990,
+    )
+    msg = format_signal(
+        tier=Tier.LIVE, module="GOLD_NY_ORB_TREND", symbol_key="XAUUSD",
+        direction=1, entry=3000, sl=2990, tp=3015,
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45",
+    )
+    assert "Funded kilidi" in msg
+    assert "Kazanc sonrasi risk artirma" in msg
+    assert "Gun kari yuzde 0.5" in msg
+    assert "yuzde 18" in msg
+    assert "yuzde 2.5 kar tamponu" in msg
+
+
+def test_funded_paper_message_forces_zero_real_risk():
+    plan = risk_plan(
+        phase="bnpl_funded", balance=5000, module_name="SWEEP_ES_DIV",
+        module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+    )
+    msg = format_signal(
+        tier=Tier.PAPER, module="SWEEP_ES_DIV", symbol_key="NASDAQ100",
+        direction=1, entry=20000, sl=19950, tp=20100,
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45",
+    )
+    assert "gercek risk sifir" in msg
+    assert "Sadece izle" in msg

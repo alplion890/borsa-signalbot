@@ -100,3 +100,26 @@ isteklerine performans hafizasi olarak eklenir; sekizden az ornek zayif kanit
 sayilir.
 
 Dry-run adaylari gercek performans defterine yazilmaz.
+
+## Kilitli Maven BNPL risk profilleri
+
+GitHub repository variable `ACCOUNT_PHASE` yalnizca su iki degeri kabul eder:
+
+- `bnpl_challenge`: Gold ve NQ normal yuzde 1.5, onceki kapanan islem
+  kazandiysa yuzde 3. Ayni anda tek islem. PAPER moduller sabit ve en fazla
+  yuzde 0.75 risk alir; kazanc sonrasi artmaz. Gunluk yumusak stop yuzde 4.5,
+  haftalik stop yuzde 7.5.
+- `bnpl_funded`: Gold ve NQ yuzde 0.35, modul agirligiyle dahi tek islem ve
+  toplam acik risk en fazla yuzde 0.50. Kazanc sonrasi risk artisi yok.
+  Gunluk zarar stopu yuzde 1, haftalik zarar stopu yuzde 2, gunluk kar tavani
+  yuzde 0.50. PAPER moduller gercek para icin sifir lot gosterir.
+
+Funded profili Maven BNPL funded kurallarindaki yuzde 4 gunluk DD, yuzde 8
+trailing DD ve yuzde 20 consistency sinirlarinin icinde guvenlik tamponu
+birakir. Payout istemeden once en az yuzde 2.5 toplam kar tamponu ve Maven
+panelinde consistency degeri yuzde 20 veya altinda olmalidir.
+
+Challenge gecince GitHub `Settings > Secrets and variables > Actions >
+Variables` bolumundeki `ACCOUNT_PHASE` degerini `bnpl_funded` yap. Bot Maven
+hesabini okuyamadigi icin bu tek asama degisikligi kullanici tarafindan
+yapilmalidir.

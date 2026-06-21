@@ -18,6 +18,7 @@ class _Response:
 
 def test_collect_uses_finnhub_news_and_calendar(monkeypatch):
     now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setenv("FINNHUB_CALENDAR_ENABLED", "true")
 
     def fake_get(url, **kwargs):
         if url == market_context.FINNHUB_NEWS_URL:
@@ -43,6 +44,25 @@ def test_collect_uses_finnhub_news_and_calendar(monkeypatch):
     assert len(result["economic_calendar"]) == 1
     assert result["trade_risk"] == "high"
     assert result["imminent_high_impact_count"] == 1
+
+
+def test_finnhub_calendar_is_disabled_by_default(monkeypatch):
+    now = dt.datetime(2026, 6, 21, 12, 0, tzinfo=dt.timezone.utc)
+    called = []
+
+    def fake_get(url, **kwargs):
+        called.append(url)
+        if url == market_context.FINNHUB_NEWS_URL:
+            return _Response(data=[])
+        if url == market_context.BLS_ICS_URL:
+            return _Response(text="BEGIN:VCALENDAR\nEND:VCALENDAR\n")
+        return _Response(content=b"<rss><channel></channel></rss>")
+
+    monkeypatch.delenv("FINNHUB_CALENDAR_ENABLED", raising=False)
+    monkeypatch.setattr(market_context.requests, "get", fake_get)
+    market_context.collect(now, api_key="key")
+
+    assert market_context.FINNHUB_CALENDAR_URL not in called
 
 
 def test_bls_ics_parser_marks_upcoming_high_impact(monkeypatch):
