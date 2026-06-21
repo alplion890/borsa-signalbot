@@ -83,3 +83,20 @@ python run_bot.py --ai-scout --dry-run
 
 Not: AI dry-run Telegram'a mesaj yollamaz ama gercek DeepSeek API tokeni
 kullanir; bu nedenle harcama state dosyasina yine kaydedilir.
+
+### Ucretsiz haber, takvim ve performans hafizasi
+
+AI scout mevcut Finnhub anahtariyla son piyasa haberlerini ve ekonomik takvimi
+almayi dener. Ucretsiz plan bu endpointleri vermezse Fed ve BEA resmi RSS
+akislarina, ekonomik takvim icin BLS iCalendar kaynagina duser. Veri kaynaklari
+gecici olarak calismazsa teknik tarama devam eder.
+
+Her `AI FIRSAT` adayi `.signalbot/ai_ledger.jsonl` dosyasina kaydedilir. Sonraki
+taramalarda mumlar kullanilarak girisin tetiklenip tetiklenmedigi, TP veya
+stopun hangisinin once geldigi, MFE/MAE ve gerceklesen R otomatik hesaplanir.
+Ayni mumda hem TP hem stop gorulurse sonuc iyimser varsayilmaz ve `ambiguous`
+olarak isaretlenir. Olculen sembol/setup istatistikleri sonraki DeepSeek
+isteklerine performans hafizasi olarak eklenir; sekizden az ornek zayif kanit
+sayilir.
+
+Dry-run adaylari gercek performans defterine yazilmaz.

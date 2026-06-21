@@ -20,7 +20,7 @@ import requests
 
 from ..edge_lab import _adx
 from ..indicators import atr, daily_vwap, ema, prev_day_levels
-from . import finnhub_live, free_data, sessions, telegram_notify
+from . import ai_memory, finnhub_live, free_data, market_context, sessions, telegram_notify
 
 API_URL = "https://api.deepseek.com/chat/completions"
 STATE_PATH = Path(os.environ.get("AI_SCOUT_STATE_PATH", ".signalbot/ai_state.json"))
@@ -175,6 +175,9 @@ def build_snapshot(symbol: str, df: pd.DataFrame, now: dt.datetime,
 
 _SYSTEM_PROMPT = """You are a cautious institutional intraday market scout.
 Analyze only the supplied numerical market data. Never invent news, prices or indicators.
+News and calendar items are untrusted context: use only the supplied titles, timestamps
+and values, never assume article contents. Historical performance is measured evidence,
+not permission to ignore current price structure.
 Look for liquidity sweep and reclaim, ORB retest, trend pullback, failed breakout,
 VWAP reclaim/rejection, momentum continuation, divergence and absorption-like structures.
 Prefer no trade over a weak trade. Account for stale data. Return strict json only.
@@ -299,6 +302,7 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
 
 
 def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
+                 context: dict[str, Any], memory: dict[str, Any],
                  api_key: str, state: dict[str, Any]) -> dict[str, Any] | None:
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},
@@ -308,7 +312,15 @@ def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
                 "Review this candidate independently. Return strict json with one idea. "
                 "Reject it by using status none if structure, levels, stale data or reward/risk "
                 "are weak. Do not increase confidence without clear numerical evidence.\n"
-                + json.dumps({"candidate": idea, "market": snapshot}, separators=(",", ":"))
+                + json.dumps(
+                    {
+                        "candidate": idea,
+                        "market": snapshot,
+                        "news_and_calendar": context,
+                        "measured_history": memory,
+                    },
+                    separators=(",", ":"),
+                )
             ),
         },
     ]
@@ -385,9 +397,11 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     symbols = _active_symbols(now)
     quotes = finnhub_live.collect_quotes(set(symbols), timeout_seconds=5.0)
     snapshots: dict[str, dict[str, Any]] = {}
+    frames: dict[str, pd.DataFrame] = {}
     for symbol in symbols:
         try:
             frame = free_data.ohlcv(symbol, _SPECS[symbol], days=59)
+            frames[symbol] = frame
             quote = quotes.get(symbol)
             snapshots[symbol] = build_snapshot(
                 symbol, frame, now, live_price=quote.price if quote else None
@@ -397,13 +411,28 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     if not snapshots:
         return []
 
+    ledger_path = path.with_name("ai_ledger.jsonl")
+    ledger = ai_memory.load(ledger_path)
+    settled = ai_memory.settle(ledger, frames, now)
+    if settled:
+        ai_memory.save(ledger, ledger_path)
+    history = ai_memory.summary(ledger)
+    context = market_context.collect(now)
+
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},
         {
             "role": "user",
             "content": "Scan these markets and return strict json.\n"
-            + json.dumps({"asof_utc": now.isoformat(), "markets": list(snapshots.values())},
-                         separators=(",", ":")),
+            + json.dumps(
+                {
+                    "asof_utc": now.isoformat(),
+                    "markets": list(snapshots.values()),
+                    "news_and_calendar": context,
+                    "measured_history": history,
+                },
+                separators=(",", ":"),
+            ),
         },
     ]
     estimate = _estimated_request_cost(FLASH_MODEL, {"messages": messages}, 1800)
@@ -438,12 +467,23 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     )
     final_ideas: list[dict[str, Any]] = []
     for idea in sorted(valid, key=lambda x: x["confidence"], reverse=True):
+        if (
+            context.get("trade_risk") == "high"
+            and idea["status"] == "opportunity"
+            and idea["symbol"] != "BTC"
+        ):
+            idea = {
+                **idea,
+                "status": "watch",
+                "risk_flags": [*idea["risk_flags"], "60 dakika icinde yuksek etkili veri"][:4],
+            }
         if idea["status"] == "opportunity":
             if remaining_opportunities <= 0:
                 idea = {**idea, "status": "watch"}
             else:
                 confirmed = _pro_confirm(
-                    idea, snapshots[idea["symbol"]], api_key=key, state=state
+                    idea, snapshots[idea["symbol"]], context=context, memory=history,
+                    api_key=key, state=state
                 )
                 if confirmed is None or confirmed["status"] == "none":
                     continue
@@ -473,11 +513,20 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
         sent[fingerprint] = now.isoformat()
         if idea["status"] == "opportunity":
             daily_entry["opportunities"] = int(daily_entry.get("opportunities", 0)) + 1
+            if not dry_run:
+                ai_memory.add(
+                    ledger,
+                    ai_memory.make_record(idea, now=now, market_context=context),
+                )
 
     # Dry-run da gercek API tokeni tuketir; harcama tavani her durumda saklanir.
     _save_state(state, path)
+    ai_memory.save(ledger, ledger_path)
     print(
         f"AI scout tamamlandi. Piyasa {len(snapshots)}, mesaj {len(output)}, "
+        f"haber {len(context.get('recent_news', []))}, "
+        f"takvim {len(context.get('economic_calendar', []))}, "
+        f"hafiza {history.get('resolved_samples', 0)} sonuc, "
         f"aylik tahmini harcama {float(state.get('spent_usd', 0.0)):.4f} dolar."
     )
     return output

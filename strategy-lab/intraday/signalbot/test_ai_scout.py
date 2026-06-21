@@ -78,6 +78,13 @@ def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path)
     now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
     monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
     monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [], "economic_calendar": [],
+            "trade_risk": "normal", "imminent_high_impact_count": 0,
+        },
+    )
     sent = []
     monkeypatch.setattr(ai_scout.telegram_notify, "send", sent.append)
 
@@ -111,9 +118,47 @@ def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path)
     assert sent == messages
     assert messages[0].startswith("AI FIRSAT Gold long")
     assert (tmp_path / "ai.json").exists()
+    assert (tmp_path / "ai_ledger.jsonl").exists()
 
 
 def test_missing_api_key_is_noop(monkeypatch, tmp_path):
     monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     assert ai_scout.run(state_path=tmp_path / "ai.json") == []
     assert not (tmp_path / "ai.json").exists()
+
+
+def test_high_impact_calendar_downgrades_macro_opportunity(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD"])
+    monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [{"headline": "US CPI ahead"}],
+            "economic_calendar": [{"event": "CPI", "minutes_until": 30}],
+            "trade_risk": "high",
+            "imminent_high_impact_count": 1,
+        },
+    )
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 85, "setup": "reclaim", "entry_low": 99.8,
+        "entry_high": 100.2, "stop": 98, "target": 104,
+        "reason": "trend", "invalidation": "98 alti", "risk_flags": [],
+    }
+    calls = []
+
+    def fake_call(**kwargs):
+        calls.append(kwargs["model"])
+        return ai_scout.ModelReply({"ideas": [raw]}, 0.001)
+
+    monkeypatch.setattr(ai_scout, "_call_deepseek", fake_call)
+    messages = ai_scout.run(
+        now=now, state_path=tmp_path / "ai.json", api_key="test-key", dry_run=True
+    )
+
+    assert calls == [ai_scout.FLASH_MODEL]
+    assert messages[0].startswith("AI IZLE")
+    assert "yuksek etkili veri" in messages[0]
+    assert (tmp_path / "ai_ledger.jsonl").read_text(encoding="utf-8") == ""
