@@ -42,6 +42,9 @@ def test_validate_idea_rejects_wrong_side_stop():
         "direction": "long",
         "confidence": 90,
         "setup": "reclaim",
+        "setup_family": "liquidity_sweep",
+        "session": "new_york",
+        "structure_level": 99.5,
         "entry_low": 99.8,
         "entry_high": 100.2,
         "stop": 101,
@@ -60,6 +63,9 @@ def test_validate_idea_rejects_below_two_rr():
         "direction": "long",
         "confidence": 82,
         "setup": "vwap reclaim",
+        "setup_family": "trend_pullback",
+        "session": "new_york",
+        "structure_level": 99.5,
         "entry_low": 99.8,
         "entry_high": 100.2,
         "stop": 99,
@@ -94,6 +100,9 @@ def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path)
         "direction": "long",
         "confidence": 82,
         "setup": "liquidity sweep reclaim",
+        "setup_family": "liquidity_sweep",
+        "session": "new_york",
+        "structure_level": 99.5,
         "entry_low": 99.8,
         "entry_high": 100.2,
         "stop": 98,
@@ -145,6 +154,8 @@ def test_high_impact_calendar_downgrades_macro_opportunity(monkeypatch, tmp_path
     raw = {
         "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
         "confidence": 85, "setup": "reclaim", "entry_low": 99.8,
+        "setup_family": "liquidity_sweep",
+        "session": "new_york", "structure_level": 99.5,
         "entry_high": 100.2, "stop": 98, "target": 104,
         "reason": "trend", "invalidation": "98 alti",
         "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
@@ -166,7 +177,8 @@ def test_high_impact_calendar_downgrades_macro_opportunity(monkeypatch, tmp_path
     assert (tmp_path / "ai_ledger.jsonl").read_text(encoding="utf-8") == ""
 
 
-def test_same_symbol_direction_is_suppressed_during_cooldown(monkeypatch, tmp_path):
+def test_same_open_structure_is_suppressed_but_new_atr_structure_is_allowed(
+        monkeypatch, tmp_path):
     now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
     monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD"])
     monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
@@ -181,6 +193,8 @@ def test_same_symbol_direction_is_suppressed_during_cooldown(monkeypatch, tmp_pa
     raw = {
         "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
         "confidence": 85, "setup": "sweep reclaim", "entry_low": 99.8,
+        "setup_family": "liquidity_sweep",
+        "session": "new_york", "structure_level": 99.5,
         "entry_high": 100.2, "stop": 98, "target": 104,
         "reason": "structured asymmetric trade", "invalidation": "98 alti",
         "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
@@ -198,10 +212,25 @@ def test_same_symbol_direction_is_suppressed_during_cooldown(monkeypatch, tmp_pa
     second = ai_scout.run(
         now=now + dt.timedelta(minutes=10), state_path=state, api_key="key"
     )
+    moved = {
+        **raw,
+        "entry_low": 101.4,
+        "entry_high": 101.6,
+        "stop": 99.4,
+        "target": 106.0,
+    }
+    monkeypatch.setattr(
+        ai_scout, "_call_deepseek",
+        lambda **kwargs: ai_scout.ModelReply({"ideas": [moved]}, 0.001),
+    )
+    third = ai_scout.run(
+        now=now + dt.timedelta(minutes=20), state_path=state, api_key="key"
+    )
 
     assert len(first) == 1
     assert second == []
-    assert len(sent) == 1
-    assert "symbol_direction_cooldown" in (
+    assert len(third) == 1
+    assert len(sent) == 2
+    assert "same_open_structure" in (
         tmp_path / "ai_audit.jsonl"
     ).read_text(encoding="utf-8")

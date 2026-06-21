@@ -18,7 +18,15 @@ def _record(now, direction="long"):
         "rr": 2.0,
     }
     return ai_memory.make_record(
-        idea, now=now, market_context={"trade_risk": "normal"}
+        {
+            **idea,
+            "setup_family": "liquidity_sweep",
+            "session": "new_york",
+            "structure_level": 99.5,
+        },
+        now=now,
+        market_context={"trade_risk": "normal"},
+        atr_at_signal=1.0,
     )
 
 
@@ -86,3 +94,32 @@ def test_report_contains_recent_trade_results(tmp_path):
     assert "Win rate 100.0%" in text
     assert "Ortalama R +2.000" in text
     assert "liquidity sweep reclaim" in text
+
+
+def test_structural_duplicate_only_blocks_same_open_thesis():
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    record = _record(now)
+    idea = {
+        "symbol": "XAUUSD", "direction": "long",
+        "setup_family": "liquidity_sweep",
+        "session": "new_york",
+        "structure_level": 99.5,
+        "entry_low": 100.1, "entry_high": 100.3, "stop": 99.1,
+    }
+
+    assert ai_memory.structural_duplicate([record], idea, atr_now=1.0) is record
+
+    moved = {**idea, "entry_low": 101.2, "entry_high": 101.4, "stop": 100.2}
+    assert ai_memory.structural_duplicate([record], moved, atr_now=1.0) is None
+
+    other_family = {**idea, "setup_family": "failed_breakout"}
+    assert ai_memory.structural_duplicate([record], other_family, atr_now=1.0) is None
+
+    other_session = {**idea, "session": "london"}
+    assert ai_memory.structural_duplicate([record], other_session, atr_now=1.0) is None
+
+    other_level = {**idea, "structure_level": 100.2}
+    assert ai_memory.structural_duplicate([record], other_level, atr_now=1.0) is None
+
+    record["outcome"] = "stop"
+    assert ai_memory.structural_duplicate([record], idea, atr_now=1.0) is None

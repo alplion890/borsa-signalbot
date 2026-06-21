@@ -4,6 +4,7 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import re
 from collections import defaultdict
@@ -42,7 +43,7 @@ def _setup_key(value: str) -> str:
 
 
 def make_record(idea: dict[str, Any], *, now: dt.datetime,
-                market_context: dict[str, Any]) -> dict[str, Any]:
+                market_context: dict[str, Any], atr_at_signal: float) -> dict[str, Any]:
     midpoint = (float(idea["entry_low"]) + float(idea["entry_high"])) / 2
     risk = (
         midpoint - float(idea["stop"])
@@ -59,6 +60,9 @@ def make_record(idea: dict[str, Any], *, now: dt.datetime,
         "symbol": idea["symbol"],
         "direction": idea["direction"],
         "setup": idea["setup"],
+        "setup_family": idea["setup_family"],
+        "session": idea["session"],
+        "structure_level": float(idea["structure_level"]),
         "setup_key": _setup_key(idea["setup"]),
         "confidence": int(idea["confidence"]),
         "entry_low": float(idea["entry_low"]),
@@ -68,6 +72,7 @@ def make_record(idea: dict[str, Any], *, now: dt.datetime,
         "target": float(idea["target"]),
         "risk": risk,
         "planned_rr": float(idea["rr"]),
+        "atr_at_signal": float(atr_at_signal),
         "news_risk": market_context.get("trade_risk", "unknown"),
         "outcome": "open",
         "entered_utc": None,
@@ -76,6 +81,45 @@ def make_record(idea: dict[str, Any], *, now: dt.datetime,
         "mfe_r": 0.0,
         "mae_r": 0.0,
     }
+
+
+def structural_duplicate(
+    records: list[dict[str, Any]],
+    idea: dict[str, Any],
+    *,
+    atr_now: float,
+) -> dict[str, Any] | None:
+    """Return the matching open thesis, not a time-based cooldown.
+
+    A new thesis is allowed when direction/setup family changes, the prior idea
+    has resolved, or the entry structure has moved by at least one ATR.
+    """
+    midpoint = (float(idea["entry_low"]) + float(idea["entry_high"])) / 2
+    stop = float(idea["stop"])
+    for record in reversed(records):
+        if record.get("outcome") != "open":
+            continue
+        if record.get("symbol") != idea["symbol"]:
+            continue
+        if record.get("direction") != idea["direction"]:
+            continue
+        if record.get("setup_family") != idea["setup_family"]:
+            continue
+        if record.get("session") != idea["session"]:
+            continue
+        reference_atr = max(
+            float(atr_now),
+            float(record.get("atr_at_signal") or 0),
+            abs(midpoint) * 1e-8,
+        )
+        entry_distance = abs(midpoint - float(record["entry_mid"])) / reference_atr
+        stop_distance = abs(stop - float(record["stop"])) / reference_atr
+        structure_distance = abs(
+            float(idea["structure_level"]) - float(record.get("structure_level", math.inf))
+        ) / reference_atr
+        if entry_distance < 1.0 and stop_distance < 1.0 and structure_distance < 0.5:
+            return record
+    return None
 
 
 def add(records: list[dict[str, Any]], record: dict[str, Any]) -> bool:

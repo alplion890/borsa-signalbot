@@ -66,12 +66,18 @@ GitHub Environment secret olarak sunu ekle:
 
 - `DEEPSEEK_API_KEY`
 
-Varsayilan aylik API butcesi 2 dolar, gunluk AI firsat tavani 4'tur. Flash model
-butun aktif piyasalari tek istekte tarar. Yalnizca 80 ve uzeri, minimum 2R ve
+Varsayilan aylik API butcesi 2 dolardir. Gunluk firsat adedi veya sabit saat
+cooldown'u yoktur. Flash model butun aktif piyasalari tek istekte tarar.
+Yalnizca 80 ve uzeri, minimum 2R ve
 en az uc bagimsiz kanit kategorisi olan firsat adaylari Pro model tarafindan
-ikinci kez kontrol edilir. `AI IZLE` adaylari Telegram'a gonderilmez; audit
-kaydinda kalir. Ayni sembol ve yon icin dort saat dolmadan yeni AI firsat
-mesaji gonderilmez. VWAP reclaim/rejection tek basina setup kabul edilmez.
+ikinci kez kontrol edilir. Watch/risk adaylari Telegram'a gonderilmez; audit
+kaydinda kalir. VWAP reclaim/rejection tek basina setup kabul edilmez.
+
+Ayni sembol, yon, seans, setup ailesi ve yapisal seviyedeki acik fikir; giris
+ve stop yapisi onceki fikre bir ATR'den daha yakin ise tekrar gonderilmez.
+Onceki fikir TP, stop, expiry veya invalidasyonla kapanmissa; seans, yon,
+setup ailesi veya supurulen/kirilan seviye degismisse ya da yeni giris yapisi
+en az bir ATR tasinmissa yeni firsat serbesttir.
 Genel watch/risk yorumlari audit dosyasinda kalir; Telegram'a cikmaz.
 
 Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik
@@ -103,7 +109,7 @@ isteklerine performans hafizasi olarak eklenir; sekizden az ornek zayif kanit
 sayilir.
 
 Dry-run adaylari gercek performans defterine yazilmaz.
-Tum ham, reddedilen ve cooldown nedeniyle bastirilan AI adaylari
+Tum ham, reddedilen ve ayni acik yapinin tekrari oldugu icin bastirilan AI adaylari
 `.signalbot/ai_audit.jsonl` dosyasina yazilir. Her workflow sonunda
 `python run_bot.py --ai-report` ile gercek firsatlarin win rate, ortalama R,
 MFE ve MAE ozeti GitHub loguna basilir.

@@ -93,11 +93,9 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           AI_SCOUT_STATE_PATH: .signalbot/ai_state.json
           AI_MONTHLY_BUDGET_USD: "2.0"
-          AI_MAX_DAILY_OPPORTUNITIES: "4"
           AI_MIN_RUN_INTERVAL_MINUTES: "9"
           AI_MIN_REWARD_RISK: "2.0"
           AI_MIN_CONFIDENCE: "80"
-          AI_SYMBOL_COOLDOWN_HOURS: "4"
         run: |
           if [ -z "$DEEPSEEK_API_KEY" ]; then
             echo "DeepSeek API secret henuz eklenmedi; AI scout beklemede."

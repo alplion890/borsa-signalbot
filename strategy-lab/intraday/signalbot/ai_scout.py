@@ -2,12 +2,11 @@
 
 Ana strateji tarayicisini asla bloke etmez. GitHub Actions icinde ana bot
 tamamlandiktan sonra ayri bir adim olarak calisir ve ayni Telegram kanalina
-AI IZLE / AI FIRSAT / AI RISK etiketli mesajlar yollar.
+yalnizca Pro teyitli AI FIRSAT mesajlari yollar.
 """
 from __future__ import annotations
 
 import datetime as dt
-import hashlib
 import json
 import math
 import os
@@ -26,10 +25,8 @@ API_URL = "https://api.deepseek.com/chat/completions"
 STATE_PATH = Path(os.environ.get("AI_SCOUT_STATE_PATH", ".signalbot/ai_state.json"))
 MONTHLY_BUDGET_USD = float(os.environ.get("AI_MONTHLY_BUDGET_USD", "2.0"))
 MIN_RUN_INTERVAL_MINUTES = int(os.environ.get("AI_MIN_RUN_INTERVAL_MINUTES", "9"))
-MAX_DAILY_OPPORTUNITIES = int(os.environ.get("AI_MAX_DAILY_OPPORTUNITIES", "4"))
 MIN_REWARD_RISK = float(os.environ.get("AI_MIN_REWARD_RISK", "2.0"))
 MIN_OPPORTUNITY_CONFIDENCE = int(os.environ.get("AI_MIN_CONFIDENCE", "80"))
-SYMBOL_COOLDOWN_HOURS = int(os.environ.get("AI_SYMBOL_COOLDOWN_HOURS", "4"))
 FLASH_MODEL = os.environ.get("AI_FLASH_MODEL", "deepseek-v4-flash")
 PRO_MODEL = os.environ.get("AI_PRO_MODEL", "deepseek-v4-pro")
 
@@ -55,6 +52,16 @@ _HUMAN = {
 }
 _ALLOWED_STATUS = {"none", "watch", "opportunity", "risk"}
 _ALLOWED_DIRECTION = {"long", "short", "neutral"}
+_SETUP_FAMILIES = {
+    "liquidity_sweep",
+    "failed_breakout",
+    "orb_retest",
+    "trend_pullback",
+    "momentum_continuation",
+    "intermarket_divergence",
+    "absorption",
+}
+_SESSIONS = {"asia", "london", "new_york", "crypto_24h"}
 
 
 @dataclass(frozen=True)
@@ -65,7 +72,7 @@ class ModelReply:
 
 def _load_state(path: Path = STATE_PATH) -> dict[str, Any]:
     if not path.exists():
-        return {"month": "", "spent_usd": 0.0, "calls": 0, "sent": {}}
+        return {"month": "", "spent_usd": 0.0, "calls": 0}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
@@ -195,6 +202,8 @@ Prefer silence over activity. One excellent trade is better than ten plausible n
 Use exactly this shape:
 {"ideas":[{"symbol":"XAUUSD","status":"none|watch|opportunity|risk",
 "direction":"long|short|neutral","confidence":0,"setup":"short name",
+"setup_family":"liquidity_sweep|failed_breakout|orb_retest|trend_pullback|momentum_continuation|intermarket_divergence|absorption",
+"session":"asia|london|new_york|crypto_24h","structure_level":0,
 "entry_low":0,"entry_high":0,"stop":0,"target":0,
 "invalidation":"short text","reason":"short text","evidence":["regime","location","trigger"],
 "risk_flags":["text"]}]}
@@ -295,6 +304,16 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
     evidence = [str(x)[:100] for x in evidence[:5]] if isinstance(evidence, list) else []
     if status == "opportunity" and len(evidence) < 3:
         return None
+    setup_family = str(raw.get("setup_family", "")).lower()
+    if status == "opportunity" and setup_family not in _SETUP_FAMILIES:
+        return None
+    session = str(raw.get("session", "")).lower()
+    structure_level = _number(raw.get("structure_level"))
+    if status == "opportunity":
+        if session not in _SESSIONS or structure_level is None:
+            return None
+        if abs(float(structure_level) - current) > 6 * atr_value:
+            return None
 
     return {
         "symbol": symbol,
@@ -302,6 +321,9 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         "direction": direction,
         "confidence": confidence,
         "setup": str(raw.get("setup", ""))[:80],
+        "setup_family": setup_family,
+        "session": session,
+        "structure_level": structure_level,
         "entry_low": entry_low,
         "entry_high": entry_high,
         "stop": stop,
@@ -355,23 +377,6 @@ def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
     return validate_idea(ideas[0], {idea["symbol"]: snapshot})
 
 
-def _fingerprint(idea: dict[str, Any], snapshot: dict[str, Any]) -> str:
-    atr_value = max(float(snapshot["atr14"]), 1e-12)
-    entry = float(idea.get("entry_low") or snapshot["close"])
-    bucket = round(entry / atr_value)
-    raw = f"{idea['symbol']}|{idea['direction']}|{bucket}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
-
-
-def _cooldown_key(idea: dict[str, Any]) -> str:
-    return f"{idea['symbol']}|{idea['direction']}"
-
-
-def _cooldown_active(state: dict[str, Any], idea: dict[str, Any], now: dt.datetime) -> bool:
-    previous = _parse_time(state.setdefault("symbol_cooldown", {}).get(_cooldown_key(idea)))
-    return previous is not None and now - previous < dt.timedelta(hours=SYMBOL_COOLDOWN_HOURS)
-
-
 def _append_audit(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
@@ -382,22 +387,11 @@ def _append_audit(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def _message(idea: dict[str, Any], now: dt.datetime) -> str:
-    label = {
-        "watch": "AI IZLE",
-        "opportunity": "AI FIRSAT",
-        "risk": "AI RISK",
-    }[idea["status"]]
     symbol = _HUMAN[idea["symbol"]]
-    if idea["status"] == "risk":
-        return (
-            f"{label} {symbol}. {idea['reason']} "
-            f"Guven {idea['confidence']}. Veri yasi {idea['data_age_minutes']:.0f} dakika. "
-            f"Saat {sessions.to_trt(now)}."
-        )
     flags = ", ".join(idea["risk_flags"]) if idea["risk_flags"] else "belirgin ek risk yok"
     evidence = ", ".join(idea["evidence"])
     return (
-        f"{label} {symbol} {idea['direction']} adayi. Setup {idea['setup']}. "
+        f"AI FIRSAT {symbol} {idea['direction']} adayi. Setup {idea['setup']}. "
         f"Giris bolgesi {idea['entry_low']:g} ile {idea['entry_high']:g}, "
         f"stop {idea['stop']:g}, hedef {idea['target']:g}, yaklasik {idea['rr']:.2f}R. "
         f"Guven {idea['confidence']}. Kanitlar {evidence}. {idea['reason']} "
@@ -419,6 +413,10 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
 
     path = state_path or STATE_PATH
     state = _load_state(path)
+    # Eski zaman/adet tabanli filtreler artik kullanilmiyor.
+    state.pop("sent", None)
+    state.pop("daily", None)
+    state.pop("symbol_cooldown", None)
     _reset_month(state, now)
     if not _run_due(state, now):
         print("AI scout atlandi: minimum tarama araligi dolmadi.")
@@ -502,12 +500,6 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
             if idea is not None and idea["status"] != "none":
                 valid.append(idea)
 
-    date_key = now.strftime("%Y-%m-%d")
-    daily = state.setdefault("daily", {})
-    daily_entry = daily.setdefault(date_key, {"opportunities": 0})
-    remaining_opportunities = max(
-        0, MAX_DAILY_OPPORTUNITIES - int(daily_entry.get("opportunities", 0))
-    )
     final_ideas: list[dict[str, Any]] = []
     for idea in sorted(valid, key=lambda x: x["confidence"], reverse=True):
         if (
@@ -524,63 +516,47 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
         # Watch/risk yorumlari audit'te kalir.
         if idea["status"] != "opportunity":
             continue
-        if idea["status"] == "opportunity":
-            if _cooldown_active(state, idea, now):
-                audit_rows.append({
-                    "timestamp_utc": now.isoformat(),
-                    "stage": "suppressed",
-                    "reason": "symbol_direction_cooldown",
-                    "idea": idea,
-                })
-                continue
-            if remaining_opportunities <= 0:
-                audit_rows.append({
-                    "timestamp_utc": now.isoformat(),
-                    "stage": "suppressed",
-                    "reason": "daily_opportunity_limit",
-                    "idea": idea,
-                })
-                continue
-            else:
-                confirmed = _pro_confirm(
-                    idea, snapshots[idea["symbol"]], context=context, memory=history,
-                    api_key=key, state=state
-                )
-                if confirmed is None or confirmed["status"] == "none":
-                    continue
-                idea = confirmed
-                if idea["status"] != "opportunity":
-                    continue
-                remaining_opportunities -= 1
+        confirmed = _pro_confirm(
+            idea, snapshots[idea["symbol"]], context=context, memory=history,
+            api_key=key, state=state
+        )
+        if confirmed is None or confirmed["status"] != "opportunity":
+            continue
+        idea = confirmed
+        duplicate = ai_memory.structural_duplicate(
+            ledger,
+            idea,
+            atr_now=float(snapshots[idea["symbol"]]["atr14"]),
+        )
+        if duplicate is not None:
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "suppressed",
+                "reason": "same_open_structure",
+                "matching_record_id": duplicate.get("id"),
+                "idea": idea,
+            })
+            continue
         final_ideas.append(idea)
 
-    sent = state.setdefault("sent", {})
-    cutoff = now - dt.timedelta(hours=24)
-    state["sent"] = {
-        key_: value for key_, value in sent.items()
-        if (_parse_time(value) or now) >= cutoff
-    }
-    sent = state["sent"]
     output: list[str] = []
     for idea in final_ideas:
-        fingerprint = _fingerprint(idea, snapshots[idea["symbol"]])
-        if fingerprint in sent:
-            continue
         text = _message(idea, now)
         if dry_run:
             print(text)
         else:
             telegram_notify.send(text)
         output.append(text)
-        sent[fingerprint] = now.isoformat()
-        if idea["status"] == "opportunity":
-            state.setdefault("symbol_cooldown", {})[_cooldown_key(idea)] = now.isoformat()
-            daily_entry["opportunities"] = int(daily_entry.get("opportunities", 0)) + 1
-            if not dry_run:
-                ai_memory.add(
-                    ledger,
-                    ai_memory.make_record(idea, now=now, market_context=context),
-                )
+        if not dry_run:
+            ai_memory.add(
+                ledger,
+                ai_memory.make_record(
+                    idea,
+                    now=now,
+                    market_context=context,
+                    atr_at_signal=float(snapshots[idea["symbol"]]["atr14"]),
+                ),
+            )
 
     # Dry-run da gercek API tokeni tuketir; harcama tavani her durumda saklanir.
     _save_state(state, path)
