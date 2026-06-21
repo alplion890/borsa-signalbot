@@ -109,7 +109,13 @@ jobs:
 
       - name: AI performans raporu
         if: always()
-        run: python run_bot.py --ai-report
+        run: |
+          report="$(python run_bot.py --ai-report)"
+          echo "$report"
+          echo "$report" >> "$GITHUB_STEP_SUMMARY"
+          while IFS= read -r line; do
+            echo "::notice title=AI Performance::$line"
+          done <<< "$report"
 
       - name: Sinyal durumunu sakla
         if: always()
