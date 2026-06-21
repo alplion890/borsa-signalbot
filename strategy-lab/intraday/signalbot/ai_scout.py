@@ -376,9 +376,9 @@ def _append_audit(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, sort_keys=True) + "\n")
+    existing = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    fresh = [json.dumps(row, sort_keys=True) for row in rows]
+    path.write_text("\n".join((existing + fresh)[-5000:]) + "\n", encoding="utf-8")
 
 
 def _message(idea: dict[str, Any], now: dt.datetime) -> str:
@@ -520,7 +520,9 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
                 "status": "watch",
                 "risk_flags": [*idea["risk_flags"], "60 dakika icinde yuksek etkili veri"][:4],
             }
-        if idea["status"] == "watch":
+        # Telegram yalnizca uygulanabilir 2R+ firsatlar icindir.
+        # Watch/risk yorumlari audit'te kalir.
+        if idea["status"] != "opportunity":
             continue
         if idea["status"] == "opportunity":
             if _cooldown_active(state, idea, now):

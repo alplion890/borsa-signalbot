@@ -60,7 +60,7 @@ python run_bot.py --dry-run
 
 AI scout ana strateji botundan bagimsiz calisir. Ana bot setup mesajini once
 gonderir; ardindan DeepSeek piyasayi tarar ve ayni Telegram sohbetine yalnizca
-`AI FIRSAT` veya `AI RISK` etiketiyle ayri mesaj yollar.
+Pro tarafindan onaylanmis `AI FIRSAT` mesaji yollar.
 
 GitHub Environment secret olarak sunu ekle:
 
@@ -72,6 +72,7 @@ en az uc bagimsiz kanit kategorisi olan firsat adaylari Pro model tarafindan
 ikinci kez kontrol edilir. `AI IZLE` adaylari Telegram'a gonderilmez; audit
 kaydinda kalir. Ayni sembol ve yon icin dort saat dolmadan yeni AI firsat
 mesaji gonderilmez. VWAP reclaim/rejection tek basina setup kabul edilmez.
+Genel watch/risk yorumlari audit dosyasinda kalir; Telegram'a cikmaz.
 
 Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik
 10 dakika, NY seansinin ikinci yarisinda 30 dakika ve diger zamanlarda dort
