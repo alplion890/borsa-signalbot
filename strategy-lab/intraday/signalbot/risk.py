@@ -1,5 +1,6 @@
 """Maven BNPL challenge/funded risk kilitleri + LIVE/PAPER tier eslemesi."""
 from __future__ import annotations
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -109,7 +110,10 @@ def lot_for(symbol_key: str, entry: float, sl: float, risk_usd: float) -> float:
     if dist <= 0 or risk_usd <= 0:
         return 0.0
     vpp = _VALUE_PER_POINT[symbol_key]
-    return max(0.01, round(risk_usd / (dist * vpp), 2))
+    raw_lot = risk_usd / (dist * vpp)
+    # Never round upward through the configured dollar-risk ceiling.
+    lot = math.floor((raw_lot + 1e-12) * 100) / 100
+    return round(lot, 2) if lot >= 0.01 else 0.0
 
 
 def risk_plan(*, phase: str, balance: float, module_name: str, module_weight: float,

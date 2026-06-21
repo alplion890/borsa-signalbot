@@ -39,7 +39,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     environment: telegram bot token
-    timeout-minutes: 5
+    # Flash + birden cok Pro teyidi 5 dakikayi asabilir; timeout state cache'ini
+    # kaybettirip ayni firsatin yeniden bildirilmesine yol acmasin.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 

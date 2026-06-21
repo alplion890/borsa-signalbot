@@ -80,6 +80,184 @@ def test_validate_idea_rejects_below_two_rr():
     assert idea is None
 
 
+def test_validate_idea_rejects_stale_market_data():
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    snapshot = ai_scout.build_snapshot("XAUUSD", _df(now), now)
+    snapshot["data_age_minutes"] = 46
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 90, "setup": "sweep reclaim",
+        "setup_family": "liquidity_sweep", "session": "asia",
+        "structure_level": 99.5, "entry_low": 99.8, "entry_high": 100.2,
+        "stop": 98, "target": 104,
+        "reason": "structured trade", "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+
+    assert ai_scout.validate_idea(raw, {"XAUUSD": snapshot}) is None
+
+
+def test_session_is_derived_from_clock_not_model_label():
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    snapshot = ai_scout.build_snapshot("XAUUSD", _df(now), now)
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 90, "setup": "sweep reclaim",
+        "setup_family": "liquidity_sweep", "session": "asia",
+        "structure_level": 99.5, "entry_low": 99.8, "entry_high": 100.2,
+        "stop": 98, "target": 104,
+        "reason": "structured trade", "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+
+    idea = ai_scout.validate_idea(raw, {"XAUUSD": snapshot})
+    assert idea is not None
+    assert idea["session"] == "new_york"
+
+
+def test_duplicate_evidence_does_not_count_as_three_categories():
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    snapshot = ai_scout.build_snapshot("XAUUSD", _df(now), now)
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 90, "setup": "vwap reclaim",
+        "setup_family": "trend_pullback", "session": "new_york",
+        "structure_level": 99.5, "entry_low": 99.8, "entry_high": 100.2,
+        "stop": 98, "target": 104,
+        "reason": "vwap", "invalidation": "98 alti",
+        "evidence": ["vwap reclaim", "vwap reclaim", "vwap reclaim"],
+        "risk_flags": [],
+    }
+
+    assert ai_scout.validate_idea(raw, {"XAUUSD": snapshot}) is None
+
+
+def test_multiple_candidates_use_one_batched_pro_call(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD", "SP500"])
+    monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [], "economic_calendar": [],
+            "trade_risk": "normal", "imminent_high_impact_count": 0,
+        },
+    )
+    base = {
+        "status": "opportunity", "direction": "long", "confidence": 85,
+        "setup": "sweep reclaim", "setup_family": "liquidity_sweep",
+        "session": "asia", "structure_level": 99.5,
+        "entry_low": 99.8, "entry_high": 100.2, "stop": 98, "target": 104,
+        "reason": "structured trade", "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+    raw = [{**base, "symbol": "XAUUSD"}, {**base, "symbol": "SP500"}]
+    calls = []
+
+    def fake_call(**kwargs):
+        calls.append(kwargs["model"])
+        return ai_scout.ModelReply({"ideas": raw}, 0.001)
+
+    monkeypatch.setattr(ai_scout, "_call_deepseek", fake_call)
+    monkeypatch.setattr(ai_scout.telegram_notify, "send", lambda text: None)
+
+    messages = ai_scout.run(now=now, state_path=tmp_path / "ai.json", api_key="key")
+
+    assert calls == [ai_scout.FLASH_MODEL, ai_scout.PRO_MODEL]
+    assert len(messages) == 2
+
+
+def test_pro_cannot_replace_candidate_with_opposite_trade(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD"])
+    monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [], "economic_calendar": [],
+            "trade_risk": "normal", "imminent_high_impact_count": 0,
+        },
+    )
+    long_idea = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 85, "setup": "sweep reclaim",
+        "setup_family": "liquidity_sweep", "session": "new_york",
+        "structure_level": 99.5, "entry_low": 99.8, "entry_high": 100.2,
+        "stop": 98, "target": 104, "reason": "structured trade",
+        "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+    short_idea = {
+        **long_idea, "direction": "short", "stop": 102, "target": 96,
+        "setup": "failed breakout", "setup_family": "failed_breakout",
+    }
+    replies = iter((long_idea, short_idea))
+    monkeypatch.setattr(
+        ai_scout, "_call_deepseek",
+        lambda **kwargs: ai_scout.ModelReply({"ideas": [next(replies)]}, 0.001),
+    )
+    sent = []
+    monkeypatch.setattr(ai_scout.telegram_notify, "send", sent.append)
+
+    messages = ai_scout.run(now=now, state_path=tmp_path / "ai.json", api_key="key")
+
+    assert messages == []
+    assert sent == []
+    assert "pro_rejected" in (
+        tmp_path / "ai_audit.jsonl"
+    ).read_text(encoding="utf-8")
+
+
+def test_pro_api_error_keeps_flash_cost_state_and_does_not_crash(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(ai_scout, "_active_symbols", lambda *a: ["XAUUSD"])
+    monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))
+    monkeypatch.setattr(ai_scout.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    monkeypatch.setattr(
+        ai_scout.market_context, "collect",
+        lambda *a, **k: {
+            "recent_news": [], "economic_calendar": [],
+            "trade_risk": "normal", "imminent_high_impact_count": 0,
+        },
+    )
+    raw = {
+        "symbol": "XAUUSD", "status": "opportunity", "direction": "long",
+        "confidence": 85, "setup": "sweep reclaim",
+        "setup_family": "liquidity_sweep", "session": "new_york",
+        "structure_level": 99.5, "entry_low": 99.8, "entry_high": 100.2,
+        "stop": 98, "target": 104, "reason": "structured trade",
+        "invalidation": "98 alti",
+        "evidence": ["trend regime", "liquidity sweep", "reclaim trigger"],
+        "risk_flags": [],
+    }
+    calls = 0
+
+    def fake_call(**kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ai_scout.ModelReply({"ideas": [raw]}, 0.001)
+        raise TimeoutError("pro timeout")
+
+    monkeypatch.setattr(ai_scout, "_call_deepseek", fake_call)
+    state_path = tmp_path / "ai.json"
+
+    assert ai_scout.run(now=now, state_path=state_path, api_key="key") == []
+    state = __import__("json").loads(state_path.read_text(encoding="utf-8"))
+    assert state["spent_usd"] == 0.001
+    assert state["calls"] == 1
+    assert state["last_run_utc"] == now.isoformat()
+    assert "pro_api_error" in (
+        tmp_path / "ai_audit.jsonl"
+    ).read_text(encoding="utf-8")
+
+
 def test_run_sends_confirmed_opportunity_to_same_telegram(monkeypatch, tmp_path):
     now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
     monkeypatch.setattr(ai_scout.free_data, "ohlcv", lambda *a, **k: _df(now))

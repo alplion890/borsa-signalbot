@@ -113,3 +113,19 @@ def test_funded_paper_message_forces_zero_real_risk():
     )
     assert "gercek risk sifir" in msg
     assert "Sadece izle" in msg
+
+
+def test_message_blocks_trade_when_minimum_lot_exceeds_risk():
+    plan = risk_plan(
+        phase="bnpl_challenge", balance=5000,
+        module_name="BTCUSDT_OF_ABSORPTION", module_weight=0.11,
+        symbol_key="BTC", entry=100000, sl=99000,
+    )
+    msg = format_signal(
+        tier=Tier.PAPER, module="BTCUSDT_OF_ABSORPTION", symbol_key="BTC",
+        direction=1, entry=100000, sl=99000, tp=102000,
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45",
+    )
+    assert "minimum lot" in msg
+    assert "gercek hesapta alma" in msg

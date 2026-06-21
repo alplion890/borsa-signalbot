@@ -14,6 +14,11 @@ def test_lot_for_xauusd():
     assert lot > 0
 
 
+def test_lot_never_rounds_above_dollar_risk_or_forces_minimum():
+    assert lot_for("BTC", 100000, 99000, 4.12) == 0.0
+    assert lot_for("XAUUSD", 3000, 2991, 50) == 0.05
+
+
 def test_tier_gold_ny_orb_trend_is_live():
     assert tier_of("GOLD_NY_ORB_TREND") is Tier.LIVE
 

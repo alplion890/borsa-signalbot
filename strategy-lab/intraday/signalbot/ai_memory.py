@@ -103,10 +103,6 @@ def structural_duplicate(
             continue
         if record.get("direction") != idea["direction"]:
             continue
-        if record.get("setup_family") != idea["setup_family"]:
-            continue
-        if record.get("session") != idea["session"]:
-            continue
         reference_atr = max(
             float(atr_now),
             float(record.get("atr_at_signal") or 0),
@@ -114,9 +110,24 @@ def structural_duplicate(
         )
         entry_distance = abs(midpoint - float(record["entry_mid"])) / reference_atr
         stop_distance = abs(stop - float(record["stop"])) / reference_atr
-        structure_distance = abs(
-            float(idea["structure_level"]) - float(record.get("structure_level", math.inf))
-        ) / reference_atr
+        old_structure = record.get("structure_level")
+        structure_distance = (
+            abs(float(idea["structure_level"]) - float(old_structure)) / reference_atr
+            if old_structure is not None
+            else math.inf
+        )
+        # Identical trade geometry is the same risk even if the model changes
+        # its descriptive setup/session labels between calls.
+        if (
+            entry_distance < 0.25
+            and stop_distance < 0.25
+            and (old_structure is None or structure_distance < 0.25)
+        ):
+            return record
+        if record.get("setup_family") != idea["setup_family"]:
+            continue
+        if record.get("session") != idea["session"]:
+            continue
         if entry_distance < 1.0 and stop_distance < 1.0 and structure_distance < 0.5:
             return record
     return None

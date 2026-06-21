@@ -113,13 +113,36 @@ def test_structural_duplicate_only_blocks_same_open_thesis():
     assert ai_memory.structural_duplicate([record], moved, atr_now=1.0) is None
 
     other_family = {**idea, "setup_family": "failed_breakout"}
-    assert ai_memory.structural_duplicate([record], other_family, atr_now=1.0) is None
+    assert ai_memory.structural_duplicate([record], other_family, atr_now=1.0) is record
 
     other_session = {**idea, "session": "london"}
-    assert ai_memory.structural_duplicate([record], other_session, atr_now=1.0) is None
+    assert ai_memory.structural_duplicate([record], other_session, atr_now=1.0) is record
+
+    genuinely_different_family = {
+        **other_family, "entry_low": 100.5, "entry_high": 100.7, "stop": 99.5,
+    }
+    assert ai_memory.structural_duplicate(
+        [record], genuinely_different_family, atr_now=1.0
+    ) is None
 
     other_level = {**idea, "structure_level": 100.2}
     assert ai_memory.structural_duplicate([record], other_level, atr_now=1.0) is None
 
     record["outcome"] = "stop"
     assert ai_memory.structural_duplicate([record], idea, atr_now=1.0) is None
+
+
+def test_legacy_open_record_without_new_labels_still_blocks_identical_geometry():
+    now = dt.datetime(2026, 6, 18, 14, 0, tzinfo=dt.timezone.utc)
+    record = _record(now)
+    record.pop("setup_family")
+    record.pop("session")
+    record.pop("structure_level")
+    idea = {
+        "symbol": "XAUUSD", "direction": "long",
+        "setup_family": "failed_breakout", "session": "london",
+        "structure_level": 99.5,
+        "entry_low": 99.8, "entry_high": 100.2, "stop": 99.0,
+    }
+
+    assert ai_memory.structural_duplicate([record], idea, atr_now=1.0) is record

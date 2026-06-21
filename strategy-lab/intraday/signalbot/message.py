@@ -44,6 +44,11 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                 "Funded hesapta bu PAPER modul icin gercek risk sifir. "
                 "Sadece izle ve performans defterine yaz."
             )
+        elif risk_plan.normal_usd > 0 and risk_plan.normal_lot == 0:
+            risk_text = (
+                f"Planlanan risk {risk_plan.normal_usd:g} dolar fakat 0.01 minimum lot "
+                "bu risk tavanini asiyor. Bu islemi gercek hesapta alma."
+            )
         if risk_plan.profile_key == "bnpl_challenge":
             risk_text += (
                 f" Hizli challenge kilidi: ayni anda tek islem ve toplam acik risk "

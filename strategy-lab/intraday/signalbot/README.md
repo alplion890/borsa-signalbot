@@ -73,11 +73,13 @@ en az uc bagimsiz kanit kategorisi olan firsat adaylari Pro model tarafindan
 ikinci kez kontrol edilir. Watch/risk adaylari Telegram'a gonderilmez; audit
 kaydinda kalir. VWAP reclaim/rejection tek basina setup kabul edilmez.
 
-Ayni sembol, yon, seans, setup ailesi ve yapisal seviyedeki acik fikir; giris
-ve stop yapisi onceki fikre bir ATR'den daha yakin ise tekrar gonderilmez.
-Onceki fikir TP, stop, expiry veya invalidasyonla kapanmissa; seans, yon,
-setup ailesi veya supurulen/kirilan seviye degismisse ya da yeni giris yapisi
-en az bir ATR tasinmissa yeni firsat serbesttir.
+Ayni sembol ve yonde neredeyse ayni giris, stop ve yapisal seviye model setup
+adini degistirse bile tekrar gonderilmez. Daha genis eslesmede ayni seans ve
+setup ailesindeki acik fikir; giris ve stop yapisi onceki fikre bir ATR'den
+daha yakin ise bastirilir. Seans etiketi modelden alinmaz, saatten hesaplanir.
+Onceki fikir TP, stop veya expiry ile kapanmissa ya da gercek fiyat yapisi
+anlamli bicimde degismisse yeni firsat serbesttir. Bayat mum verisinden AI
+firsati uretilmez.
 Genel watch/risk yorumlari audit dosyasinda kalir; Telegram'a cikmaz.
 
 Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik

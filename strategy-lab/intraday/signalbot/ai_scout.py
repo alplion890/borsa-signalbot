@@ -42,6 +42,7 @@ _SPECS = {
     "GBPUSD": "15m",
     "BTC": "1H",
 }
+_MAX_DATA_AGE_MINUTES = {"15m": 45.0, "1H": 120.0}
 _HUMAN = {
     "XAUUSD": "Gold",
     "NASDAQ100": "NQ",
@@ -123,6 +124,18 @@ def _active_symbols(now: dt.datetime) -> list[str]:
     return list(dict.fromkeys(symbols))
 
 
+def _session_for(symbol: str, now: dt.datetime) -> str:
+    """Derive session from the clock; never trust a model label for dedupe."""
+    if symbol == "BTC":
+        return "crypto_24h"
+    hour = now.hour + now.minute / 60
+    if hour < 6.5:
+        return "asia"
+    if hour < 12.5:
+        return "london"
+    return "new_york"
+
+
 def _last_number(series: pd.Series) -> float | None:
     value = series.iloc[-1]
     return None if pd.isna(value) or not math.isfinite(float(value)) else round(float(value), 8)
@@ -154,6 +167,7 @@ def build_snapshot(symbol: str, df: pd.DataFrame, now: dt.datetime,
     return {
         "symbol": symbol,
         "timeframe": _SPECS[symbol],
+        "session": _session_for(symbol, now),
         "bar_time_utc": bar_time.isoformat(),
         "data_age_minutes": round(max(0.0, (now - bar_time).total_seconds() / 60), 1),
         "close": round(close, 8),
@@ -262,6 +276,26 @@ def _number(value: Any) -> float | None:
         return None
 
 
+def _evidence_categories(evidence: list[str]) -> set[str]:
+    keywords = {
+        "regime": ("regime", "trend", "ema", "adx", "momentum", "compression"),
+        "location": (
+            "location", "liquidity", "sweep", "level", "pdh", "pdl",
+            "high", "low", "range", "value", "orb", "auction",
+        ),
+        "trigger": (
+            "trigger", "reclaim", "reject", "break", "close", "absorption",
+            "divergence", "volume", "continuation",
+        ),
+    }
+    text_items = [item.lower() for item in evidence]
+    return {
+        category
+        for category, words in keywords.items()
+        if any(any(word in item for word in words) for item in text_items)
+    }
+
+
 def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
     """Model seviyelerini piyasa verisine karsi deterministik olarak dogrula."""
     symbol = str(raw.get("symbol", "")).upper()
@@ -279,6 +313,11 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
     snap = snapshots[symbol]
     current = float(snap.get("live_price") or snap["close"])
     atr_value = max(float(snap["atr14"]), abs(current) * 1e-8)
+    if (
+        status == "opportunity"
+        and float(snap["data_age_minutes"]) > _MAX_DATA_AGE_MINUTES[snap["timeframe"]]
+    ):
+        return None
     entry_low = _number(raw.get("entry_low"))
     entry_high = _number(raw.get("entry_high"))
     stop = _number(raw.get("stop"))
@@ -295,6 +334,10 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         reward = float(target) - midpoint if direction == "long" else midpoint - float(target)
         if risk <= 0 or reward <= 0:
             return None
+        if risk < 0.2 * atr_value or risk > 4 * atr_value:
+            return None
+        if entry_high - entry_low > 1.5 * atr_value:
+            return None
         rr = reward / risk
         if rr < MIN_REWARD_RISK:
             return None
@@ -302,17 +345,25 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         rr = 0.0
     evidence = raw.get("evidence", [])
     evidence = [str(x)[:100] for x in evidence[:5]] if isinstance(evidence, list) else []
-    if status == "opportunity" and len(evidence) < 3:
-        return None
+    if status == "opportunity":
+        if len({item.strip().lower() for item in evidence if item.strip()}) < 3:
+            return None
+        if len(_evidence_categories(evidence)) < 3:
+            return None
     setup_family = str(raw.get("setup_family", "")).lower()
     if status == "opportunity" and setup_family not in _SETUP_FAMILIES:
         return None
-    session = str(raw.get("session", "")).lower()
+    session = str(snap["session"])
     structure_level = _number(raw.get("structure_level"))
+    setup = str(raw.get("setup", "")).strip()[:80]
+    invalidation = str(raw.get("invalidation", "")).strip()[:180]
+    reason = str(raw.get("reason", "")).strip()[:240]
     if status == "opportunity":
         if session not in _SESSIONS or structure_level is None:
             return None
         if abs(float(structure_level) - current) > 6 * atr_value:
+            return None
+        if not setup or not invalidation or not reason:
             return None
 
     return {
@@ -320,7 +371,7 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         "status": status,
         "direction": direction,
         "confidence": confidence,
-        "setup": str(raw.get("setup", ""))[:80],
+        "setup": setup,
         "setup_family": setup_family,
         "session": session,
         "structure_level": structure_level,
@@ -329,8 +380,8 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
         "stop": stop,
         "target": target,
         "rr": round(rr, 2),
-        "invalidation": str(raw.get("invalidation", ""))[:180],
-        "reason": str(raw.get("reason", ""))[:240],
+        "invalidation": invalidation,
+        "reason": reason,
         "evidence": evidence,
         "risk_flags": [str(x)[:100] for x in raw.get("risk_flags", [])[:4]]
         if isinstance(raw.get("risk_flags", []), list) else [],
@@ -338,23 +389,28 @@ def validate_idea(raw: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> 
     }
 
 
-def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
+def _pro_confirm(candidate_ideas: list[dict[str, Any]], snapshots: dict[str, dict[str, Any]], *,
                  context: dict[str, Any], memory: dict[str, Any],
-                 api_key: str, state: dict[str, Any]) -> dict[str, Any] | None:
+                 api_key: str, state: dict[str, Any]) -> list[dict[str, Any]]:
+    if not candidate_ideas:
+        return []
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},
         {
             "role": "user",
             "content": (
-                "Review this candidate independently. Return strict json with one idea. "
-                "Reject it by using status none if structure, levels, stale data or reward/risk "
-                "are weak. VWAP alone is not a thesis. Require at least three independent "
-                "evidence categories and at least 2.0R. Do not increase confidence without "
-                "clear numerical evidence.\n"
+                "Review every candidate independently in one response. Return exactly one "
+                "idea for each candidate symbol, using status none when rejected. Reject weak "
+                "structure, stale levels or poor reward/risk. VWAP alone is not a thesis. "
+                "Require at least three independent evidence categories and at least 2.0R. "
+                "Do not increase confidence without clear numerical evidence.\n"
                 + json.dumps(
                     {
-                        "candidate": idea,
-                        "market": snapshot,
+                        "candidates": candidate_ideas,
+                        "markets": {
+                            idea["symbol"]: snapshots[idea["symbol"]]
+                            for idea in candidate_ideas
+                        },
                         "news_and_calendar": context,
                         "measured_history": memory,
                     },
@@ -363,18 +419,46 @@ def _pro_confirm(idea: dict[str, Any], snapshot: dict[str, Any], *,
             ),
         },
     ]
-    estimate = _estimated_request_cost(PRO_MODEL, {"messages": messages}, 1400)
+    max_tokens = min(2600, 700 + 350 * len(candidate_ideas))
+    estimate = _estimated_request_cost(PRO_MODEL, {"messages": messages}, max_tokens)
     if float(state.get("spent_usd", 0.0)) + estimate > MONTHLY_BUDGET_USD:
-        return None
+        return []
     reply = _call_deepseek(
-        model=PRO_MODEL, messages=messages, max_tokens=1400, thinking=True, api_key=api_key
+        model=PRO_MODEL, messages=messages, max_tokens=max_tokens, thinking=True, api_key=api_key
     )
     state["spent_usd"] = float(state.get("spent_usd", 0.0)) + reply.cost_usd
     state["calls"] = int(state.get("calls", 0)) + 1
-    ideas = reply.data.get("ideas", [])
-    if not isinstance(ideas, list) or not ideas:
-        return None
-    return validate_idea(ideas[0], {idea["symbol"]: snapshot})
+    raw_ideas = reply.data.get("ideas", [])
+    if not isinstance(raw_ideas, list):
+        return []
+    candidates = {idea["symbol"]: idea for idea in candidate_ideas}
+    confirmed_by_symbol: dict[str, dict[str, Any]] = {}
+    for raw in raw_ideas:
+        if not isinstance(raw, dict):
+            continue
+        symbol = str(raw.get("symbol", "")).upper()
+        candidate = candidates.get(symbol)
+        if candidate is None:
+            continue
+        idea = validate_idea(raw, snapshots)
+        if idea is None or idea["status"] != "opportunity":
+            continue
+        if (
+            idea["direction"] != candidate["direction"]
+            or idea["setup_family"] != candidate["setup_family"]
+        ):
+            continue
+        atr_value = float(snapshots[symbol]["atr14"])
+        candidate_mid = (candidate["entry_low"] + candidate["entry_high"]) / 2
+        confirmed_mid = (idea["entry_low"] + idea["entry_high"]) / 2
+        if abs(confirmed_mid - candidate_mid) > 0.5 * atr_value:
+            continue
+        if abs(float(idea["structure_level"]) - float(candidate["structure_level"])) > 0.5 * atr_value:
+            continue
+        previous = confirmed_by_symbol.get(symbol)
+        if previous is None or idea["confidence"] > previous["confidence"]:
+            confirmed_by_symbol[symbol] = idea
+    return list(confirmed_by_symbol.values())
 
 
 def _append_audit(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -482,6 +566,9 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
     state["spent_usd"] = float(state.get("spent_usd", 0.0)) + reply.cost_usd
     state["calls"] = int(state.get("calls", 0)) + 1
     state["last_run_utc"] = now.isoformat()
+    # Flash cagrisi ucretlendi; sonraki Pro/Telegram adimi hata verse bile
+    # harcama ve run araligi kaybolmasin.
+    _save_state(state, path)
 
     raw_ideas = reply.data.get("ideas", [])
     audit_rows: list[dict[str, Any]] = []
@@ -500,8 +587,10 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
             if idea is not None and idea["status"] != "none":
                 valid.append(idea)
 
-    final_ideas: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
+    candidate_symbols: set[str] = set()
     for idea in sorted(valid, key=lambda x: x["confidence"], reverse=True):
+        suppression_reason = "internal_non_opportunity"
         if (
             context.get("trade_risk") == "high"
             and idea["status"] == "opportunity"
@@ -512,19 +601,66 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
                 "status": "watch",
                 "risk_flags": [*idea["risk_flags"], "60 dakika icinde yuksek etkili veri"][:4],
             }
+            suppression_reason = "high_impact_calendar"
         # Telegram yalnizca uygulanabilir 2R+ firsatlar icindir.
         # Watch/risk yorumlari audit'te kalir.
         if idea["status"] != "opportunity":
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "suppressed",
+                "reason": suppression_reason,
+                "idea": idea,
+            })
             continue
-        confirmed = _pro_confirm(
-            idea, snapshots[idea["symbol"]], context=context, memory=history,
-            api_key=key, state=state
+        if idea["symbol"] in candidate_symbols:
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "suppressed",
+                "reason": "duplicate_flash_symbol",
+                "idea": idea,
+            })
+            continue
+        candidate_symbols.add(idea["symbol"])
+        candidates.append(idea)
+
+    try:
+        confirmed_ideas = _pro_confirm(
+            candidates, snapshots, context=context, memory=history,
+            api_key=key, state=state,
         )
-        if confirmed is None or confirmed["status"] != "opportunity":
-            continue
-        idea = confirmed
+    except Exception as exc:
+        print(f"AI scout Pro API hatasi: {type(exc).__name__}: {exc}")
+        confirmed_ideas = []
+        for candidate in candidates:
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "suppressed",
+                "reason": "pro_api_error",
+                "idea": candidate,
+            })
+    _save_state(state, path)
+    confirmed_symbols = {idea["symbol"] for idea in confirmed_ideas}
+    for candidate in candidates:
+        if (
+            candidate["symbol"] not in confirmed_symbols
+            and not any(
+                row.get("reason") == "pro_api_error"
+                and row.get("idea", {}).get("symbol") == candidate["symbol"]
+                for row in audit_rows
+            )
+        ):
+            audit_rows.append({
+                "timestamp_utc": now.isoformat(),
+                "stage": "suppressed",
+                "reason": "pro_rejected",
+                "idea": candidate,
+            })
+
+    final_ideas: list[dict[str, Any]] = []
+    dedupe_records = list(ledger)
+    for idea in sorted(confirmed_ideas, key=lambda x: x["confidence"], reverse=True):
         duplicate = ai_memory.structural_duplicate(
-            ledger,
+            dedupe_records,
             idea,
             atr_now=float(snapshots[idea["symbol"]]["atr14"]),
         )
@@ -538,6 +674,14 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
             })
             continue
         final_ideas.append(idea)
+        dedupe_records.append(
+            ai_memory.make_record(
+                idea,
+                now=now,
+                market_context=context,
+                atr_at_signal=float(snapshots[idea["symbol"]]["atr14"]),
+            )
+        )
 
     output: list[str] = []
     for idea in final_ideas:
