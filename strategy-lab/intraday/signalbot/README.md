@@ -40,14 +40,16 @@ eklenir. Ardından Actions sekmesindeki `borsa-signalbot` workflow'u
 Workflow private repository ücretsiz kotasına uygun şekilde Gold/NQ ana
 penceresinde 5 dakikada, diğer aktif seanslarda 15 dakikada bir çalışır.
 Tarayıcı arada kapanan tüm 5 dakikalık barları sırayla kontrol eder.
-Aynı bardaki aynı sinyal ikinci kez gönderilmez.
+Aynı bardaki aynı sinyal ikinci kez gönderilmez. Ayrıca aynı modül, yön,
+giriş, stop ve hedef yapısındaki küçük veri revizyonları 24 saat içinde aynı
+fikir sayılır. Son kapanmış fiyat girişten 0.5R'den fazla uzaklaşmışsa gecikmiş
+aday Telegram'a gönderilmez.
 
-Yahoo, GC/NQ/ES futures verisini yaklaşık 10 dakika gecikmeli verir. Bu
-modüllerin Telegram mesajı eski mum fiyatını her koşulda bildirir. Finnhub
-anlık fiyat geldiyse ayrıca girişten fiyat farkını ve R cinsinden hareketi
-yazar. Finnhub çalışmazsa sinyal yine gönderilir ve Maven grafiğinden kontrol
-istenir. EUR/GBP Yahoo metadata gecikmesi 0 dakika, BTC geçmiş mumları Binance
-public API üzerinden gelir.
+Yahoo, GC/NQ/ES futures verisini yaklaşık 10 dakika gecikmeli verir. OANDA
+spot/CFD proxy'leri futures kontrat seviyeleriyle aynı olmadığı için Gold, NQ
+ve ES mesajlarında Finnhub fiyat karşılaştırması kullanılmaz; mevcut fiyat
+Maven grafiğinden kontrol edilir. EUR/GBP Yahoo metadata gecikmesi 0 dakika,
+BTC geçmiş mumları Binance public API üzerinden gelir.
 
 ## Lokal test
 

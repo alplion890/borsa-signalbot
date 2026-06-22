@@ -78,8 +78,47 @@ def test_live_quote_is_compared_in_r_units():
     )
     assert "15 dakika onceki" in msg
     assert "Finnhub anlik fiyat 3003" in msg
-    assert "+0.30R" in msg
+    assert "setup acisindan +0.30R" in msg
     assert "long yonune ilerlemis" in msg
+
+
+def test_short_favorable_quote_uses_short_direction_and_positive_r():
+    msg = format_signal(
+        tier=Tier.LIVE,
+        module="NQ_ORB_STRONG_TREND",
+        symbol_key="NASDAQ100",
+        direction=-1,
+        entry=30600,
+        sl=30750,
+        tp=30300,
+        lot=0.02,
+        risk_usd=75,
+        trt_time="18 01",
+        live_quote=LiveQuote(
+            "NASDAQ100", "TEST:NQ", 30525, 1781800000000
+        ),
+    )
+    assert "setup acisindan +0.50R" in msg
+    assert "short yonune ilerlemis" in msg
+
+
+def test_incompatible_futures_proxy_is_explained_without_finnhub_price():
+    msg = format_signal(
+        tier=Tier.LIVE,
+        module="NQ_ORB_STRONG_TREND",
+        symbol_key="NASDAQ100",
+        direction=-1,
+        entry=30600,
+        sl=30750,
+        tp=30300,
+        lot=0.02,
+        risk_usd=75,
+        trt_time="18 01",
+        expected_delay_minutes=10,
+        live_quote_supported=False,
+    )
+    assert "uyumsuz CFD/spot fiyat proxy'si" in msg
+    assert "Finnhub anlik fiyat" not in msg
 
 
 def test_funded_message_contains_locked_stops_and_consistency():

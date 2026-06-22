@@ -22,7 +22,8 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   risk_plan: RiskPlan | None = None,
                   expected_delay_minutes: int = 0,
                   signal_age_minutes: float | None = None,
-                  live_quote: LiveQuote | None = None) -> str:
+                  live_quote: LiveQuote | None = None,
+                  live_quote_supported: bool = True) -> str:
     yon = "long" if direction == 1 else "short"
     ad = _HUMAN.get(module, module)
     if risk_plan is None:
@@ -90,9 +91,9 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
     if live_quote is not None:
         risk_distance = abs(entry - sl)
         drift = live_quote.price - entry
-        drift_r = drift / risk_distance if risk_distance > 0 else 0.0
+        directional_r = direction * drift / risk_distance if risk_distance > 0 else 0.0
         direction_text = (
-            "long yonune ilerlemis" if direction * drift > 0
+            f"{yon} yonune ilerlemis" if direction * drift > 0
             else "setup yonunun tersine gitmis" if direction * drift < 0
             else "giris seviyesinde"
         )
@@ -101,8 +102,14 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
         ).astimezone(dt.timezone(dt.timedelta(hours=3)))
         common_tail += (
             f" Finnhub anlik fiyat {live_quote.price:g}. Girise gore "
-            f"{drift:+g} yani {drift_r:+.2f}R, fiyat {direction_text}. "
+            f"{drift:+g} yani setup acisindan {directional_r:+.2f}R, "
+            f"fiyat {direction_text}. "
             f"Canli fiyat saati {quote_time.hour:02d} {quote_time.minute:02d}."
+        )
+    elif expected_delay_minutes > 0 and not live_quote_supported:
+        common_tail += (
+            " Futures kontratiyla uyumsuz CFD/spot fiyat proxy'si bilincli olarak "
+            "kullanilmadi. Mevcut fiyati Maven grafiginden kontrol et."
         )
     elif expected_delay_minutes > 0:
         common_tail += (

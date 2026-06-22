@@ -24,6 +24,8 @@ STATE_PATH = Path(os.environ.get("SIGNALBOT_STATE_PATH", ".signalbot/state.json"
 MIN_BARS = {"5m": 200, "15m": 520, "1H": 220}
 BAR_LENGTH = {"5m": dt.timedelta(minutes=5), "15m": dt.timedelta(minutes=15),
               "1H": dt.timedelta(hours=1)}
+MAX_ENTRY_DRIFT_R = 0.5
+STRUCTURE_MAX_AGE = dt.timedelta(hours=24)
 
 
 def _load_modules() -> list:
@@ -51,6 +53,51 @@ def _fingerprint(module_name: str, bar_time, direction: int, entry: float) -> st
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
 
 
+def _structure(sig, bar_time) -> dict:
+    return {
+        "direction": int(sig.direction),
+        "entry": float(sig.entry),
+        "sl": float(sig.sl),
+        "tp": float(sig.tp),
+        "bar_time": bar_time.isoformat(),
+    }
+
+
+def _same_structure(previous: dict | None, current: dict) -> bool:
+    """Treat small level revisions as the same still-open trading idea."""
+    if not isinstance(previous, dict):
+        return False
+    try:
+        if int(previous["direction"]) != int(current["direction"]):
+            return False
+        previous_time = pd.Timestamp(previous["bar_time"])
+        current_time = pd.Timestamp(current["bar_time"])
+        if previous_time.tzinfo is None:
+            previous_time = previous_time.tz_localize("UTC")
+        if current_time.tzinfo is None:
+            current_time = current_time.tz_localize("UTC")
+        age = current_time - previous_time
+        if age < dt.timedelta(0) or age > STRUCTURE_MAX_AGE:
+            return False
+        previous_risk = abs(float(previous["entry"]) - float(previous["sl"]))
+        current_risk = abs(float(current["entry"]) - float(current["sl"]))
+        scale = max(previous_risk, current_risk, 1e-12)
+        return (
+            abs(float(previous["sl"]) - float(current["sl"])) <= 0.25 * scale
+            and abs(float(previous["entry"]) - float(current["entry"])) <= 0.50 * scale
+            and abs(float(previous["tp"]) - float(current["tp"])) <= 0.75 * scale
+        )
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def _entry_drift_r(sig, reference_price: float) -> float:
+    risk_distance = abs(float(sig.entry) - float(sig.sl))
+    if risk_distance <= 0:
+        return float("inf")
+    return abs(float(reference_price) - float(sig.entry)) / risk_distance
+
+
 def _prepare_es_div_feeds() -> None:
     """Inject free-data feeds into the existing ES-div detector cache."""
     from ..forward_ea import modules
@@ -75,6 +122,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
     state = _load_state(path)
     sent_state = state.setdefault("sent", {})
     scanned_state = state.setdefault("scanned", {})
+    structure_state = state.setdefault("structures", {})
     messages: list[str] = []
     pending: list[dict] = []
     active_modules = 0
@@ -96,6 +144,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             ]
             if not closed_positions:
                 continue
+            latest_closed_price = float(df.iloc[closed_positions[-1]]["close"])
             if previous_scan:
                 previous_ts = pd.Timestamp(previous_scan)
                 if previous_ts.tzinfo is None and df.index.tz is not None:
@@ -122,6 +171,22 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 continue
             if sig is None:
                 continue
+            structure = _structure(sig, bar_time)
+            if _same_structure(structure_state.get(mod.name), structure):
+                continue
+            if any(
+                item["mod"].name == mod.name
+                and _same_structure(item["structure"], structure)
+                for item in pending
+            ):
+                continue
+            drift_r = _entry_drift_r(sig, latest_closed_price)
+            if drift_r > MAX_ENTRY_DRIFT_R:
+                print(
+                    f"{mod.name}: aday atlandi; fiyat giristen "
+                    f"{drift_r:.2f}R uzak."
+                )
+                continue
             fingerprint = _fingerprint(mod.name, bar_time, sig.direction, sig.entry)
             if sent_state.get(mod.name) == fingerprint:
                 continue
@@ -137,18 +202,23 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                     "bar_time": bar_time,
                     "fingerprint": fingerprint,
                     "plan": plan,
+                    "structure": structure,
                 }
             )
         scanned_state[mod.name] = df.index[closed_positions[-1]].isoformat()
 
-    quotes = finnhub_live.collect_quotes(
-        {item["mod"].symbol_key for item in pending}
-    )
+    quote_keys = {
+        item["mod"].symbol_key
+        for item in pending
+        if resolve(item["mod"].symbol_key).live_quote_compatible
+    }
+    quotes = finnhub_live.collect_quotes(quote_keys)
     for item in pending:
         mod = item["mod"]
         sig = item["sig"]
         bar_time = item["bar_time"]
         plan = item["plan"]
+        symbol_spec = resolve(mod.symbol_key)
         bar_dt = bar_time.to_pydatetime()
         if bar_dt.tzinfo is None:
             bar_dt = bar_dt.replace(tzinfo=dt.timezone.utc)
@@ -161,6 +231,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             expected_delay_minutes=resolve(mod.symbol_key).expected_delay_minutes,
             signal_age_minutes=signal_age,
             live_quote=quotes.get(mod.symbol_key),
+            live_quote_supported=symbol_spec.live_quote_compatible,
         )
         if dry_run:
             print(message)
@@ -168,6 +239,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             telegram_notify.send(message)
         messages.append(message)
         sent_state[mod.name] = item["fingerprint"]
+        structure_state[mod.name] = item["structure"]
 
     if not dry_run:
         _save_state(state, path)

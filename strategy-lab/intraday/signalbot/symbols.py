@@ -14,12 +14,15 @@ class SymbolSpec:
     source: Source
     ticker: str
     expected_delay_minutes: int = 0
+    live_quote_compatible: bool = True
 
 
 _MAP: dict[str, SymbolSpec] = {
-    "XAUUSD":    SymbolSpec(Source.YFINANCE, "GC=F", 10),
-    "NASDAQ100": SymbolSpec(Source.YFINANCE, "NQ=F", 10),
-    "SP500":     SymbolSpec(Source.YFINANCE, "ES=F", 10),
+    # Futures setup seviyelerini OANDA spot/CFD proxy fiyatlariyla kiyaslama.
+    # Kontrat-vade/baz farki, gercek piyasa hareketi gibi gorunebiliyor.
+    "XAUUSD":    SymbolSpec(Source.YFINANCE, "GC=F", 10, False),
+    "NASDAQ100": SymbolSpec(Source.YFINANCE, "NQ=F", 10, False),
+    "SP500":     SymbolSpec(Source.YFINANCE, "ES=F", 10, False),
     "EURUSD":    SymbolSpec(Source.YFINANCE, "EURUSD=X"),
     "GBPUSD":    SymbolSpec(Source.YFINANCE, "GBPUSD=X"),
     "BTC":       SymbolSpec(Source.BINANCE, "BTCUSDT"),
