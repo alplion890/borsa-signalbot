@@ -37,8 +37,25 @@ def ohlcv(symbol_key: str, tf: str, days: int = 60) -> pd.DataFrame:
     spec = resolve(symbol_key)
     if spec.source is Source.YFINANCE:
         raw = _yf_download(spec.ticker, _TF_YF[tf], _period_for(days))
-        return _normalize(raw)
+        frame = _normalize(raw)
+        frame.attrs.update(
+            {
+                "source": "yfinance",
+                "expected_delay_minutes": spec.expected_delay_minutes,
+            }
+        )
+        return frame
     if spec.source is Source.BINANCE:
         from .binance_data import klines
-        return klines(spec.ticker, tf, days)
+        frame = klines(spec.ticker, tf, days)
+        frame.attrs.update({"source": "binance", "expected_delay_minutes": 0})
+        return frame
     raise ValueError(f"desteklenmeyen kaynak: {spec.source}")
+
+
+def source_of(frame: pd.DataFrame) -> str:
+    return str(frame.attrs.get("source", "unknown"))
+
+
+def expected_delay(frame: pd.DataFrame, fallback: int = 0) -> int:
+    return int(frame.attrs.get("expected_delay_minutes", fallback))

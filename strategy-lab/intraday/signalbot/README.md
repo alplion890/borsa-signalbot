@@ -1,7 +1,7 @@
 # Maven 5K Telegram Sinyal Botu
 
-Yedi stratejiyi ücretsiz veriden tarar ve uygun her setup'ı Telegram'a yollar.
-Emir açmaz. Son karar ve manuel emir kullanıcıdadır.
+Yedi stratejiyi ucretsiz veriden tarar ve uygun setup'lari Telegram'a yollar.
+Emir acmaz. Son karar ve manuel emir kullanicidadir.
 
 ## Stratejiler
 
@@ -13,49 +13,45 @@ Emir açmaz. Son karar ve manuel emir kullanıcıdadır.
 - NQ/ES divergence
 - BTCUSDT absorption
 
-## Risk mesajı
-
-Challenge modu normalde yüzde 1.5 risk gösterir. Bir önceki kapanan işlemin
-kazandığını kullanıcı biliyorsa yüzde 3 lotunu seçebilir. Portföy ağırlıkları
-ve tek işlem yüzde 3 tavanı otomatik uygulanır.
-
 ## GitHub kurulumu
 
-Repository `Settings > Secrets and variables > Actions` bölümüne:
+Repository `Settings > Secrets and variables > Actions` bolumune:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 - `FINNHUB_API_KEY`
+- `DEEPSEEK_API_KEY`
 
-eklenir. Ardından Actions sekmesindeki `borsa-signalbot` workflow'u
-`Run workflow` ile bir kez çalıştırılır.
+eklenir. Ardindan Actions sekmesindeki `borsa-signalbot` workflow'u `Run workflow`
+ile bir kez calistirilir.
 
-İlk canlıya alma sırası:
+Ilk canliya alma sirasi:
 
-1. `test_finnhub` seçilerek XAU, NAS100, SP500, EUR, GBP ve BTC sembolleri test edilir.
-2. Çalışmayan Finnhub proxy sembolü varsa `FINNHUB_SYMBOL_*` eşlemesi düzeltilir.
-3. `test_telegram` seçilerek telefona test mesajı gönderilir.
-4. İkisi de başarılıysa normal zamanlanmış tarama açık bırakılır.
+1. `test_finnhub` secilerek ikincil anlik fiyat kaynagi test edilir.
+2. `test_telegram` secilerek telefona test mesaji gonderilir.
+3. Testler basariliysa normal zamanlanmis tarama acik birakilir.
 
-Workflow private repository ücretsiz kotasına uygun şekilde Gold/NQ ana
-penceresinde 5 dakikada, diğer aktif seanslarda 15 dakikada bir çalışır.
-Tarayıcı arada kapanan tüm 5 dakikalık barları sırayla kontrol eder.
-Aynı bardaki aynı sinyal ikinci kez gönderilmez. Ayrıca aynı modül, yön,
-giriş, stop ve hedef yapısındaki küçük veri revizyonları 24 saat içinde aynı
-fikir sayılır. Son kapanmış fiyat girişten 0.5R'den fazla uzaklaşmışsa gecikmiş
-aday Telegram'a gönderilmez.
+Workflow private repository ucretsiz kotasina uygun sekilde Gold/NQ ana
+penceresinde 5 dakikada, diger aktif seanslarda 15-30 dakikada bir calisir.
+Tarayici arada kapanan tum barlari sirayla kontrol eder.
 
-Yahoo, GC/NQ/ES futures verisini yaklaşık 10 dakika gecikmeli verir. OANDA
-spot/CFD proxy'leri futures kontrat seviyeleriyle aynı olmadığı için Gold, NQ
-ve ES mesajlarında Finnhub fiyat karşılaştırması kullanılmaz; mevcut fiyat
-Maven grafiğinden kontrol edilir. EUR/GBP Yahoo metadata gecikmesi 0 dakika,
-BTC geçmiş mumları Binance public API üzerinden gelir.
+Ayni bardaki ayni sinyal ikinci kez gonderilmez. Ayrica ayni modul, yon, giris,
+stop ve hedef yapisindaki kucuk veri revizyonlari 24 saat icinde ayni fikir
+sayilir. Son kapanmis fiyat setup yonunde 1R'den fazla ilerlemisse veya setup
+tersine 0.5R gitmisse gecikmis aday Telegram'a gonderilmez.
+
+Gold, NQ, ES, EUR ve GBP icin mum kaynagi Yahoo Finance, BTC icin Binance public
+API'dir. Finnhub ikincil anlik fiyat destegi olarak kalir; fakat futures kontrat
+seviyeleri spot/CFD proxy fiyatlariyla karismasin diye Gold, NQ ve ES
+sinyallerinde Finnhub fiyati kullanilmaz. Bu sinyallerde Maven grafigindeki
+guncel fiyat manuel kontrol edilmelidir.
 
 ## Lokal test
 
 ```powershell
-python -m pytest strategy-lab/intraday/signalbot -q
+python -m pytest strategy-lab/intraday/signalbot -q --basetemp .pytest_tmp
 python run_bot.py --dry-run
+python run_bot.py --test-finnhub
 ```
 
 ## DeepSeek AI scout
@@ -64,28 +60,21 @@ AI scout ana strateji botundan bagimsiz calisir. Ana bot setup mesajini once
 gonderir; ardindan DeepSeek piyasayi tarar ve ayni Telegram sohbetine yalnizca
 Pro tarafindan onaylanmis `AI FIRSAT` mesaji yollar.
 
-GitHub Environment secret olarak sunu ekle:
-
-- `DEEPSEEK_API_KEY`
-
 Varsayilan aylik API butcesi 2 dolardir. Gunluk firsat adedi veya sabit saat
 cooldown'u yoktur. Flash model butun aktif piyasalari tek istekte tarar.
-Yalnizca 80 ve uzeri, minimum 2R ve
-en az uc bagimsiz kanit kategorisi olan firsat adaylari Pro model tarafindan
-ikinci kez kontrol edilir. Watch/risk adaylari Telegram'a gonderilmez; audit
-kaydinda kalir. VWAP reclaim/rejection tek basina setup kabul edilmez.
+Yalnizca 80 ve uzeri guven, minimum 2R ve en az uc bagimsiz kanit kategorisi
+olan firsat adaylari Pro model tarafindan ikinci kez kontrol edilir.
+Watch/risk adaylari Telegram'a gonderilmez; audit kaydinda kalir.
+VWAP reclaim/rejection tek basina setup kabul edilmez.
 
 Ayni sembol ve yonde neredeyse ayni giris, stop ve yapisal seviye model setup
 adini degistirse bile tekrar gonderilmez. Daha genis eslesmede ayni seans ve
-setup ailesindeki acik fikir; giris ve stop yapisi onceki fikre bir ATR'den
-daha yakin ise bastirilir. Seans etiketi modelden alinmaz, saatten hesaplanir.
-Onceki fikir TP, stop veya expiry ile kapanmissa ya da gercek fiyat yapisi
-anlamli bicimde degismisse yeni firsat serbesttir. Bayat mum verisinden AI
-firsati uretilmez.
-Genel watch/risk yorumlari audit dosyasinda kalir; Telegram'a cikmaz.
+setup ailesindeki acik fikir; giris ve stop yapisi onceki fikre bir ATR'den daha
+yakin ise bastirilir. Seans etiketi modelden alinmaz, saatten hesaplanir.
+Bayat mum verisinden AI firsati uretilmez.
 
-Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik
-10 dakika, NY seansinin ikinci yarisinda 30 dakika ve diger zamanlarda dort
+Tarama sikligi Londra seansinda 15 dakika, ana NY penceresinde yaklasik 10
+dakika, NY seansinin ikinci yarisinda 30 dakika ve diger zamanlarda dort
 saattir. Ana botun 5 dakikalik NY taramasi degismez.
 
 Lokal kuru test:
@@ -112,24 +101,24 @@ olarak isaretlenir. Olculen sembol/setup istatistikleri sonraki DeepSeek
 isteklerine performans hafizasi olarak eklenir; sekizden az ornek zayif kanit
 sayilir.
 
-Dry-run adaylari gercek performans defterine yazilmaz.
-Tum ham, reddedilen ve ayni acik yapinin tekrari oldugu icin bastirilan AI adaylari
+Dry-run adaylari gercek performans defterine yazilmaz. Tum ham, reddedilen ve
+ayni acik yapinin tekrari oldugu icin bastirilan AI adaylari
 `.signalbot/ai_audit.jsonl` dosyasina yazilir. Her workflow sonunda
-`python run_bot.py --ai-report` ile gercek firsatlarin win rate, ortalama R,
-MFE ve MAE ozeti GitHub loguna basilir.
+`python run_bot.py --ai-report` ile gercek firsatlarin win rate, ortalama R, MFE
+ve MAE ozeti GitHub loguna basilir.
 
 ## Kilitli Maven BNPL risk profilleri
 
 GitHub repository variable `ACCOUNT_PHASE` yalnizca su iki degeri kabul eder:
 
 - `bnpl_challenge`: Gold ve NQ normal yuzde 1.5, onceki kapanan islem
-  kazandiysa yuzde 3. Ayni anda tek islem. PAPER moduller sabit ve en fazla
+  kazandiysa yuzde 3. Ayni anda tek islem. Paper moduller sabit ve en fazla
   yuzde 0.75 risk alir; kazanc sonrasi artmaz. Gunluk yumusak stop yuzde 4.5,
   haftalik stop yuzde 7.5.
-- `bnpl_funded`: Gold ve NQ yuzde 0.35, modul agirligiyle dahi tek islem ve
-  toplam acik risk en fazla yuzde 0.50. Kazanc sonrasi risk artisi yok.
-  Gunluk zarar stopu yuzde 1, haftalik zarar stopu yuzde 2, gunluk kar tavani
-  yuzde 0.50. PAPER moduller gercek para icin sifir lot gosterir.
+- `bnpl_funded`: Gold ve NQ yuzde 0.35, modul agirligiyla dahi tek islem ve
+  toplam acik risk en fazla yuzde 0.50. Kazanc sonrasi risk artisi yok. Gunluk
+  zarar stopu yuzde 1, haftalik zarar stopu yuzde 2, gunluk kar tavani yuzde
+  0.50. Paper moduller gercek para icin sifir lot gosterir.
 
 Funded profili Maven BNPL funded kurallarindaki yuzde 4 gunluk DD, yuzde 8
 trailing DD ve yuzde 20 consistency sinirlarinin icinde guvenlik tamponu

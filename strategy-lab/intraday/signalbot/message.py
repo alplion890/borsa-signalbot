@@ -23,7 +23,8 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   expected_delay_minutes: int = 0,
                   signal_age_minutes: float | None = None,
                   live_quote: LiveQuote | None = None,
-                  live_quote_supported: bool = True) -> str:
+                  live_quote_supported: bool = True,
+                  data_source: str = "unknown") -> str:
     yon = "long" if direction == 1 else "short"
     ad = _HUMAN.get(module, module)
     if risk_plan is None:
@@ -88,6 +89,10 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
         common_tail += (
             f" Setup verisi yaklasik {age:.0f} dakika onceki kapanmis mumdan."
         )
+    if data_source == "yfinance":
+        common_tail += " Mum verisi Yahoo Finance feed'inden."
+    elif data_source == "binance":
+        common_tail += " Mum verisi Binance public feed'inden."
     if live_quote is not None:
         risk_distance = abs(entry - sl)
         drift = live_quote.price - entry

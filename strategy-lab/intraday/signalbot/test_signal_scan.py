@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from intraday.forward_ea.modules import LiveModule, Signal
 from intraday.signalbot import signal_scan
@@ -112,7 +113,7 @@ def test_structural_revision_of_same_setup_is_not_sent_twice(monkeypatch, tmp_pa
     assert len(sent) == 1
 
 
-def test_signal_more_than_half_r_from_latest_close_is_suppressed(
+def test_signal_more_than_one_r_favorable_from_latest_price_is_suppressed(
     monkeypatch, tmp_path
 ):
     now = dt.datetime(2026, 6, 18, 15, 1, tzinfo=dt.timezone.utc)
@@ -145,6 +146,20 @@ def test_signal_more_than_half_r_from_latest_close_is_suppressed(
     assert quote_calls == [set()]
 
 
+def test_signal_up_to_one_r_favorable_is_still_actionable(monkeypatch, tmp_path):
+    sig = Signal(-1, 30600, 30750, 30300)
+    actionable, drift = signal_scan._entry_is_actionable(sig, 30465)
+    assert actionable is True
+    assert drift == pytest.approx(0.9)
+
+
+def test_signal_more_than_half_r_adverse_is_suppressed():
+    sig = Signal(-1, 30600, 30750, 30300)
+    actionable, drift = signal_scan._entry_is_actionable(sig, 30690)
+    assert actionable is False
+    assert drift == pytest.approx(-0.6)
+
+
 def test_futures_proxy_quote_is_not_requested(monkeypatch, tmp_path):
     now = dt.datetime(2026, 6, 18, 15, 1, tzinfo=dt.timezone.utc)
     mod = LiveModule(
@@ -157,6 +172,8 @@ def test_futures_proxy_quote_is_not_requested(monkeypatch, tmp_path):
     )
     frame = _df(now)
     frame.loc[:, "close"] = 30590.0
+    frame.attrs["source"] = "yfinance"
+    frame.attrs["expected_delay_minutes"] = 10
     monkeypatch.setattr(signal_scan, "_load_modules", lambda: [mod])
     monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: frame)
     monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
@@ -173,3 +190,4 @@ def test_futures_proxy_quote_is_not_requested(monkeypatch, tmp_path):
     assert requested == [set()]
     assert len(messages) == 1
     assert "uyumsuz CFD/spot fiyat proxy'si" in messages[0]
+

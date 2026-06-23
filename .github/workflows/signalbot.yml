@@ -2,7 +2,7 @@ name: borsa-signalbot
 
 on:
   schedule:
-    # Gold/NQ ana penceresi: Yahoo gecikmesini azaltmak icin 5 dakikada bir.
+    # Gold/NQ ana penceresi: Yahoo kapanmis 5m mumunu yakalamak icin 5 dakikada bir.
     - cron: "2,7,12,17,22,27,32,37,42,47,52,57 13-16 * * 1-5"
     # Londra: ana bot + AI scout 15 dakikada bir.
     - cron: "2,17,32,47 7-11 * * 1-5"

@@ -24,7 +24,8 @@ STATE_PATH = Path(os.environ.get("SIGNALBOT_STATE_PATH", ".signalbot/state.json"
 MIN_BARS = {"5m": 200, "15m": 520, "1H": 220}
 BAR_LENGTH = {"5m": dt.timedelta(minutes=5), "15m": dt.timedelta(minutes=15),
               "1H": dt.timedelta(hours=1)}
-MAX_ENTRY_DRIFT_R = 0.5
+MAX_FAVORABLE_ENTRY_DRIFT_R = 1.0
+MAX_ADVERSE_ENTRY_DRIFT_R = 0.5
 STRUCTURE_MAX_AGE = dt.timedelta(hours=24)
 
 
@@ -95,7 +96,18 @@ def _entry_drift_r(sig, reference_price: float) -> float:
     risk_distance = abs(float(sig.entry) - float(sig.sl))
     if risk_distance <= 0:
         return float("inf")
-    return abs(float(reference_price) - float(sig.entry)) / risk_distance
+    return (
+        int(sig.direction) * (float(reference_price) - float(sig.entry))
+        / risk_distance
+    )
+
+
+def _entry_is_actionable(sig, reference_price: float) -> tuple[bool, float]:
+    drift_r = _entry_drift_r(sig, reference_price)
+    return (
+        -MAX_ADVERSE_ENTRY_DRIFT_R <= drift_r <= MAX_FAVORABLE_ENTRY_DRIFT_R,
+        drift_r,
+    )
 
 
 def _prepare_es_div_feeds() -> None:
@@ -138,13 +150,17 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             df = free_data.ohlcv(mod.symbol_key, mod.tf, days=59)
             if df is None or len(df) < MIN_BARS[mod.tf]:
                 continue
+            data_source = free_data.source_of(df)
+            expected_delay = free_data.expected_delay(
+                df, resolve(mod.symbol_key).expected_delay_minutes
+            )
             previous_scan = scanned_state.get(mod.name)
             closed_positions = [
                 i for i, bar_time in enumerate(df.index) if _is_closed(bar_time, now, mod.tf)
             ]
             if not closed_positions:
                 continue
-            latest_closed_price = float(df.iloc[closed_positions[-1]]["close"])
+            reference_price = float(df.iloc[-1]["close"])
             if previous_scan:
                 previous_ts = pd.Timestamp(previous_scan)
                 if previous_ts.tzinfo is None and df.index.tz is not None:
@@ -180,11 +196,11 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 for item in pending
             ):
                 continue
-            drift_r = _entry_drift_r(sig, latest_closed_price)
-            if drift_r > MAX_ENTRY_DRIFT_R:
+            actionable, drift_r = _entry_is_actionable(sig, reference_price)
+            if not actionable:
                 print(
                     f"{mod.name}: aday atlandi; fiyat giristen "
-                    f"{drift_r:.2f}R uzak."
+                    f"{drift_r:+.2f}R uzak."
                 )
                 continue
             fingerprint = _fingerprint(mod.name, bar_time, sig.direction, sig.entry)
@@ -203,6 +219,8 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                     "fingerprint": fingerprint,
                     "plan": plan,
                     "structure": structure,
+                    "data_source": data_source,
+                    "expected_delay": expected_delay,
                 }
             )
         scanned_state[mod.name] = df.index[closed_positions[-1]].isoformat()
@@ -228,10 +246,11 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             direction=sig.direction, entry=sig.entry, sl=sig.sl, tp=sig.tp,
             lot=plan.normal_lot, risk_usd=plan.normal_usd, risk_plan=plan,
             trt_time=sessions.to_trt(now),
-            expected_delay_minutes=resolve(mod.symbol_key).expected_delay_minutes,
+            expected_delay_minutes=item["expected_delay"],
             signal_age_minutes=signal_age,
             live_quote=quotes.get(mod.symbol_key),
             live_quote_supported=symbol_spec.live_quote_compatible,
+            data_source=item["data_source"],
         )
         if dry_run:
             print(message)

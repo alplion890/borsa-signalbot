@@ -18,3 +18,4 @@ def test_yfinance_normalized_shape(monkeypatch):
     assert list(df.columns) == ["open", "high", "low", "close", "volume"]
     assert str(df.index.tz) == "UTC"
     assert len(df) == 5
+    assert free_data.source_of(df) == "yfinance"

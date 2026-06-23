@@ -20,6 +20,7 @@ import requests
 from ..edge_lab import _adx
 from ..indicators import atr, daily_vwap, ema, prev_day_levels
 from . import ai_memory, finnhub_live, free_data, market_context, sessions, telegram_notify
+from .symbols import resolve
 
 API_URL = "https://api.deepseek.com/chat/completions"
 STATE_PATH = Path(os.environ.get("AI_SCOUT_STATE_PATH", ".signalbot/ai_state.json"))
@@ -510,19 +511,38 @@ def run(*, now: dt.datetime | None = None, dry_run: bool = False,
         return []
 
     symbols = _active_symbols(now)
-    quotes = finnhub_live.collect_quotes(set(symbols), timeout_seconds=5.0)
     snapshots: dict[str, dict[str, Any]] = {}
     frames: dict[str, pd.DataFrame] = {}
+    sources: dict[str, str] = {}
     for symbol in symbols:
         try:
             frame = free_data.ohlcv(symbol, _SPECS[symbol], days=59)
             frames[symbol] = frame
-            quote = quotes.get(symbol)
-            snapshots[symbol] = build_snapshot(
-                symbol, frame, now, live_price=quote.price if quote else None
-            )
+            sources[symbol] = free_data.source_of(frame)
         except Exception as exc:
             print(f"AI scout {symbol} veri hatasi: {type(exc).__name__}: {exc}")
+
+    quote_symbols = {
+        symbol
+        for symbol, source in sources.items()
+        if source != "binance" and resolve(symbol).live_quote_compatible
+    }
+    quotes = finnhub_live.collect_quotes(quote_symbols, timeout_seconds=5.0)
+    for symbol, frame in frames.items():
+        try:
+            quote = quotes.get(symbol)
+            source = sources[symbol]
+            live_price = (
+                float(frame["close"].iloc[-1])
+                if source == "binance" and not frame.empty
+                else quote.price if quote else None
+            )
+            snapshots[symbol] = build_snapshot(
+                symbol, frame, now, live_price=live_price
+            )
+            snapshots[symbol]["data_source"] = source
+        except Exception as exc:
+            print(f"AI scout {symbol} snapshot hatasi: {type(exc).__name__}: {exc}")
     if not snapshots:
         return []
 
