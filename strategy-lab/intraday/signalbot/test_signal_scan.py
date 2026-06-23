@@ -46,12 +46,12 @@ def test_sends_every_distinct_setup_and_dedupes_same_bar(monkeypatch, tmp_path):
     assert second == []
 
 
-def test_delayed_bar_is_still_sent(monkeypatch, tmp_path):
+def test_moderately_delayed_bar_is_still_sent(monkeypatch, tmp_path):
     now = dt.datetime(2026, 6, 18, 13, 42, tzinfo=dt.timezone.utc)
     mod = LiveModule("GOLD_NY_ORB_TREND", "XAUUSD", "5m", 1.0, 48,
                      lambda df: Signal(1, 4225, 4214, 4247))
     monkeypatch.setattr(signal_scan, "_load_modules", lambda: [mod])
-    stale = _df(now - dt.timedelta(hours=2))
+    stale = _df(now - dt.timedelta(minutes=20))
     monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: stale)
     monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
     monkeypatch.setattr(signal_scan.finnhub_live, "collect_quotes", lambda *a, **k: {})
@@ -62,6 +62,26 @@ def test_delayed_bar_is_still_sent(monkeypatch, tmp_path):
     assert len(messages) == 1
     assert len(sent) == 1
     assert "onceki kapanmis mumdan" in messages[0]
+
+
+def test_very_stale_bar_is_suppressed(monkeypatch, tmp_path):
+    now = dt.datetime(2026, 6, 18, 13, 42, tzinfo=dt.timezone.utc)
+    mod = LiveModule("BTCUSDT_OF_ABSORPTION", "BTC", "1H", 0.11, 48,
+                     lambda df: Signal(-1, 63203.5, 63819.3, 61972.1))
+    monkeypatch.setattr(signal_scan, "_load_modules", lambda: [mod])
+    stale = _df(now - dt.timedelta(days=4))
+    stale.attrs["source"] = "binance"
+    stale.attrs["expected_delay_minutes"] = 0
+    monkeypatch.setattr(signal_scan.free_data, "ohlcv", lambda *a, **k: stale)
+    monkeypatch.setattr(signal_scan.sessions, "is_active", lambda *a, **k: True)
+    monkeypatch.setattr(signal_scan.finnhub_live, "collect_quotes", lambda *a, **k: {})
+    sent = []
+    monkeypatch.setattr(signal_scan.telegram_notify, "send", sent.append)
+
+    messages = signal_scan.run(now=now, state_path=tmp_path / "state.json")
+
+    assert messages == []
+    assert sent == []
 
 
 def test_dry_run_does_not_persist_dedupe_state(monkeypatch, tmp_path):
@@ -190,4 +210,3 @@ def test_futures_proxy_quote_is_not_requested(monkeypatch, tmp_path):
     assert requested == [set()]
     assert len(messages) == 1
     assert "uyumsuz CFD/spot fiyat proxy'si" in messages[0]
-

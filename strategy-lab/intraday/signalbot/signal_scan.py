@@ -27,6 +27,7 @@ BAR_LENGTH = {"5m": dt.timedelta(minutes=5), "15m": dt.timedelta(minutes=15),
 MAX_FAVORABLE_ENTRY_DRIFT_R = 1.0
 MAX_ADVERSE_ENTRY_DRIFT_R = 0.5
 STRUCTURE_MAX_AGE = dt.timedelta(hours=24)
+MAX_SIGNAL_AGE_MINUTES = {"5m": 45, "15m": 90, "1H": 360}
 
 
 def _load_modules() -> list:
@@ -124,6 +125,13 @@ def _is_closed(bar_time, now: dt.datetime, tf: str) -> bool:
     return bar_dt + BAR_LENGTH[tf] <= now
 
 
+def _age_minutes(bar_time, now: dt.datetime) -> float:
+    bar_dt = bar_time.to_pydatetime()
+    if bar_dt.tzinfo is None:
+        bar_dt = bar_dt.replace(tzinfo=dt.timezone.utc)
+    return max(0.0, (now - bar_dt).total_seconds() / 60.0)
+
+
 def run(*, now: dt.datetime | None = None, phase: str | None = None,
         balance: float | None = None, dry_run: bool = False,
         state_path: Path | None = None) -> list[str]:
@@ -173,6 +181,20 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 ]
             else:
                 candidate_positions = [closed_positions[-1]]
+            fresh_positions = []
+            stale_count = 0
+            max_age = MAX_SIGNAL_AGE_MINUTES[mod.tf]
+            for pos in candidate_positions:
+                if _age_minutes(df.index[pos], now) > max_age:
+                    stale_count += 1
+                else:
+                    fresh_positions.append(pos)
+            if stale_count:
+                print(
+                    f"{mod.name}: {stale_count} aday atlandi; "
+                    f"setup mumu {max_age} dakikadan eski."
+                )
+            candidate_positions = fresh_positions
         except Exception as exc:
             data_errors += 1
             print(f"{mod.name}: tarama hatasi: {type(exc).__name__}: {exc}")

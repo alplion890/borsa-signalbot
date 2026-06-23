@@ -55,6 +55,12 @@ Gecikme filtresi:
   - Fiyat setup tersine -0.5R gitmisse aday gonderilmez.
   - Bu filtre en son kapanmis mum fiyatina gore calisir.
   - Futures'ta sahte CFD/spot proxy fiyati kullanmaz.
+
+Bayat mum filtresi:
+  - 5m setup maksimum 45 dakika eski olabilir.
+  - 15m setup maksimum 90 dakika eski olabilir.
+  - 1H/BTC setup maksimum 360 dakika eski olabilir.
+  - Daha eski mumlardan gelen adaylar Telegram'a cikmaz.
 ```
 
 ## DeepSeek AI scout
@@ -111,19 +117,18 @@ Local test:
   python -m pytest strategy-lab/intraday/signalbot -q --basetemp .pytest_tmp
 
 Sonuc:
-  71 passed
+  72 passed
 
 Dry-run:
   python run_bot.py --dry-run
 
 Sonuc:
-  Kod calisti. Local sandbox dis internete/Binance'a izin vermedigi icin BTC
-  veri istegi ConnectionError verdi; bu GitHub Actions icin kod hatasi olarak
-  okunmadi.
+  Kod calisti. Bayat BTC mumlari artik tek satir ozetle atlandi ve Telegram'a
+  cikacak yeni setup uretmedi.
 
 Hazir commitler:
-  Local normal commit: 09ea6f2 fix: remove unavailable capital feed path
-  Remote origin/main parent'li deploy commit: face0778 fix: remove unavailable capital feed path
+  GitHub main: 2a9c4d3 fix: remove unavailable capital feed path
+  Bayat mum filtresi: sonraki commit ile eklenecek/guncellenecek.
 ```
 
 ## Son acik risk
