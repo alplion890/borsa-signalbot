@@ -9,7 +9,7 @@ Capital.com Turkiye'de kullanilamadigi icin Capital demo/API yolu tamamen terk
 edildi. Capital primary feed, Capital secret'lari, `test_capital` workflow
 secenegi ve ilgili kod/test yolu kaldirildi.
 
-Bu karar sonrasi bot cop olmadı; rolu degisti:
+Bu karar sonrasi bot cop olmadi; rolu degisti:
 
 ```text
 Bot = setup radari
