@@ -111,13 +111,6 @@ def _entry_is_actionable(sig, reference_price: float) -> tuple[bool, float]:
     )
 
 
-def _prepare_es_div_feeds() -> None:
-    """Inject free-data feeds into the existing ES-div detector cache."""
-    from ..forward_ea import modules
-    modules._ESDIV_CACHE["es"] = free_data.ohlcv("SP500", "15m", days=59)
-    modules._ESDIV_CACHE["h1"] = free_data.ohlcv("NASDAQ100", "1H", days=59)
-
-
 def _is_closed(bar_time, now: dt.datetime, tf: str) -> bool:
     bar_dt = bar_time.to_pydatetime()
     if bar_dt.tzinfo is None:
@@ -153,8 +146,6 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             continue
         active_modules += 1
         try:
-            if mod.name == "SWEEP_ES_DIV":
-                _prepare_es_div_feeds()
             df = free_data.ohlcv(mod.symbol_key, mod.tf, days=59)
             if df is None or len(df) < MIN_BARS[mod.tf]:
                 continue

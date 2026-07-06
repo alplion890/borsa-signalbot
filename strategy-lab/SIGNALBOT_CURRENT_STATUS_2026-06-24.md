@@ -137,3 +137,34 @@ GitHub baglantisi bu oturumda ara ara `github.com port 443` hatasi verdi. Baglan
 geldigi anda `face0778` commit'i `origin/main` uzerine fast-forward pushlanacak.
 Push tamamlandiktan sonra GitHub Actions uzerinden dry-run/test calistirilip bot
 aktif halde birakilacak.
+
+## Guncelleme 2026-07-04: SWEEP_ES_DIV portfoyden kaldirildi
+
+MT5 forward test (Maven hesabi 10325017, MavenTrade-Server) 45 gunluk canli
+backfill ile 7 modulden 6'sini kosturdu (BTC hala ayri Binance-spot altyapisi
+istedigi icin MT5'e hic baglanmadi). Yol acan altyapi hatasi da bulundu:
+`mt5_io.py` SYMBOL_MAP'te NASDAQ100 -> "USTEC" yanlisti, gercek broker sembolu
+**US100**; bu yuzden NQ_ORB/SWEEP_CORE/SWEEP_ES_DIV daha once sessizce
+atlaniyordu. Duzeltildi.
+
+**SWEEP_ES_DIV (agirlik 2.0, portfoyun en agirlikli modulu) sahte edge
+cikardi ve kaldirildi:**
+- Backtest iddiasi: 19 islem, %47.4 win, exp_R +0.210, avg_loss -0.09R
+- Gercek forward (45 gun, 10 islem): %20 win, exp_R -0.330R, avg_loss -1.14R
+- Kanit: -0.09R'lik ortalama kayip fiziksel olarak imkansiz (gercek bir SL
+  kaybi ~-1.0R olmali). Modulun igne-ince stop'u (sweep dibi - 0.25xATR,
+  ~7-13 puan risk) temiz dukascopy backtest verisinde hic tetiklenmemis,
+  timeout'ta basabasa yakin kapanmis. Canli US100 CFD gurultusunde ayni
+  stop'lar aninda vuruluyor.
+- Kod: `intraday/forward_ea/modules.py` `default_modules()` icinden silindi.
+  Bu fonksiyonu signalbot `signal_scan.py` da kullaniyor -> Telegram'a artik
+  SWEEP_ES_DIV sinyali cikmayacak, otomatik.
+
+**Guncel gercek portfoy: 7 modulden 5'i dogrulanmis/aktif** (Gold NY ORB,
+NQ ORB, Sweep Core VWAP, EUR London Fade, GBP London). BTC hic baglanmadi,
+ES_DIV bugun elendi. Gold+NQ ORB backtest'le en tutarli olanlar; EUR
+London 45 gunde hic sinyal uretmedi (asiri seyrek filtre); GBP London
+zayif (3 islem, %33 win) ama ornekleme cok kucuk.
+
+Detay: `strategy-lab/intraday/forward_ea/README.md`,
+memory `project-state-signalbot.md`, Obsidian `traiding stratejim1.md`.

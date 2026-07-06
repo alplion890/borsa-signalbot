@@ -7,7 +7,7 @@ _WINDOWS = {
     "GOLD_NY_ORB_TREND": (13, 16),
     "NQ_ORB_STRONG_TREND": (13, 17),
     "SWEEP_CORE_AVOID_MID_VWAP": (13, 21),
-    "SWEEP_ES_DIV": (13, 21),
+    # SWEEP_ES_DIV kaldirildi 2026-07-04 (sahte edge, forward test kaniti).
     "EUR_LONDON_FADE_EMA": (7, 11),
     "GBP_LONDON_STRONG_TREND": (7, 11),
     "BTCUSDT_OF_ABSORPTION": None,  # 7/24

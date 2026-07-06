@@ -141,11 +141,11 @@ def test_funded_message_contains_locked_stops_and_consistency():
 
 def test_funded_paper_message_forces_zero_real_risk():
     plan = risk_plan(
-        phase="bnpl_funded", balance=5000, module_name="SWEEP_ES_DIV",
+        phase="bnpl_funded", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     msg = format_signal(
-        tier=Tier.PAPER, module="SWEEP_ES_DIV", symbol_key="NASDAQ100",
+        tier=Tier.PAPER, module="SWEEP_CORE_AVOID_MID_VWAP", symbol_key="NASDAQ100",
         direction=1, entry=20000, sl=19950, tp=20100,
         lot=plan.normal_lot, risk_usd=plan.normal_usd,
         risk_plan=plan, trt_time="16 45",

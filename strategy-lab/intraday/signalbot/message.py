@@ -11,7 +11,6 @@ _HUMAN = {
     "SWEEP_CORE_AVOID_MID_VWAP": "NQ sweep",
     "EUR_LONDON_FADE_EMA": "EUR London fade",
     "GBP_LONDON_STRONG_TREND": "GBP London trend",
-    "SWEEP_ES_DIV": "NQ ES uyumsuzluk",
     "BTCUSDT_OF_ABSORPTION": "BTC absorption",
 }
 

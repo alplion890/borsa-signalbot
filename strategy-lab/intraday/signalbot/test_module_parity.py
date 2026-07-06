@@ -45,5 +45,4 @@ def test_final_module_count_and_weights():
         "SWEEP_CORE_AVOID_MID_VWAP": 1.0,
         "EUR_LONDON_FADE_EMA": 1.0,
         "GBP_LONDON_STRONG_TREND": 0.25,
-        "SWEEP_ES_DIV": 2.0,
     }

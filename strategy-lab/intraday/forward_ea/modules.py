@@ -270,7 +270,12 @@ def default_modules() -> list[LiveModule]:
                    _london_detector(
                        LondonCase("GBPUSD", 0.0, 7.0, 11.0, "ema", 1.5, "other_side", 1.0, 48),
                        dow=3, range_regime="normal_range")),
-        LiveModule("SWEEP_ES_DIV", "NASDAQ100", "15m", 2.0, 480, _es_div_detector()),
+        # SWEEP_ES_DIV (w=2.0) KALDIRILDI 2026-07-04: forward test edge'i cürüttü.
+        # Backtest avg_loss -0.09R fiziksel olarak sahte (igne-ince stop = sweep dibi
+        # -0.25*ATR, ~7-13 puan; temiz dukascopy verisinde hic tetiklenmemis, timeout'ta
+        # basabas kapanmis). Canli US100 CFD gürültüsünde ayni stop'lar aninda vuruluyor:
+        # forward 10 islem, %20 win, -0.33R (backtest 19 islem, %47, +0.21R iddiasina karsi).
+        # 19 islemlik örneklem zaten hic saglam degildi. En yüksek agirlik = en tehlikeli.
     ]
 
 

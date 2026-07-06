@@ -55,7 +55,7 @@ def test_btc_weight_reduces_risk():
 
 def test_challenge_paper_modules_are_capped_at_point_75_percent():
     plan = risk_plan(
-        phase="bnpl_challenge", balance=5000, module_name="SWEEP_ES_DIV",
+        phase="bnpl_challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     assert plan.normal_usd == 37.5
@@ -76,7 +76,7 @@ def test_funded_live_has_no_winner_boost_and_half_percent_cap():
 
 def test_funded_paper_modules_are_observation_only():
     plan = risk_plan(
-        phase="bnpl_funded", balance=5000, module_name="SWEEP_ES_DIV",
+        phase="bnpl_funded", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     assert plan.normal_usd == 0.0
