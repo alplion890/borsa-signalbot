@@ -140,7 +140,7 @@ aktif halde birakilacak.
 
 ## Guncelleme 2026-07-04: SWEEP_ES_DIV portfoyden kaldirildi
 
-MT5 forward test (Maven hesabi 10325017, MavenTrade-Server) 45 gunluk canli
+MT5 forward test (Maven hesabi [MT5-HESAP], MavenTrade-Server) 45 gunluk canli
 backfill ile 7 modulden 6'sini kosturdu (BTC hala ayri Binance-spot altyapisi
 istedigi icin MT5'e hic baglanmadi). Yol acan altyapi hatasi da bulundu:
 `mt5_io.py` SYMBOL_MAP'te NASDAQ100 -> "USTEC" yanlisti, gercek broker sembolu
