@@ -1,0 +1,400 @@
+==========================================================================
+   ALPARSLAN'IN STRATEJİLERİ ÖĞRENMESİ
+   (Sıfırdan, sade dille, hiçbir şey bilmediğini varsayarak)
+==========================================================================
+
+
+##########################################################################
+#  HIZLI HATIRLATMA KARTI  (aşağıda her şeyin detayı var, bu sadece özet) #
+##########################################################################
+
+--- TERİMLER TEK SATIRDA ---
+  MUM      : fiyatın bir zaman diliminin özeti (açılış/kapanış/tepe/dip)
+  SEANS    : borsanın açık olduğu bölge — Asya(gece)/Londra(sabah)/NY(öğleden sonra)
+  VWAP     : günün "adil fiyatı"; üstündeyse yukarı eğilim, altındaysa aşağı
+  ADX      : trend GÜCÜ (yön değil). <20 kararsız(chop), 20-30 trend, 30+ güçlü
+  ATR      : oynaklık; yüksek=fırtınalı, düşük=sakin. Stop genişliği + filtre
+  R        : risk birimi. Stop mesafen=1R. +2R=riskin 2 katı kazanç, -1R=stop yedin
+  exp_R    : işlem başına ortalama R. Pozitifse uzun vadede kazanırsın
+  chop     : yatay/kararsız piyasa — seni sağa sola savurur, İŞLEM YAPMA
+  whipsaw  : kırılım sonrası ani ters dönüş (sahte kırılım tuzağı)
+  timeout  : işlem ne stop ne hedefe vardı, süre doldu, ortada kapandı
+
+--- 2 ANA FİKİR ---
+  ORB   : Seans açılışı ilk 60dk kutu çizer; kutuyu kıran yöne bahis (kırılım avı)
+  SWEEP : Fiyat bir seviyeyi süpürüp geri dönerse tuzaktır; tersine bahis (fade)
+
+--- 6 MODÜL TEK SATIRDA ---
+  1. GOLD_NY_ORB_TREND   | Altın   | ORB, NY açılışı        | tökezledi→filtre eklendi
+  2. NQ_ORB_STRONG_TREND | NASDAQ  | ORB, ADX>28            | ✓ KANITLI MOTOR
+  3. SWEEP_CORE_...VWAP  | NASDAQ  | Sweep, VWAP-ortası kaç | pozitif ama az veri
+  4. EUR_LONDON_FADE_EMA | Euro    | Fade, Londra, Perşembe | neredeyse hiç tetiklenmez
+  5. GBP_LONDON_STRONG.. | Sterlin | Trend, ADX>30, ağırlık 0.25 | zayıf/nadir
+  6. BTCUSDT_OF_ABSORP.. | Bitcoin | Emir akışı             | devre dışı (bağlanmadı)
+
+--- ALTIN KURALLAR ---
+  * Her şeyi R ile ölç, dolar ile değil.
+  * ADX<20 ise işlem yapma (kararsız piyasa seni doğrar).
+  * Yeni filtre = önce dürüst backtest + yıl-tutarlılık + forward'dan geçmeli.
+  * Az işlem "çöp" değil "belirsiz" demek — 3-4 işlemle hüküm verme.
+  * Tek sağlam edge (NQ_ORB) ile bile fon geçilir; 7 modül şart değil.
+  * "Kaşıntı" (sürekli yeni edge arama) tuzaktır — disiplinle uygula, avlama.
+
+##########################################################################
+
+
+
+
+Bu yazıyı okuduğunda elindeki 6 stratejinin HER BİRİNİN ne yaptığını,
+neden çalıştığını ve nerede tıkandığını anlayacaksın. Terimleri geçtiğim
+yerde hemen açıklıyorum. Acele etme, baştan sona oku.
+
+
+==========================================================================
+BÖLÜM 0 — ÖNCE 6 TANE TEMEL KAVRAM (bunları anlamadan strateji anlaşılmaz)
+==========================================================================
+
+Bir stratejinin kalbinde hep şu soru var: "Fiyat ne zaman, hangi yöne
+gidecek?" Bunu tahmin etmek için birkaç basit araç kullanıyoruz. Önce
+onları öğren.
+
+
+--- 1) MUM (Candle / Bar) ---
+Fiyat grafiği "mum" denen kutucuklardan oluşur. Her mum bir zaman dilimini
+gösterir. Bir mumun 4 bilgisi vardır:
+  - Açılış (open): o dilim başladığında fiyat neydi
+  - Kapanış (close): o dilim biterken fiyat neydi
+  - En yüksek (high): o dilimde fiyatın gördüğü en tepe
+  - En düşük (low): o dilimde gördüğü en dip
+
+"5 dakikalık mum" = her kutu 5 dakikayı özetler. "5m" bunu demek.
+
+
+--- 2) SEANS (Session) ---
+Dünya borsaları farklı saatlerde açılır. Üç ana seans:
+  - ASYA (Tokyo): gece
+  - LONDRA: sabah (Avrupa)
+  - NEW YORK (NY): öğleden sonra (Amerika)
+
+Neden önemli? Çünkü fiyat en çok, büyük seanslar AÇILDIĞINDA hareket eder.
+Amerika açılınca (NY) borsaya büyük para girer, fiyat coşar. Stratejilerimiz
+çoğunlukla bu açılış anlarını avlar.
+
+
+--- 3) VWAP (Hacim Ağırlıklı Ortalama Fiyat) ---
+Okunuşu "vi-wap". Şöyle düşün: gün içinde alınıp satılan her işlemin
+ortalama fiyatı. Ama büyük işlemler ortalamayı daha çok etkiler (hacim
+ağırlıklı = çok mal dönen fiyat daha önemli).
+
+Neye yarar? VWAP "günün adil fiyatı" gibidir. Büyük kurumlar (bankalar,
+fonlar) alım yaparken "VWAP'ın altında mı alıyorum" diye bakar.
+  - Fiyat VWAP'ın ÜSTÜNDEyse → gün boyu alıcılar güçlü (yukarı eğilim)
+  - Fiyat VWAP'ın ALTINDAysa → satıcılar güçlü (aşağı eğilim)
+
+Biz VWAP'ı "trend hangi yönde" sorusuna cevap olarak kullanıyoruz.
+
+
+--- 4) ADX (Trend Gücü Ölçer) ---
+ADX bir sayıdır, 0 ile 100 arasında. TEK BİR ŞEYİ söyler: "Ortada güçlü
+bir trend var mı, yoksa fiyat yatay mı sürünüyor?"
+
+DİKKAT: ADX yön SÖYLEMEZ (yukarı mı aşağı mı demez). Sadece GÜCÜ söyler.
+  - ADX düşük (0-20 arası) → "chop" = fiyat kararsız, yatay, git-gel.
+    Burada işlem açmak PARA KAYBETTİRİR. Fiyat bir yukarı bir aşağı
+    seni sağa sola savurur.
+  - ADX orta (20-30) → "trend" = düzgün bir yönlü hareket var.
+  - ADX yüksek (30+) → "strong_trend" = güçlü, net yönlü hareket.
+
+Stratejilerimizin çoğu "ADX 20'nin altındaysa İŞLEM YAPMA" der. Yani
+kararsız piyasada kenarda bekleriz. Bu çok önemli bir koruma.
+
+("chop" = İngilizce "doğramak". Yatay piyasa seni doğrar, o yüzden bu isim.)
+
+
+--- 5) ATR (Oynaklık Ölçer) ---
+ATR "fiyat ne kadar zıpzıp oynuyor" onu ölçer. Yüksek ATR = fiyat büyük
+adımlarla hareket ediyor (fırtınalı). Düşük ATR = sakin, küçük adımlar.
+
+Neye yarar? İki şeye:
+  (a) Stop-loss'u (zarar-durdur) ne kadar geniş koyacağımızı belirler.
+      Fırtınalı günde stop'u dar koyarsan boşuna vurulursun.
+  (b) FİLTRE olarak: bazen "çok fırtınalı günde işlem yapma" deriz, çünkü
+      fiyat o kadar çılgın zıplar ki hem stop hem hedef aynı anda vurulur,
+      sen kaybedersin. (Buna "whipsaw" = kamçılanma denir.)
+
+
+--- 6) R (Risk Birimi) — EN ÖNEMLİ KAVRAM ---
+Kazancı/zararı para (dolar) ile değil, "R" ile ölçüyoruz. R = bir işlemde
+göze aldığın risk miktarı.
+
+Örnek: Bir işleme girdin. Stop-loss'un girişten 10 dolar uzakta. Yani
+en kötü ihtimalle 10 dolar kaybedeceksin. İşte o 10 dolar = 1R.
+  - Hedefine ulaşıp 20 dolar kazandın → +2R (riskin 2 katı kazandın)
+  - Stop'a vurup 10 dolar kaybettin → −1R
+  - 5 dolar kazançla çıktın → +0.5R
+
+NEDEN R KULLANIYORUZ? Çünkü hesabın 5.000 dolar da olsa 50.000 dolar da
+olsa, strateji "R" olarak aynı performansı verir. Para miktarından
+bağımsız, adil bir ölçü. Bütün tablolarımızda gördüğün "+0.063R" gibi
+sayılar bunu anlatıyor.
+
+"exp_R" (beklenen R) = işlem başına ortalama kaç R kazanıyorsun.
+  - exp_R pozitifse → uzun vadede kâr edersin (küçük olsa bile)
+  - exp_R negatifse → uzun vadede kaybedersin
+  +0.063R kulağa küçük gelir ama 300 işlemde birikir: 300 x 0.063 = ~19R.
+
+
+==========================================================================
+BÖLÜM 1 — İKİ ANA STRATEJİ TİPİ
+==========================================================================
+
+Elindeki 6 stratejinin hepsi 2 fikirden birine dayanır. Önce bu 2 fikri
+anla, sonra 6 modül kolay gelecek.
+
+
+--- TİP A: ORB (Opening Range Breakout = Açılış Aralığı Kırılımı) ---
+
+En sağlam, en çok işlem veren fikrimiz. Mantığı çok basit:
+
+1. Büyük seans açılır (mesela NY, öğleden sonra).
+2. Açılıştan sonra İLK 60 DAKİKAYI izleriz. Bu 60 dakikada fiyatın gördüğü
+   en tepe ve en dip bir "kutu" (aralık) oluşturur. Buna "açılış aralığı"
+   denir.
+3. Sonra bekleriz. Fiyat bu kutunun DIŞINA çıkarsa (kırarsa):
+   - Tepeyi yukarı kırdı → AL (fiyat yukarı gidecek diye bahis)
+   - Dibi aşağı kırdı → SAT (fiyat aşağı gidecek diye bahis)
+
+NEDEN ÇALIŞIR? Seans açılışında büyük para girer. İlk saatte piyasa
+"karar verir". Bu kararın yönüne fiyat kutuyu kırarak işaret eder. Kutuyu
+kıran fiyat genelde o yöne devam eder çünkü arkasında gerçek para akışı var.
+
+KORUMALAR (filtreler):
+  - ADX > 20 olmalı (kararsız/yatay günde kırılım sahte olur, atlarız)
+  - Bazı modüllerde: aşırı fırtınalı gün değilse (whipsaw'dan kaçın)
+  - VWAP yönü ile uyumlu olmalı (fiyat VWAP üstündeyse yukarı kırılıma
+    daha çok güveniriz)
+
+Stop-loss nerede? Kutunun diğer tarafında. Yukarı kırdıysan, stop'u kutunun
+dibinin altına koyarsın: "kırılım sahteyse ve fiyat geri kutuya dönerse,
+zararı kes."
+
+
+--- TİP B: SWEEP / FADE (Likidite Süpürme / Tersine Dönüş) ---
+
+Bu daha ince bir fikir. Şöyle:
+
+Piyasada birçok insanın stop-loss'u belli seviyelerde toplanır (mesela
+dünün en tepesinin hemen üstünde). Büyük oyuncular bunu bilir. Bazen
+fiyatı KASITLI o seviyeye iterler, oradaki stop'ları tetikleyip
+"süpürürler" (sweep), sonra fiyat TERS yöne döner.
+
+Yani: fiyat bir tepeyi yalayıp hemen geri düşerse, bu bir "tuzak"
+olabilir. Yukarı gidecek sananlar kapana kısılır, gerçek yön aşağıdır.
+
+"Fade" = bu sahte harekete karşı bahis oynamak. Fiyat yukarı fırladı ama
+biz "bu sahte, aşağı dönecek" deyip SATARIZ.
+
+NEDEN ÇALIŞIR? Çünkü o ani süpürme gerçek alıcı değil, stop avıdır. Av
+bitince fiyat gerçek yönüne döner.
+
+DİKKAT: Bu fikir ORB'dan daha NADİR sinyal verir ve daha hassastır. Az
+işlem = az veri = daha az güvenilir. (İleride bunun neden sorun olduğunu
+göreceksin.)
+
+
+==========================================================================
+BÖLÜM 2 — 6 MODÜLÜN TEK TEK AÇIKLAMASI
+==========================================================================
+
+Şimdi elindeki gerçek 6 modül. Her biri yukarıdaki 2 tipten birinin,
+belli bir pariteye (enstrümana) ayarlanmış hali.
+
+("Parite/enstrüman" = neyi işlem ettiğin. XAUUSD=altın, NASDAQ100=Amerikan
+teknoloji borsa endeksi, EURUSD=euro/dolar, GBPUSD=sterlin/dolar.)
+
+
+-------------------------------------------------------------
+MODÜL 1 — GOLD_NY_ORB_TREND   (ALTIN, NY açılışı ORB)
+-------------------------------------------------------------
+TİP: A (ORB kırılımı)
+NE İŞLER: XAUUSD = Altın
+NE ZAMAN: New York açılışında (saat 13:30 UTC civarı)
+NASIL:
+  - NY açılışından sonra ilk 60 dakika altının kutusunu çizer
+  - Kutuyu kıran yöne işlem açar
+  - Filtre: ADX > 20 (kararsızsa atla) + VWAP yön uyumu
+  - YENİ (2026-07-12): "aşırı fırtınalı gün değilse" filtresi eklendi
+    (aşağıda anlatacağım)
+DURUM: Portföyün eski taşıyıcılarından biri ama forward testte tökezledi
+       (Bölüm 3'te detay). Altın son aylarda yatay/kararsız olduğu için
+       kırılımlar sahte çıkıyordu.
+
+
+-------------------------------------------------------------
+MODÜL 2 — NQ_ORB_STRONG_TREND   (NASDAQ, güçlü trend ORB)
+-------------------------------------------------------------
+TİP: A (ORB kırılımı)
+NE İŞLER: NASDAQ100 = Amerikan teknoloji endeksi (Apple, Microsoft vb.)
+NE ZAMAN: New York açılışında
+NASIL:
+  - Aynı ORB mantığı AMA daha katı filtre: ADX > 28 olmalı
+  - Yani sadece GERÇEKTEN güçlü trend günlerinde işlem açar
+  - "strong_trend" ismi buradan: sadece kuvvetli hareketleri avlar
+NEDEN EN İYİSİ: NASDAQ karakteri gereği NY açılışında sert, yönlü hareket
+       eder (Amerikan teknoloji hisseleri o saatte coşar). ORB için ideal
+       parite. Bu yüzden en sağlam edge'in bu.
+DURUM: PORTFÖYÜN GERÇEK MOTORU. Forward testte backtest'ten bile iyi
+       performans verdi. İçin rahat olsun diyeceğin tek modül bu.
+
+
+-------------------------------------------------------------
+MODÜL 3 — SWEEP_CORE_AVOID_MID_VWAP   (NASDAQ, süpürme çekirdeği)
+-------------------------------------------------------------
+TİP: B (Sweep/Fade)
+NE İŞLER: NASDAQ100
+NASIL:
+  - Fiyatın bir seviyeyi süpürüp geri dönüşünü avlar
+  - "AVOID_MID_VWAP" = VWAP'ın tam ortasında (kararsız bölgede) işlem
+    YAPMA demek. Çünkü orta bölge en gürültülü yer, sinyal güvenilmez.
+  - Filtre: ADX belli eşiğin üstünde + iyi risk/kazanç oranı (min 2R hedef)
+DURUM: Fikir sağlam ama ÇOK NADİR sinyal veriyor (ayda ~1 işlem). Az veri
+       yüzünden "kesin çalışıyor" diyemiyoruz. İzlemede.
+
+
+-------------------------------------------------------------
+MODÜL 4 — EUR_LONDON_FADE_EMA   (EURO, Londra tersine dönüş)
+-------------------------------------------------------------
+TİP: B (Fade)
+NE İŞLER: EURUSD = Euro/Dolar
+NE ZAMAN: Londra seansında
+NASIL:
+  - Londra açılışındaki ilk sert hareketin TERSİNE bahis
+  - "FADE_EMA" = EMA denen ortalama çizgiye göre dönüşü avlar
+    (EMA = üstel hareketli ortalama, VWAP'a benzer bir trend çizgisi)
+  - Filtre: ADX < 18 (SADECE kararsız/yatay günde çalışır — çünkü fade
+    mantığı trend olmayan günlerde iş görür) + sadece Perşembe günleri
+DURUM: Filtre O KADAR dar ki neredeyse hiç tetiklenmiyor (forward testte
+       0 işlem). Belki fazla kısıtlı. İzlemede ama şüpheli.
+
+
+-------------------------------------------------------------
+MODÜL 5 — GBP_LONDON_STRONG_TREND   (STERLİN, Londra trend)
+-------------------------------------------------------------
+TİP: A (ORB/trend takip, Londra versiyonu)
+NE İŞLER: GBPUSD = Sterlin/Dolar
+NE ZAMAN: Londra seansında
+NASIL:
+  - Londra açılışındaki güçlü yönlü hareketi takip eder
+  - Filtre: ADX > 30 (çok güçlü trend şart)
+  - AĞIRLIK: 0.25 — yani bu modüle diğerlerinin çeyreği kadar güveniyoruz
+    (portföyde en az güvenilen modül, bilerek küçük tutulmuş)
+DURUM: Zayıf ve nadir. İzlemede.
+
+("Ağırlık" = bir modüle ne kadar para/güven ayırdığın. 1.0 = tam güven,
+0.25 = çeyrek güven. Zayıf modülleri küçük ağırlıkla tutarsın ki batırırsa
+az zarar versin.)
+
+
+-------------------------------------------------------------
+MODÜL 6 — BTCUSDT_OF_ABSORPTION   (BITCOIN, emir akışı emilimi)
+-------------------------------------------------------------
+TİP: Farklı — "order flow" (emir akışı) tabanlı
+NE İŞLER: Bitcoin
+NASIL: Alıcı/satıcı emirlerinin "emilme" desenini avlar (büyük satış
+       gelmesine rağmen fiyat düşmüyorsa, alıcılar emiyor demektir → yukarı)
+DURUM: Bu modül Binance borsasının özel verisini ister, MT5 sistemimize
+       hiç bağlanmadı. Şu an devre dışı, sadece kağıt üzerinde var.
+
+
+==========================================================================
+BÖLÜM 3 — "FORWARD TEST" NEDİR VE BİZE NE ÖĞRETTİ
+==========================================================================
+
+--- Backtest vs Forward test farkı (çok önemli) ---
+
+BACKTEST = "Geçmiş veriye stratejiyi uygularsak ne olurdu?" Bilgisayara
+2-3 yıllık eski veriyi verirsin, strateji o günlerde kaç para kazanırdı
+hesaplar. AMA tehlike: strateji geçmişe "fazla uydurulmuş" olabilir.
+Geçmişi ezberlemek gelecekte kazandırmaz.
+
+FORWARD TEST = "Stratejiyi ŞU ANDAN İTİBAREN, canlı piyasada, gerçek zamanlı
+izleyelim." Gerçek emir atmadan (kağıt/paper), ama gerçek canlı fiyatla.
+Bu, stratejinin GERÇEKTEN çalışıp çalışmadığının tek dürüst testidir.
+
+Bizde bir "Forward EA" botu var: MT5 (MetaTrader5, bir işlem platformu)
+canlı fiyatını çeker, her modülü otomatik izler, kağıt üzerinde işlem açıp
+kapar, sonucu kaydeder.
+
+
+--- Forward testin bize söyledikleri (54 günlük veri) ---
+
+MODÜL                  | İşlem | Sonuç      | Yorum
+-----------------------|-------|------------|---------------------------
+NQ_ORB (NASDAQ)        |  16   | exp +0.366 | ÇALIŞIYOR, kanıtlı motor ✓
+GOLD_ORB (Altın)       |  18   | exp -0.152 | TÖKEZLEDİ, filtre eklendi ✗
+SWEEP_CORE (NASDAQ)    |   4   | exp +1.13  | Pozitif ama az veri, belirsiz
+GBP_LONDON (Sterlin)   |   3   | ~sıfır     | Az veri, belirsiz
+EUR_LONDON (Euro)      |   0   | -          | Hiç tetiklenmedi
+
+EN ÖNEMLİ DERS:
+  - Az işlem "çöp" demek DEĞİL. 3-4 işlemle hüküm veremezsin (4 kez
+    yazı-tura atıp "hileli para" demek gibi). Bunlar "belirsiz", çöp değil.
+  - Sadece 2 modülün yeterli verisi var: NQ (çalışıyor) ve Gold (tökezledi).
+  - Bir profesyonel fon TEK sağlam edge'le bile fon geçer. 7 modül şart
+    değil. Elinde NQ_ORB gibi kanıtlı bir motor olması yeterli.
+
+
+==========================================================================
+BÖLÜM 4 — GOLD'A EKLENEN YENİ FİLTRE (2026-07-12)
+==========================================================================
+
+SORUN: Altın forward testte kaybediyordu. Tüm kayıpları "timeout"tan
+geliyordu. (Timeout = ne stop'a ne hedefe vardı, süre doldu, ortada kaldı.)
+
+TEŞHİS: Altın son aylarda çok fırtınalı ama YÖNSÜZ. ORB kutusunu kırıyor,
+sonra fiyat çıldırmış gibi zıplayıp geri dönüyor (whipsaw). Kırılım sahte.
+
+ÇÖZÜM: "Aşırı fırtınalı günde işlem yapma" filtresi (ATR ile ölçülüyor).
+  - En oynak %33'lük günleri artık atlıyoruz
+  - Geçmiş veride test: bu filtreyle altın 4 yılın 4'ünde de pozitif
+    (filtresiz hali sadece 3/4 yıl pozitifti). Yani filtre gerçek bir
+    iyileştirme, uydurma değil.
+
+DİKKAT — nasıl doğruladık: Filtreyi körlemesine eklemedik. Önce geçmiş
+veride (honest engine = kendi dürüst backtest motorumuz) test ettik,
+"her yıl pozitif mi" diye baktık. Geçtikten sonra canlıya aldık. Bu bizim
+DEMİR KURALIMIZ: hiçbir filtre, dürüst testten + yıl-yıl tutarlılıktan
+geçmeden portföye girmez.
+
+
+==========================================================================
+BÖLÜM 5 — ÖZET: NELERİ BİLMEN GEREKİYOR
+==========================================================================
+
+1. Elinde 2 ana fikir var: ORB (kırılım avı) ve Sweep/Fade (tuzak avı).
+
+2. En sağlam modülün NASDAQ ORB (NQ_ORB_STRONG_TREND). Forward testte
+   kanıtlandı. Portföyün asıl motoru bu.
+
+3. Altın ORB tökezlemişti; yeni fırtına-filtresiyle düzeltmeye çalışıyoruz.
+
+4. Diğer 3 modül (Sweep, EUR, GBP) az sinyal verdiği için henüz "belirsiz"
+   — çöp değil, sadece daha çok forward zamanı lazım.
+
+5. Her şeyi "R" ile ölç, dolar ile değil. exp_R pozitifse uzun vadede
+   kazanırsın.
+
+6. Filtreler (ADX, ATR) seni kararsız/fırtınalı piyasadan korur. En büyük
+   dostun onlar. "İşlem yapmamak" da bir karardır.
+
+7. DEMİR KURAL: Yeni bir fikir/filtre, dürüst backtest + yıl-tutarlılık +
+   forward testten geçmeden portföye GİRMEZ. Heyecanla ekleme yapma.
+
+8. Edge aramak bağımlılık yapar ("kaşıntı"). Ama gerçek para, elindeki
+   kanıtlı edge'i disiplinle tekrar tekrar uygulamakta — yeni edge
+   avlamakta değil.
+
+==========================================================================
+Son güncelleme: 2026-07-12
+Bu dosya senin öğrenmen için. Kafan karıştıkça buraya dön.
+==========================================================================

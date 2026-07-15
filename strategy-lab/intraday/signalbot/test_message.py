@@ -168,3 +168,42 @@ def test_message_blocks_trade_when_minimum_lot_exceeds_risk():
     )
     assert "minimum lot" in msg
     assert "gercek hesapta alma" in msg
+
+
+def test_live_message_has_maven_order_card():
+    plan = risk_plan(
+        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+    )
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=-1, entry=20000, sl=20050, tp=19900,
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45",
+    )
+    assert "MAVEN EMIR KARTI" in msg
+    assert "US100" in msg          # broker sembol adi, symbol_key degil
+    assert "SELL" in msg
+    assert "Giris: 20000" in msg
+    assert "Stop: 20050" in msg
+    assert "Hedef: 19900" in msg
+    assert "Lot:" in msg
+    assert msg.count("|") == 0
+
+
+def test_paper_message_has_no_order_card():
+    msg = format_signal(
+        tier=Tier.PAPER, module="EUR_LONDON_FADE_EMA", symbol_key="EURUSD",
+        direction=-1, entry=1.0950, sl=1.0960, tp=1.0930,
+        lot=0.1, risk_usd=50.0, trt_time="10 15",
+    )
+    assert "MAVEN EMIR KARTI" not in msg
+
+
+def test_zero_lot_live_message_has_no_order_card():
+    msg = format_signal(
+        tier=Tier.LIVE, module="GOLD_NY_ORB_TREND", symbol_key="XAUUSD",
+        direction=1, entry=3000, sl=2990, tp=3015,
+        lot=0.0, risk_usd=75.0, trt_time="16 45",
+    )
+    assert "MAVEN EMIR KARTI" not in msg

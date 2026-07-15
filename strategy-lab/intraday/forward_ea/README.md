@@ -1,0 +1,123 @@
+# Forward EA — MT5 Demo Canlı Forward Test
+
+**Çözdüğü sorun:** Final portföy 7 modüllü + çok varlıklı; gerçek kullanım fon
+hesabı ister ve 7 indikatörü elle takip etmek pratik değil. Bu motor portföyü
+MT5 canlı feed'inde **otomatik** yürütür — fon hesabı gerekmez, `trade_allowed`
+iznine takılmaz (emir göndermez, paper-fill ile gerçek forward *sinyal* testi yapar).
+
+## Çalıştırma
+```bash
+# Tek döngü (Task Scheduler için ideal)
+python -m intraday.forward_ea.live_runner --once
+
+# İlk kurulumda son 30 günü backfill et (hemen sonuç gör)
+python -m intraday.forward_ea.live_runner --once --warmup 30
+
+# Sürekli döngü (her 5 dk)
+python -m intraday.forward_ea.live_runner --loop 300
+
+# Sadece durum panosu
+python -m intraday.forward_ea.live_runner --status
+```
+
+## Nasıl çalışır
+Her döngüde her modül için:
+1. MT5'ten güncel bar çekilir (son kapanmamış bar dışlanır).
+2. Son işlenen bardan sonraki yeni barlar sırayla işlenir:
+   - önce açık paper-pozisyonlar güncellenir (SL/TP/timeout, **honest = SL-önce**),
+   - sonra o barda yeni sinyal varsa pozisyon açılır.
+3. Durum `forward_state.json`'a yazılır → **restart'a dayanıklı**, kaldığı yerden devam.
+
+Maliyet `config.cost_per_side`'dan R cinsinden düşülür (backtest ile aynı).
+
+## Windows Task Scheduler ile otomatik
+```
+Program: C:\...\Python311\python.exe
+Argümanlar: -m intraday.forward_ea.live_runner --once
+Başlangıç: C:\Users\quantum\OneDrive\Masaüstü\borsa\strategy-lab
+Tetikleyici: her 5 dakikada bir
+```
+MT5 terminali açık olmalı.
+
+## Güncelleme 2026-07-16 — bot dirildi + Telegram köprüsü
+
+**İki gizli bug bulundu ve düzeltildi** (botun 2026-07-02'den beri durmasının
+gerçek sebebi — artımlı bar işleme yolu HİÇ çalışmamıştı, sadece warmup
+backfill çalışıyordu):
+1. `live_runner.py`: `df.index > last` numpy ndarray döner, `.to_numpy()`
+   çağrısı AttributeError atıyordu → `np.asarray` ile düzeltildi.
+2. `positions.py ledger()`: state JSON'dan str, yeni kapanan işlemden
+   Timestamp gelen karışık `entry_time` tipleri sort'u çökertiyordu →
+   `pd.to_datetime` normalizasyonu eklendi.
+
+**Yeni: Telegram köprüsü (`notify.py`).** Yeni pozisyon açıldığında signalbot
+formatında mesaj + MAVEN EMİR KARTI (broker sembol adı, yön, giriş/SL/TP, lot,
+risk) Telegram'a gider. Emri Maven kuralına uygun olarak KULLANICI elle girer
+(EA/bot emri yasak). Korumalar: >30dk eski (backfill) sinyal gönderilmez; env
+eksikse döngü kırılmaz. Kurulum: `strategy-lab/.env` içine TELEGRAM_BOT_TOKEN
+ve TELEGRAM_CHAT_ID; `run_forward_ea.cmd` Task Scheduler'a 5dk'lık görev.
+
+**Gold ORB'a rangeci-rejim filtresi** (`modules.py`, `atr_max_rank=0.67`):
+54 günlük forward'da gold 18 işlem exp −0.152R verdi (backtest +0.063
+beklerken), tüm kayıplar yüksek-vol whipsaw timeout'u. `gold_orb_regime`
+taraması `adx>=trend & atr<high` kovasını 4/4 yıl pozitif buldu (exp +0.072,
+minYr +0.015) → yüksek-vol (rolling-500 pctile > 0.67) günler artık atlanıyor.
+Geri dönüş: `atr_max_rank=1.0`.
+
+**Forward skor tablosu (54g, 2026-07-16 itibarıyla):**
+
+| Modül | İşlem | exp_R | Verdikt |
+|---|---|---|---|
+| NQ_ORB_STRONG_TREND | 16 | +0.366 | KANITLI MOTOR (backtest +0.082'nin üstünde) |
+| GOLD_NY_ORB_TREND | 18 | −0.152 | tökezledi → atr filtresi eklendi, izle |
+| SWEEP_CORE_AVOID_MID_VWAP | 4 | +1.13 | pozitif, örneklem yetersiz |
+| GBP_LONDON_STRONG_TREND | 3 | +0.10 | örneklem yetersiz |
+| EUR_LONDON_FADE_EMA | 0 | — | hiç tetiklenmedi, filtre fazla dar olabilir |
+
+## Modül durumu (güncellendi 2026-07-04)
+
+**Kritik düzeltme:** `mt5_bridge/mt5_io.py` SYMBOL_MAP'te NASDAQ100 → "USTEC"
+olarak eşliydi; MavenTrade-Server broker'ında bu isim yok, gerçek isim
+**US100**. Bu yüzden NQ_ORB/SWEEP_CORE/SWEEP_ES_DIV önceden sessizce
+atlanıyordu. Ayrıca "BTC bu broker'da yok" notu yanlıştı — **BTCUSD** CFD
+olarak mevcut (Cryptocurrencies\BTCUSD), sadece OF_ABSORPTION modülü ayrı
+Binance-spot altyapısı istediği için hâlâ bağlanmadı.
+
+| Modül | Ağırlık | Durum |
+|---|---|---|
+| GOLD_NY_ORB_TREND | 1.0 | ✅ devrede (45g: 14 trade, win %57.1, +0.026R — backtest uyumlu) |
+| NQ_ORB_STRONG_TREND | 1.0 | ✅ devrede (45g: 14 trade, win %57.1, +0.389R — yönü doğru, örneklem küçük) |
+| SWEEP_CORE_AVOID_MID_VWAP | 1.0 | ✅ devrede (45g: 3 trade, win %66.7, +1.883R — yönü doğru, örneklem çok küçük) |
+| EUR_LONDON_FADE_EMA | 1.0 | ✅ devrede (45g: 0 trade — sinyal hiç tetiklenmedi, filtre aşırı seyrek) |
+| GBP_LONDON_STRONG_TREND | 0.25 | ✅ devrede (45g: 3 trade, win %33.3, +0.097R — zayıf, örneklem yetersiz) |
+| SWEEP_ES_DIV | 2.0 | ❌ **KALDIRILDI 2026-07-04** — sahte edge (bkz. aşağı) |
+| BTCUSDT_OF_ABSORPTION | 0.11 | ✖ Binance spot feed ister, MT5'e hiç wire edilmedi |
+
+**SWEEP_ES_DIV neden kaldırıldı:** Backtest'te avg_loss **−0.09R** çıkıyordu
+(19 işlem, %47.4 win, exp_R +0.210 iddiası) — bu fiziksel olarak imkânsız,
+gerçek bir SL kaybı ~−1.0R olmalı. Kanıtladı ki modülün iğne-ince stop'u
+(sweep dibi − 0.25×ATR, ~7-13 puan risk) temiz dukascopy verisinde hiç
+tetiklenmemiş, timeout'ta başabaşa yakın kapanmış. Canlı US100 CFD
+gürültüsünde aynı stop'lar anında vuruluyor (bars_held 1-4): forward'da
+10 trade, **%20 win, −0.330R net, avg_loss −1.14R**. En yüksek ağırlığa
+(w=2.0) sahip olması riski büyütüyordu — `default_modules()`'tan silindi.
+
+**Doğrulanmış canlı portföy (45g backfill, 5 modül, sembol düzeltmesi sonrası):**
+44 trade, win %47.7, toplam +8.45R, weighted +4.93R.
+
+> Forward testin değeri: hem eski EUR/GBP wiring sorununu hem de bugün
+> SWEEP_ES_DIV'in sahte backtest edge'ini **yakaladı**. Backtest'in görünürde
+> kazandırdığı bir modül canlı feed'de kayıp çıkardı — forward test olmasa
+> bu portföyde kalıp riski büyütecekti.
+
+## Yeni modül ekleme
+`modules.py` içinde `LiveModule(name, symbol_key, tf, weight, max_hold_bars, detect)`
+tanımla. `detect(df) -> Signal|None` son kapanmış bara bakar. `default_modules()`
+listesine ekle. `live_runner` ve `positions` değişmeden çalışır.
+
+## Kapalı döngü (asıl değer)
+```
+GA gold adayı -> modules.py'de gold detektör paramlarını güncelle ->
+forward EA ile demo'da canlı izle -> backtest ile tutuyorsa benimse
+```
+Çıktılar: `outputs/intraday/forward_ea/forward_ledger.csv`, `forward_state.json`

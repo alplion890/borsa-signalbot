@@ -14,6 +14,38 @@ _HUMAN = {
     "BTCUSDT_OF_ABSORPTION": "BTC absorption",
 }
 
+# symbol_key -> MavenTrade-Server broker sembol adi (MT5'te gorunen isim).
+# NASDAQ100 broker'da US100 (bkz. forward_ea/README sembol duzeltmesi).
+_MAVEN_SYMBOL = {
+    "XAUUSD": "XAUUSD",
+    "NASDAQ100": "US100",
+    "SP500": "US500",
+    "EURUSD": "EURUSD",
+    "GBPUSD": "GBPUSD",
+    "BTC": "BTCUSD",
+}
+
+
+def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
+                      sl: float, tp: float, lot: float, risk_usd: float) -> str:
+    """MT5'e elle girilecek emrin kopyala-yapistir karti.
+
+    Maven kurali: EA/bot yasak, emri SEN girersin. Kart sadece alanlari
+    hazirlar. Duz ASCII, boru karakteri yok (telegram sade metin kurali).
+    """
+    yon = "BUY" if direction == 1 else "SELL"
+    sembol = _MAVEN_SYMBOL.get(symbol_key, symbol_key)
+    return (
+        "\n\nMAVEN EMIR KARTI (elle gir, kopyala)\n"
+        f"Sembol: {sembol}\n"
+        f"Yon: {yon}\n"
+        f"Giris: {entry:g} (retest bekle, market kovalama)\n"
+        f"Stop: {sl:g}\n"
+        f"Hedef: {tp:g}\n"
+        f"Lot: {lot:g}\n"
+        f"Risk: {risk_usd:g} dolar"
+    )
+
 
 def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   entry: float, sl: float, tp: float, lot: float,
@@ -121,11 +153,22 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
             "gonderildi, Maven grafiginden mevcut fiyati kontrol et."
         )
     if tier is Tier.LIVE:
-        return (
+        msg = (
             f"{ad} {yon} sinyali geldi. Yaklasik {entry:g} ten gir, "
             f"stop {sl:g}, hedef {tp:g}. {common_tail} "
             "Retest girisi bekle, kirilimi kovalama."
         )
+        # Emir karti: sadece gercek para izni + gecerli lot varsa.
+        real_ok = risk_plan is None or (
+            risk_plan.real_money_allowed
+            and not (risk_plan.normal_usd > 0 and risk_plan.normal_lot == 0)
+        )
+        if real_ok and lot > 0:
+            msg += _maven_order_card(
+                symbol_key=symbol_key, direction=direction, entry=entry,
+                sl=sl, tp=tp, lot=lot, risk_usd=risk_usd,
+            )
+        return msg
     return (
         f"Paper sinyali {ad} {yon}. Once chart ac ve setupi teyit et. "
         f"Yaklasik {entry:g} ten gir, stop {sl:g}, hedef {tp:g}. {common_tail}"

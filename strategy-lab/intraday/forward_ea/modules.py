@@ -46,11 +46,19 @@ class LiveModule:
 def _gold_orb_detector(open_hour: float = 13.5, range_minutes: int = 60,
                        rr: float = 1.0, max_hold: int = 48,
                        adx_thresh_strong: float = 30.0,
-                       entry_mode: str = "retest", trend: str = "vwap"):
+                       entry_mode: str = "retest", trend: str = "vwap",
+                       atr_max_rank: float = 0.67):
     """Final portfoydeki gold modulunun canli dedektoru.
 
-    Son kapanmis bar bir ORB giris sinyali tasiyorsa ve adx rejimi trend/strong
-    ise Signal doner. Backtest gold_orb_regime ile ayni filtre.
+    Son kapanmis bar bir ORB giris sinyali tasiyorsa VE (a) adx rejimi trend/strong
+    (chop degil) VE (b) atr rejimi yuksek-vol degil ise Signal doner.
+
+    (b) rangeci-rejim filtresi (2026-07-12): forward'da gold ORB'un tum kayiplari
+    yuksek-vol patlama gunlerinde whipsaw timeout'tan geliyordu. gold_orb_regime
+    taramasi 'adx>=trend & atr<high' kovasini 4/4 yil pozitif (exp +0.072, minYr
+    +0.015) buldu; ham 'adx>=trend' 3/4 yil (minYr -0.009) idi. atr_max_rank=0.67
+    = high_vol kovasini (rolling-500 pctile > 0.67) disla. gold_orb_regime ile ayni
+    esik. atr_max_rank>=1.0 verilerek eski davranisa donulur.
     """
     case = ORBCase("XAUUSD", open_hour, range_minutes, 21.0, entry_mode, trend,
                    rr, "other_side", 1.0, max_hold)
@@ -63,6 +71,12 @@ def _gold_orb_detector(open_hour: float = 13.5, range_minutes: int = 60,
         adx = _adx(df, 14).iloc[i]
         if not (adx > 20):           # chop'u disla (trend/strong_trend tut)
             return None
+        # rangeci/yuksek-vol whipsaw filtresi: atr_rank (rolling-500 pctile) high ise atla
+        if atr_max_rank < 1.0:
+            atr_pct = atr(df, ATR_LEN) / df["close"]
+            atr_rank = atr_pct.rolling(500, min_periods=100).rank(pct=True).iloc[i]
+            if not (atr_rank <= atr_max_rank):
+                return None
         if bool(le.iloc[i]):
             return Signal(1, float(df["close"].iloc[i]), float(lsl.iloc[i]), float(ltp.iloc[i]))
         if bool(se.iloc[i]):
