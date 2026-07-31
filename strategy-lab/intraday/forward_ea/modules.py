@@ -336,9 +336,20 @@ def candidate_modules() -> list[LiveModule]:
     Isim onu `CAND_` ile baslar -> defterde bir bakista ayirt edilir.
     Agirlik 0.0: portfoy R'sine katilmaz, sadece kendi kaydini tutar.
     """
+    sp500_orb = ORBCase("SP500", 14.5, 15, 20.5, "retest", "none", 1.5, "other_side", 1.0, 48)
     return [
         LiveModule("CAND_NQ_DUAL_THRUST", "NASDAQ100", "5m", 0.0, 48,
                    _dual_thrust_detector(k=0.3, n_days=2, rr=1.5, adx_min=30.0)),
+        # NQ_ORB config'inin BIREBIR AYNISI, sadece sembol SP500 (broker: US500).
+        # Amac iki katli: (a) forward veri hizini ~2x artirmak, (b) "ORB mantigi
+        # endekslerde genellenebilir mi" hipotezini bagimsiz olarak sinamak.
+        # Backtest (orb_cross_symbol.py, 3 yil): 270 islem, exp_R +0.031, 2/4 yil
+        # pozitif -- NQ'dan (+0.099, 3/4) ZAYIF ama pozitif. Havuzlanmis NQ+SP500:
+        # 556 islem, +0.066, PSR 0.925. Endeks disi sembollerde (XAU/XAG/EUR/GBP)
+        # ayni config NEGATIF -- likidite profilerinin yapisal tezini dogruluyor.
+        # US100 ile korelasyon yuksek: 2 islem != 2 bagimsiz kanit.
+        LiveModule("CAND_SP500_ORB", "SP500", "5m", 0.0, 48,
+                   _orb_detector(sp500_orb, adx_min=30.0)),
     ]
 
 
