@@ -36,7 +36,7 @@ except Exception:
     pass
 
 from ..mt5_bridge import mt5_io
-from .modules import LiveModule, default_modules
+from .modules import LiveModule, forward_test_modules
 from .order_executor import OrderExecutor
 from .positions import Book, PaperPosition
 
@@ -171,7 +171,7 @@ def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False
     state = _load_state()
     book = _book_from_state(state)
     last_bar = state.get("last_bar", {})
-    modules = default_modules()
+    modules = forward_test_modules()
     with mt5_io.session():
         acc = mt5_io.account()
         if not status_only:

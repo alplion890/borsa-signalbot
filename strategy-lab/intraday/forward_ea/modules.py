@@ -86,6 +86,38 @@ def _gold_orb_detector(open_hour: float = 13.5, range_minutes: int = 60,
     return detect
 
 
+def _dual_thrust_detector(k: float = 0.3, n_days: int = 2, rr: float = 1.5,
+                          adx_min: float = 30.0, max_hold: int = 48):
+    """Dual Thrust range tanimiyla NQ ORB (ADAY -- kanitlanmadi).
+
+    NQ_ORB ile ayni seans/SL mantigi/RR/hold/ADX filtresi; sadece tetik
+    seviyesi farkli: seans acilisi +- k * max(HH-LC, HC-LL) (onceki n_days gun).
+    Backtest A/B (intraday/dual_thrust_ab.py, 3 yil): 205 islem, exp_R +0.122,
+    4/4 yil pozitif (baseline ORB15: +0.099, 3/4 yil). DSR 0.895 -- 0.95
+    esigini GECMEDI, fark bootstrap'ta anlamsiz (%95 GA [-0.132, +0.178]).
+    Bu yuzden aday: forward'da bagimsiz veri toplanacak.
+    """
+    from ..dual_thrust_ab import build_dual_thrust
+
+    def detect(df: pd.DataFrame) -> Signal | None:
+        if len(df) < 200:
+            return None
+        try:
+            le, se, lsl, ltp, ssl, stp = build_dual_thrust(df, k, n_days, rr, max_hold)
+        except Exception:
+            return None
+        i = -1
+        if adx_min > 0 and not (_adx(df, 14).iloc[i] > adx_min):
+            return None
+        if bool(le.iloc[i]) and np.isfinite(lsl.iloc[i]) and np.isfinite(ltp.iloc[i]):
+            return Signal(1, float(df["close"].iloc[i]), float(lsl.iloc[i]), float(ltp.iloc[i]))
+        if bool(se.iloc[i]) and np.isfinite(ssl.iloc[i]) and np.isfinite(stp.iloc[i]):
+            return Signal(-1, float(df["close"].iloc[i]), float(ssl.iloc[i]), float(stp.iloc[i]))
+        return None
+
+    return detect
+
+
 def _orb_detector(case: ORBCase, adx_min: float):
     """Genel ORB dedektoru (NQ/Gold). adx_min: rejim filtresi (0=filtre yok)."""
     def detect(df: pd.DataFrame) -> Signal | None:
@@ -291,6 +323,28 @@ def default_modules() -> list[LiveModule]:
         # forward 10 islem, %20 win, -0.33R (backtest 19 islem, %47, +0.21R iddiasina karsi).
         # 19 islemlik örneklem zaten hic saglam degildi. En yüksek agirlik = en tehlikeli.
     ]
+
+
+def candidate_modules() -> list[LiveModule]:
+    """ADAYLAR: forward'da olculur, Telegram'a CIKMAZ.
+
+    Neden ayri liste: `default_modules()` hem forward EA hem signalbot tarafindan
+    kullaniliyor. Kanitlanmamis bir aday oraya konursa kullanicinin telefonuna
+    sinyal duser. Aday once burada bagimsiz veri biriktirir; PSR/DSR yeterli
+    olunca ELLE default_modules()'e tasinir.
+
+    Isim onu `CAND_` ile baslar -> defterde bir bakista ayirt edilir.
+    Agirlik 0.0: portfoy R'sine katilmaz, sadece kendi kaydini tutar.
+    """
+    return [
+        LiveModule("CAND_NQ_DUAL_THRUST", "NASDAQ100", "5m", 0.0, 48,
+                   _dual_thrust_detector(k=0.3, n_days=2, rr=1.5, adx_min=30.0)),
+    ]
+
+
+def forward_test_modules() -> list[LiveModule]:
+    """Forward EA'nin kosturdugu tam liste: canli portfoy + adaylar."""
+    return [*default_modules(), *candidate_modules()]
 
 
 def experimental_modules() -> list[LiveModule]:
