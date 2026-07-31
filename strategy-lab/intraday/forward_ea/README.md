@@ -32,12 +32,19 @@ Maliyet `config.cost_per_side`'dan R cinsinden düşülür (backtest ile aynı).
 
 ## Windows Task Scheduler ile otomatik
 ```
-Program: C:\...\Python311\python.exe
-Argümanlar: -m intraday.forward_ea.live_runner --once
-Başlangıç: C:\Users\quantum\OneDrive\Masaüstü\borsa\strategy-lab
-Tetikleyici: her 5 dakikada bir
+Program: wscript.exe
+Argümanlar: "<repo>\strategy-lab\run_forward_ea_hidden.vbs"
+Tetikleyici: her 5 dakikada bir + oturum açılışında
 ```
-MT5 terminali açık olmalı.
+`run_forward_ea_hidden.vbs`, `run_forward_ea.cmd`'yi görünür pencere açmadan
+çalıştırır (aksi halde 5 dakikada bir cmd penceresi yanıp söner).
+
+Görev ayarlarında `DisallowStartIfOnBatteries` / `StopIfGoingOnBatteries`
+varsayılan olarak açık gelir — dizüstünde fişte değilken bot hiç çalışmaz,
+ikisini de kapat.
+
+MT5 terminali açık ve hesaba giriş yapılmış olmalı; kapalıysa döngü sessizce
+atlar (log'a yazar).
 
 ## Güncelleme 2026-07-16 — bot dirildi + Telegram köprüsü
 
