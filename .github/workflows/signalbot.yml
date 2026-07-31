@@ -27,6 +27,11 @@ on:
         required: false
         default: false
         type: boolean
+      test_failure:
+        description: "Alarmi dene: bilerek patlat, hata bildirimi gelsin"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -44,6 +49,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
+      # Alarmin kendisini test etmek icin. Test edilmemis alarm, alarm degildir.
+      # Elle calistir: Actions > Run workflow > "Alarmi dene" isaretli.
+      - name: Alarm testi (bilerek basarisiz)
+        if: ${{ inputs.test_failure }}
+        run: |
+          echo "Alarm testi: bu adim bilerek basarisiz oluyor."
+          exit 1
 
       - uses: actions/setup-python@v5
         with:
