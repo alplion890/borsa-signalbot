@@ -85,9 +85,19 @@ jobs:
             python run_bot.py
           fi
 
+      # KAPALI (2026-08-01). Acmak icin repo variable: AI_SCOUT_ENABLED=true
+      #
+      # Neden kapatildi: DeepSeek API'si 402 Payment Required donuyordu (kredi
+      # bitmis/hic yuklenmemis). AI scout defteri bu yuzden bugune kadar TAMAMEN
+      # BOS kaldi -- tek bir kayit bile uretmedi. continue-on-error: true bu
+      # hatayi yutuyordu, adim "success" gorunuyordu.
+      #
+      # Ikinci gerekce: LLM'in "firsat gordum" demesinin backtest'i, DSR'si,
+      # forward kaydi yok. Mekanik modullerin edge'i henuz kanitlanmamisken
+      # (bkz overfit_audit.py) olculmemis bir sinyal kaynagi eklemek olcumu
+      # zorlastirir. Once mevcut moduller cevap versin.
       - name: DeepSeek AI scout
-        if: ${{ !inputs.test_finnhub && !inputs.test_telegram && !inputs.dry_run }}
-        continue-on-error: true
+        if: ${{ vars.AI_SCOUT_ENABLED == 'true' && !inputs.test_finnhub && !inputs.test_telegram && !inputs.dry_run }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
@@ -108,7 +118,7 @@ jobs:
           fi
 
       - name: AI performans raporu
-        if: always()
+        if: ${{ always() && vars.AI_SCOUT_ENABLED == 'true' }}
         run: |
           report="$(python run_bot.py --ai-report)"
           echo "$report"
@@ -123,3 +133,27 @@ jobs:
         with:
           path: .signalbot
           key: signalbot-state-${{ github.run_id }}
+
+      # Sessiz basarisizliga karsi. Bot 15 gun olu kalabildi ve forward EA'nin
+      # durdugu fark edilmedi; DeepSeek aylarca 402 dondu, CI hep yesil gorundu.
+      # Bu adim bilerek `curl` kullanir (python degil): bildirim, bozulmus
+      # olabilecek seye bagimli olmamali.
+      - name: Hata bildirimi (Telegram)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; hata bildirimi atlanamadi."
+            exit 0
+          fi
+          text="SIGNALBOT HATASI
+          Workflow: ${{ github.workflow }}
+          Calisma: ${{ github.run_id }}
+          Commit: ${{ github.sha }}
+          Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -sS --max-time 20 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode text="$text" >/dev/null || echo "Bildirim gonderilemedi."
