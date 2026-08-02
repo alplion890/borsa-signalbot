@@ -350,6 +350,19 @@ def candidate_modules() -> list[LiveModule]:
         # US100 ile korelasyon yuksek: 2 islem != 2 bagimsiz kanit.
         LiveModule("CAND_SP500_ORB", "SP500", "5m", 0.0, 48,
                    _orb_detector(sp500_orb, adx_min=30.0)),
+        # SWEEP_CORE'u diger ABD endekslerine yay (multi_index_lab.py, 6 ay MT5 M5).
+        # Onceden yazilan karar kurali "HAVUZ exp_R>0 ve PSR>=0.80" idi; sweep
+        # havuzu 60 islem, exp_R +0.423, PSR 0.929 ile GECTI -> ekleniyor.
+        #
+        # DURUST NUANS: havuzu tek basina NASDAQ tasiyor (US100 n=19 exp_R +1.379;
+        # US500 +0.036, US30 +0.049, US2000 -0.141). Yani bu ekleme "sweep tum
+        # endekslerde calisiyor" demek DEGIL. Amac tam tersini sinamak: sweep
+        # NASDAQ'a mi ozgu, yoksa endeks geneli mi? Uc sembol de duz cikarsa
+        # sweep'in NASDAQ mikroyapisina bagli oldugu kanitlanir.
+        # Olcum icin eklendi, TICARET icin degil. weight=0.0, Telegram'a cikmaz.
+        LiveModule("CAND_SWEEP_SP500", "SP500", "15m", 0.0, 480, _sweep_core_detector()),
+        LiveModule("CAND_SWEEP_US30", "US30", "15m", 0.0, 480, _sweep_core_detector()),
+        LiveModule("CAND_SWEEP_US2000", "US2000", "15m", 0.0, 480, _sweep_core_detector()),
     ]
 
 
