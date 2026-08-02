@@ -184,7 +184,21 @@ def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0):
 
     VWAP trend + ADX>thresh + likidite sweep. TP swing seviyesi; RR ATR rejimine
     gore caplenir (low<0.33:4, mid<0.67:6, high:8). min_rr alti setup atlanir.
-    Seyrek ama yuksek-beklentili edge (+0.76R).
+
+    ISIM UYARISI (2026-08-02): Modul adi "SWEEP_CORE_AVOID_MID_VWAP" ama bu
+    dedektor mid-VWAP filtresini UYGULAMAZ ve uygulamamalidir. Isim tarihsel;
+    veri surekliligi bozulmasin diye degistirilmedi (mevcut forward islemleri
+    o ad altinda kayitli).
+
+    Filtre neden UYGULANMIYOR -- taze veriyle test edildi (US100, 6 ay MT5 15m):
+        filtresiz (bu dedektor)      n=19  exp_R +1.445
+        filtreli (orijinal esikler)  n=13  exp_R +0.948
+        filtreli (yeniden terzil)    n=14  exp_R +0.618
+    Filtre performansi DUSURUYOR. Sebep: kova bazinda bakildiginda orijinal
+    39-islemlik ornekte mid_vwap en kotu kovaydi (+0.332 vs near +1.031); taze
+    veride TERSINE dondu (mid +2.013 vs near +0.696). Yani "ortayi at, iki ucu
+    tut" deseninin yapisal bir hikayesi yok -- kucuk ornekte olusan gurultuydu
+    ve isaret degistirdi. Klasik overfit.
     """
     from ..adx_lab import _make_signals  # geri yuklendi
 
