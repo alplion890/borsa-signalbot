@@ -32,6 +32,11 @@ on:
         required: false
         default: false
         type: boolean
+      dump_state:
+        description: "Teshis: bot hafizasini (state.json) yazdir, tarama yapma"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -75,7 +80,30 @@ jobs:
           restore-keys: |
             signalbot-state-
 
+      # Teshis: bot "yeni setup 0" derken hafizasinda ne tutuyor?
+      # sent/scanned/structures anahtarlarini ozetler; sir icermez.
+      - name: Bot hafizasini yazdir (teshis)
+        if: ${{ inputs.dump_state }}
+        env:
+          SIGNALBOT_STATE_PATH: .signalbot/state.json
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["SIGNALBOT_STATE_PATH"])
+          if not p.exists():
+              print("state.json YOK -- cache bos gelmis.")
+              raise SystemExit
+          s = json.loads(p.read_text(encoding="utf-8"))
+          print("anahtarlar:", list(s))
+          for key in ("scanned", "sent", "structures"):
+              d = s.get(key) or {}
+              print(f"\n== {key} ({len(d)} kayit)")
+              for k, v in list(d.items())[:12]:
+                  print(f"   {k}: {json.dumps(v, ensure_ascii=False)[:180]}")
+          PY
+
       - name: Yedi stratejiyi tara
+        if: ${{ !inputs.dump_state }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # Environment secret eklenirken bu adla kaydedilmis.
