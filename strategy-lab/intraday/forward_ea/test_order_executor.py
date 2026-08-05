@@ -545,9 +545,17 @@ class TestReconcile:
         """Broker position matching an OPEN paper live position must NOT be closed.
 
         Regression: matching uses truncated comment + broker-side symbol name
-        (USTEC <- NASDAQ100). A live position with a broker match stays open.
+        (US100 <- NASDAQ100). A live position with a broker match stays open.
+
+        NOTE (2026-08-05): this test was red for ~1 month and mislabeled as
+        "pre-existing, not ours". Real cause: the fixture used the stale broker
+        name "USTEC" while SYMBOL_MAP was fixed to "US100" on 2026-07-04.
+        Only `resolve` was mocked, so the open path saw "USTEC" (mock) but the
+        close path read SYMBOL_MAP directly and saw "US100" -> no paper match
+        -> position closed. Production is consistent (resolve() just wraps
+        SYMBOL_MAP.get + symbol_select); only the fixture was stale.
         """
-        mock_resolve.return_value = "USTEC"
+        mock_resolve.return_value = "US100"
         paper = PaperPosition(
             module="NQ_ORB_STRONG_TREND",
             symbol="NASDAQ100",
@@ -562,7 +570,7 @@ class TestReconcile:
         )
         broker_match = SimpleNamespace(
             ticket=3001,
-            symbol="USTEC",                  # broker name for NASDAQ100
+            symbol="US100",                  # broker name for NASDAQ100
             type=0,
             volume=0.5,
             magic=MAGIC,

@@ -179,7 +179,8 @@ def _london_detector(case: LondonCase, adx_min: float = 0.0,
     return detect
 
 
-def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0):
+def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0,
+                         skip_wednesday: bool = True):
     """NQ sweep core canli dedektoru (geri yuklenen adx_lab ile birebir).
 
     VWAP trend + ADX>thresh + likidite sweep. TP swing seviyesi; RR ATR rejimine
@@ -199,13 +200,32 @@ def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0):
     veride TERSINE dondu (mid +2.013 vs near +0.696). Yani "ortayi at, iki ucu
     tut" deseninin yapisal bir hikayesi yok -- kucuk ornekte olusan gurultuydu
     ve isaret degistirdi. Klasik overfit.
+
+    CARSAMBA FILTRESI (skip_wednesday) -- OLCULDU 2026-08-05, ETKISI IHMAL EDILEBILIR.
+    `quality_11` taramasindan gelen "Carsamba kesin kapali" kuralinin bagimsiz
+    bir gerekcesi yok (bkz EUR/GBP `dow=3` ile ayni post-hoc kalip), o yuzden
+    maliyeti olculdu: US100 15m, 16.1 hafta, filtresiz dedektor, gun dagilimi
+        Pzt 5 | Sal 2 | Car 1 | Per 2 | Cum 2 | Paz 1   (toplam 13)
+    Yani filtre 13 sinyalin sadece 1'ini kesiyor (%8):
+        filtreli 0.74/hafta   vs   filtresiz 0.81/hafta
+    Sweep zaten Carsamba gunleri nadiren tetikleniyor -- yasak pratikte bos.
+
+    Karar: varsayilan True BIRAKILDI. Gerekce ilkesel degil pratik --
+    SWEEP_CORE'un 9 forward islemi (+10.86R, portfoyun neredeyse tum kari)
+    bu filtreyle toplandi; %8'lik bir hacim icin canli modulu degistirip
+    defteri karistirmaya degmez.
+    A/B adayi (CAND_SWEEP_ALLDAYS) KURULMADI ve kurulmamali: 16 haftada tek
+    bir Carsamba sinyali farkiyla test yillarca sonuclanmaz. Olculemeyecek bir
+    seyi "olcuyoruz" diye tutmak gold `atr_max_rank` filtresindeki hatanin
+    aynisi olur (bkz _gold_orb_detector: modulu fiilen kapatti, kimse fark
+    etmedi). Soru burada KAPANDI; yeniden acmak icin yeni gerekce gerekir.
     """
     from ..adx_lab import _make_signals  # geri yuklendi
 
     def detect(df: pd.DataFrame) -> Signal | None:
         if len(df) < 520:
             return None
-        if df.index[-1].dayofweek == 2:  # quality_11: Carsamba kesin kapali
+        if skip_wednesday and df.index[-1].dayofweek == 2:
             return None
         le, se, lsl, ltp, ssl, stp, a = _make_signals(df, adx_thresh)
         i = -1
@@ -322,14 +342,28 @@ def default_modules() -> list[LiveModule]:
                    _orb_detector(nq_orb, adx_min=28.0)),
         LiveModule("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", "15m", 1.0, 480,
                    _sweep_core_detector()),
+        # PERSEMBE (dow=3) FILTRESI KALDIRILDI 2026-08-05.
+        # Gerekce: filtre bu dosyanin kendi yorumunda "final ledger'dan birebir
+        # geri cikarildi" diye yaziyordu -- yani sonuca bakilip secilmis, klasik
+        # post-hoc cherry-pick. Londra acilisinin Persembe gunu farkli calismasi
+        # icin mikroyapisal bir sebep yok.
+        # Olculdu (MT5, production penceresi 40g, 2026-08-05):
+        #   EUR canli (adx<18 + Persembe)  0 sinyal/hafta
+        #   EUR Persembe yok               1.75 sinyal/hafta
+        #   GBP canli (Persembe + rejim)   0 sinyal/hafta
+        #   GBP Persembe yok (rejim var)   1.75 sinyal/hafta
+        # Filtre modulleri fiilen KAPATMISTI: EUR'un 2 forward islemi de ayni
+        # gunde, GBP 6 haftadir sessizdi. Silinen veri yok (n=2 ve n=3 zaten
+        # hicbir sey kanitlamiyordu), o yuzden aday katmani yerine dogrudan
+        # kaldirildi. adx/rejim filtreleri KORUNDU -- onlarin rejim gerekcesi var.
         LiveModule("EUR_LONDON_FADE_EMA", "EURUSD", "5m", 1.0, 48,
                    _london_detector(
                        LondonCase("EURUSD", 2.0, 7.0, 11.0, "none", 1.5, "other_side", 1.0, 48),
-                       adx_max=18.0, dow=3)),
+                       adx_max=18.0)),
         LiveModule("GBP_LONDON_STRONG_TREND", "GBPUSD", "5m", 0.25, 48,
                    _london_detector(
                        LondonCase("GBPUSD", 0.0, 7.0, 11.0, "ema", 1.5, "other_side", 1.0, 48),
-                       dow=3, range_regime="normal_range")),
+                       range_regime="normal_range")),
         # SWEEP_ES_DIV (w=2.0) KALDIRILDI 2026-07-04: forward test edge'i cürüttü.
         # Backtest avg_loss -0.09R fiziksel olarak sahte (igne-ince stop = sweep dibi
         # -0.25*ATR, ~7-13 puan; temiz dukascopy verisinde hic tetiklenmemis, timeout'ta
@@ -395,6 +429,9 @@ def candidate_modules() -> list[LiveModule]:
         LiveModule("CAND_SWEEP_UK100", "UK100", "15m", 0.0, 480, _sweep_core_detector()),
         LiveModule("CAND_SWEEP_FRA40", "FRA40", "15m", 0.0, 480, _sweep_core_detector()),
         LiveModule("CAND_SWEEP_JAP225", "JAP225", "15m", 0.0, 480, _sweep_core_detector()),
+        # NOT: CAND_SWEEP_ALLDAYS (Carsamba filtresiz sweep) bilerek EKLENMEDI.
+        # Olculdu: filtre 16 haftada 13 sinyalin 1'ini kesiyor (%8), yani A/B
+        # yillarca sonuclanmaz. Detay ve karar: _sweep_core_detector docstring.
     ]
 
 
