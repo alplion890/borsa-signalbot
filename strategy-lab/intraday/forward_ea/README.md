@@ -64,22 +64,86 @@ risk) Telegram'a gider. Emri Maven kuralına uygun olarak KULLANICI elle girer
 eksikse döngü kırılmaz. Kurulum: `strategy-lab/.env` içine TELEGRAM_BOT_TOKEN
 ve TELEGRAM_CHAT_ID; `run_forward_ea.cmd` Task Scheduler'a 5dk'lık görev.
 
+---
+
+# ⚠️ GÜNCEL DURUM (2026-08-05) — aşağıdaki eski bölümler tarihsel kayıt
+
+## Forward skor tablosu (76g, 74 işlem, +11.91R)
+
+| Modül | n | WR | exp_R | PSR | Verdikt |
+|---|---|---|---|---|---|
+| SWEEP_CORE_AVOID_MID_VWAP | 9 | %44 | **+1.206** | **0.907** | en güçlü kanıt |
+| NQ_ORB_STRONG_TREND | 26 | %46 | +0.067 | 0.619 | zayıf ama tutarlı pozitif |
+| EUR_LONDON_FADE_EMA | 2 | %50 | +0.105 | — | **kayıt GEÇERSİZ**, konfig değişti |
+| GBP_LONDON_STRONG_TREND | 3 | %33 | +0.097 | — | **kayıt GEÇERSİZ**, konfig değişti |
+| GOLD_NY_ORB_TREND | 18 | %44 | −0.152 | 0.203 | negatif, challenge'da KULLANILMIYOR |
+
+NQ_ORB üç kaynakta da pozitif (Dukascopy +0.082 · MT5 6ay +0.226 · canlı
++0.067). Önceki "NQ_ORB çöktü" teşhisi fazla sertti; doğrusu "küçük ama
+tutarlı".
+
+## Post-hoc gün filtreleri iki modülü sessizce kapatmıştı (düzeltildi)
+
+`dow=3` (sadece Perşembe) filtresi EUR/GBP London'dan **kaldırıldı**
+(commit 287ca55). Filtre bu dosyanın kendi yorumunda "final ledger'dan
+birebir geri çıkarıldı" diye yazıyordu — sonuca bakılıp seçilmiş.
+
+| Konfig | sinyal/hafta |
+|---|---|
+| EUR canlı (adx<18 + Perşembe) | **0.00** |
+| EUR Perşembe filtresi yok | 1.75 |
+| GBP canlı (Perşembe + rejim) | **0.00** |
+| GBP Perşembe yok (rejim var) | 1.75 |
+
+İki modül de "az sinyal veriyor" değil **hiç vermiyordu**. adx/rejim
+filtreleri korundu (rejim gerekçesi var). Portföy hacmi ~3.5 → ~7.0/hafta.
+
+**Eski EUR n=2 / GBP n=3 kayıtları artık geçersiz** — farklı konfigle
+toplandılar. Bu iki modül şu an KANITSIZ, sıfırdan veri biriktiriyor.
+
+## Sweep Çarşamba yasağı: ölçüldü, bırakıldı
+
+16 hafta gün dağılımı: Pzt 5 | Sal 2 | **Çar 1** | Per 2 | Cum 2 | Paz 1.
+Filtre 13 sinyalin 1'ini kesiyor (%8) — zararsız, ama aynı sebeple A/B ile
+test edilemez (yıllar sürer). `CAND_SWEEP_ALLDAYS` bilerek kurulmadı: ölçüm
+tiyatrosu olurdu. Detay: `_sweep_core_detector` docstring.
+
+## Gold `atr_max_rank=0.67` modülü fiilen kapatmış
+
+Filtreli **0** sinyal/hafta, filtresiz 2.33. Uzun pencerede 25 → 3 sinyal
+(%88 kesme). Defterdeki "4 hafta sessiz" gizemi buydu. Bu hızda 30 işlem
+~2 yıl sürer → **modül artık ölçülemez**. Challenge dışı olduğu için acil
+değil, ama "kanıt topluyor" sanmak yanlış. Geri dönüş: `atr_max_rank=1.0`.
+
+## SWEEP_CORE seyrek ama bozuk değil
+
+Taze MT5 (US100 15m, 18.3 hafta): 0.77 sinyal/hafta. Forward defteri
+1.54/hafta — backtest'ten daha **sık** tetikliyor. Seyreklik tasarım:
+ADX>25 + VWAP trend + sweep + minRR 2.0 dördü birden nadir hizalanır.
+Verimlilik: SWEEP ~1/hafta × +1.206 ≈ **+63R/yıl** vs NQ_ORB ~2.5/hafta ×
++0.067 ≈ +8.7R/yıl.
+
+---
+
+# Tarihsel kayıt (2026-07-16 ve öncesi)
+
 **Gold ORB'a rangeci-rejim filtresi** (`modules.py`, `atr_max_rank=0.67`):
 54 günlük forward'da gold 18 işlem exp −0.152R verdi (backtest +0.063
 beklerken), tüm kayıplar yüksek-vol whipsaw timeout'u. `gold_orb_regime`
 taraması `adx>=trend & atr<high` kovasını 4/4 yıl pozitif buldu (exp +0.072,
 minYr +0.015) → yüksek-vol (rolling-500 pctile > 0.67) günler artık atlanıyor.
 Geri dönüş: `atr_max_rank=1.0`.
+⚠️ 2026-08-05'te ölçüldü: bu filtre modülü fiilen kapattı (yukarı bkz).
 
-**Forward skor tablosu (54g, 2026-07-16 itibarıyla):**
+**Forward skor tablosu (54g, 2026-07-16 itibarıyla) — ESKİ:**
 
 | Modül | İşlem | exp_R | Verdikt |
 |---|---|---|---|
-| NQ_ORB_STRONG_TREND | 16 | +0.366 | KANITLI MOTOR (backtest +0.082'nin üstünde) |
-| GOLD_NY_ORB_TREND | 18 | −0.152 | tökezledi → atr filtresi eklendi, izle |
-| SWEEP_CORE_AVOID_MID_VWAP | 4 | +1.13 | pozitif, örneklem yetersiz |
-| GBP_LONDON_STRONG_TREND | 3 | +0.10 | örneklem yetersiz |
-| EUR_LONDON_FADE_EMA | 0 | — | hiç tetiklenmedi, filtre fazla dar olabilir |
+| NQ_ORB_STRONG_TREND | 16 | +0.366 | ⚠️ küçük-örneklem şişkinliği; 26 işlemde +0.067'ye indi |
+| GOLD_NY_ORB_TREND | 18 | −0.152 | tökezledi → atr filtresi eklendi (modülü kapattı) |
+| SWEEP_CORE_AVOID_MID_VWAP | 4 | +1.13 | 9 işlemde +1.206'ya çıktı, dayandı |
+| GBP_LONDON_STRONG_TREND | 3 | +0.10 | kayıt geçersiz (dow=3 kaldırıldı) |
+| EUR_LONDON_FADE_EMA | 0 | — | filtre fazla dar DEĞİL, **fiilen kapalıydı** |
 
 ## Modül durumu (güncellendi 2026-07-04)
 

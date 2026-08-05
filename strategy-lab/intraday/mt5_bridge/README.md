@@ -24,14 +24,21 @@ python -m intraday.mt5_bridge.apply_reality_discount
 | `reality_profiler.py` | Sembol başına gerçek tek-yön maliyet (spread + slippage + fiyat-seviye düzeltmesi). |
 | `apply_reality_discount.py` | Maliyet farkını R cezasına çevirip challenge sim'i yeniden koşar. |
 
-## Sembol durumu (MetaQuotes-Demo)
+## Sembol durumu (MavenTrade-Server — güncellendi 2026-08-05)
 | Modül sembolü | MT5 adı | Durum |
 |---|---|---|
-| NASDAQ100 | `USTEC` | var (geçmiş 2022+) |
-| SP500 | `US500` | var (2015+) |
-| XAUUSD | `XAUUSD` | var (2015+) |
-| EURUSD | `EURUSD` | var (2015+) |
-| BTCUSDT | — | **YOK** (BTC = Grayscale ETF). Binance'ten ayrı kontrol. |
+| NASDAQ100 | `US100` | var. **`USTEC` DEĞİL** — bu broker'da o isim yok. |
+| SP500 | `US500` | var |
+| US30 / US2000 | `US30` / `US2000` | var (maliyet 2026-08-02'de ölçüldü) |
+| UK100 / FRA40 / JAP225 | aynı | var (düşük spread, <2.5 bps) |
+| XAUUSD | `XAUUSD` | var |
+| EURUSD / GBPUSD | aynı | var |
+| BTCUSDT | `BTCUSD` (CFD) | CFD var, ama OF_ABSORPTION Binance-spot ister → bağlı değil |
+
+> ⚠️ `USTEC` yanlış eşleme 2026-07-04'te düzeltildi (NQ/SWEEP modülleri o zamana
+> kadar sessizce atlanıyordu). Eski `USTEC` referansı gören yer kalırsa bayattır.
+> Bu isim 2026-08-05'te `test_order_executor.py` fixture'ında da bulundu ve
+> düzeltildi — test 1 aydır kırıktı, "bize ait değil" diye yanlış etiketlenmişti.
 
 ## Maliyet → R dönüşümü
 ```
