@@ -202,12 +202,23 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 continue
             structure = _structure(sig, bar_time)
             if _same_structure(structure_state.get(mod.name), structure):
+                # Bu yol ONCEDEN SESSIZDI. 2026-08-05 teshisinde bot gunlerce
+                # "yeni setup 0" raporladi; ayni sinyal yerel replay'de
+                # uretiliyordu. Loglarda modul adi hic gecmiyordu -- cunku
+                # bastirma buradan sessizce donuyordu. Artik gorunur.
+                prev = structure_state.get(mod.name) or {}
+                print(
+                    f"{mod.name}: aday atlandi; ayni yapi zaten bildirilmis "
+                    f"(onceki bar {prev.get('bar_time', '?')}, "
+                    f"giris {prev.get('entry', '?')})."
+                )
                 continue
             if any(
                 item["mod"].name == mod.name
                 and _same_structure(item["structure"], structure)
                 for item in pending
             ):
+                print(f"{mod.name}: aday atlandi; ayni taramada zaten kuyrukta.")
                 continue
             actionable, drift_r = _entry_is_actionable(sig, reference_price)
             if not actionable:
@@ -218,6 +229,8 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                 continue
             fingerprint = _fingerprint(mod.name, bar_time, sig.direction, sig.entry)
             if sent_state.get(mod.name) == fingerprint:
+                # Bu yol da SESSIZDI -- bkz yukaridaki not.
+                print(f"{mod.name}: aday atlandi; ayni bar zaten gonderilmis.")
                 continue
             plan = risk_plan(
                 phase=phase, balance=balance, module_name=mod.name,
