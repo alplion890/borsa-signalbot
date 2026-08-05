@@ -37,6 +37,12 @@ INSTRUMENTS: dict[str, Instrument] = {
     # US30 spread'i NASDAQ'in ~3.7 katidir; strateji karliligini ciddi etkiler.
     "US30": Instrument("US30", "", 0.000256, (13, 21), 1.0),
     "US2000": Instrument("US2000", "", 0.000136, (13, 21), 0.1),
+    # Dusuk-maliyetli endeksler (spread<2.5 bps, MT5'ten 2026-08-03'te olculdu).
+    # Sweep'in maliyet duyarliligi kanitlandi: korelasyon(spread, exp_R) = -0.731.
+    # Seans (13,21) ABD saatine gore; sweep seanstan bagimsiz calisir (VWAP+ADX).
+    "UK100": Instrument("UK100", "", 0.0000595, (7, 21), 0.1),
+    "FRA40": Instrument("FRA40", "", 0.0000935, (7, 21), 0.1),
+    "JAP225": Instrument("JAP225", "", 0.000110, (0, 21), 1.0),
     # XAUUSD (altın): ~20-30 cent spread, ~2400 fiyatta ~0.00012 oran. Hem
     # Londra hem NY likit -> geniş seans (7-21 UTC).
     "XAUUSD": Instrument("XAUUSD", "INSTRUMENT_FX_METALS_XAU_USD", 0.00012, (7, 21), 0.1),

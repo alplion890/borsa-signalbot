@@ -377,6 +377,24 @@ def candidate_modules() -> list[LiveModule]:
         LiveModule("CAND_SWEEP_SP500", "SP500", "15m", 0.0, 480, _sweep_core_detector()),
         LiveModule("CAND_SWEEP_US30", "US30", "15m", 0.0, 480, _sweep_core_detector()),
         LiveModule("CAND_SWEEP_US2000", "US2000", "15m", 0.0, 480, _sweep_core_detector()),
+        # 16 endeks taramasi (2026-08-03): ham havuz NEGATIF (-0.101, PSR 0.281),
+        # yani "sweep her endekste calisir" YANLIS. Ama guclu bir mekanik oruntu
+        # var: korelasyon(spread, exp_R) = -0.731.
+        #   spread<2.5 bps (6 sembol): n=108 exp_R +0.345 PSR 0.953
+        #   spread>=5.0 bps (6 sembol): n= 56 exp_R -1.024 PF 0.37
+        # Bu, AVOID_MID_VWAP gibi uydurma bir filtre DEGIL: spread her islemden
+        # dusulen bilinen bir maliyet, yonu sonucu gormeden tahmin edilebilirdi.
+        # Esik de kritik degil (2.5/3.5/5.0 hepsi +0.29..+0.35 veriyor).
+        #
+        # Dusuk-maliyet grubunun TAMAMI ekleniyor -- UK100 tek basina negatif
+        # (-0.733) ama onu ayiklamak sonuca bakip secmek olurdu (tam da
+        # kacindigimiz sey). Karar kurali GRUP icindi, grup gecti.
+        #
+        # Amac CHALLENGE degil FUNDED: %20 tutarlilik kurali kari gunlere
+        # yaymayi zorunlu kiliyor (NASDAQ tek: ~29 hafta, cok endeks: ~12 hafta).
+        LiveModule("CAND_SWEEP_UK100", "UK100", "15m", 0.0, 480, _sweep_core_detector()),
+        LiveModule("CAND_SWEEP_FRA40", "FRA40", "15m", 0.0, 480, _sweep_core_detector()),
+        LiveModule("CAND_SWEEP_JAP225", "JAP225", "15m", 0.0, 480, _sweep_core_detector()),
     ]
 
 
