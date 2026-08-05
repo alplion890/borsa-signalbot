@@ -66,17 +66,54 @@ ve TELEGRAM_CHAT_ID; `run_forward_ea.cmd` Task Scheduler'a 5dk'lık görev.
 
 ---
 
-# ⚠️ GÜNCEL DURUM (2026-08-05) — aşağıdaki eski bölümler tarihsel kayıt
+# ⚠️ GÜNCEL DURUM (2026-08-06) — aşağıdaki eski bölümler tarihsel kayıt
 
-## Forward skor tablosu (76g, 74 işlem, +11.91R)
+## Forward skor tablosu (97 işlem)
 
 | Modül | n | WR | exp_R | PSR | Verdikt |
 |---|---|---|---|---|---|
 | SWEEP_CORE_AVOID_MID_VWAP | 9 | %44 | **+1.206** | **0.907** | en güçlü kanıt |
 | NQ_ORB_STRONG_TREND | 26 | %46 | +0.067 | 0.619 | zayıf ama tutarlı pozitif |
 | EUR_LONDON_FADE_EMA | 2 | %50 | +0.105 | — | **kayıt GEÇERSİZ**, konfig değişti |
-| GBP_LONDON_STRONG_TREND | 3 | %33 | +0.097 | — | **kayıt GEÇERSİZ**, konfig değişti |
+| GBP_LONDON_STRONG_TREND | 4 | %50 | +0.093 | — | **kayıt GEÇERSİZ**, konfig değişti |
 | GOLD_NY_ORB_TREND | 18 | %44 | −0.152 | 0.203 | negatif, challenge'da KULLANILMIYOR |
+| CAND_BTC_ABSORPTION | 12 | %17 | **−0.691** | 0.113 | backtest çürüdü, sinyaline GİRME |
+
+**KANITLI İKİLİ (SWEEP+NQ): n=35, exp_R +0.360, toplam +12.59R, PSR 0.911.**
+
+## BTC ölçüme bağlandı (2026-08-06) — backtest'in TERSİ çıktı
+
+signalbot BTCUSDT_OF_ABSORPTION'ı Telegram'a gönderiyordu ama forward
+defterinde **sıfır** kaydı vardı — aylardır ölçülmeyen bir sinyal kaynağı
+telefona düşüyordu (DeepSeek AI scout'un kapatılma gerekçesiyle aynı durum).
+
+Bağlanırken üç sessiz hata çıktı:
+
+| Hata | Etki |
+|---|---|
+| live_runner her modülü mt5_io'dan çekiyordu | Maven'da spot BTC yok → veri gelmiyor |
+| `symbol_key="BTC"`, INSTRUMENTS anahtarı `"BTCUSDT"` | `cost_per_side` KeyError → dedektör 4.6 sinyal/hafta üretirken defter boş |
+| Binance tz-aware, mt5_io tz-naive | Defter yazımı patlıyor; hata `_save_state` içinde olduğu için **o döngüdeki tüm modüllerin** kaydı kayboluyor |
+
+Sonuç: backtest 138 işlem +0.073 exp_R · **forward 12 işlem −0.691 exp_R**.
+SWEEP_ES_DIV kalıbının aynısı. Aday olarak (weight=0.0) ölçümde kalır ama
+Telegram'dan gelen BTC sinyallerine işlem açılmamalı.
+
+Dedektör **kopyalanmadı**, signalbot'un `detect`'i import edildi — kopya
+olsaydı ikisi zamanla ayrışır, ölçüm gönderilen sinyali temsil etmezdi.
+
+## MT5 artık kendiliğinden açılmıyor (2026-08-06)
+
+`mt5.initialize()` argümansız çağrılınca terminal kapalıysa **onu kendisi
+başlatır**. Forward EA 5 dakikada bir koştuğu için kullanıcı MT5'i kapatsa
+bile geri açılıyordu → Task Scheduler görevi devre dışı bırakılmıştı → **veri
+toplama tamamen durmuştu** (son koşum 2026-08-02, 4 gün kayıp).
+
+`mt5_io._terminal_running()` eklendi (tasklist, ek bağımlılık yok): terminal
+kapalıysa `initialize` hiç çağrılmaz, sessizce atlanır. Tespit edilemezse
+`True` döner — yanlış negatif botu sessizce öldürürdü.
+
+Görev tekrar aktif: 5 dk + oturum açılışı, pil koruması kapalı.
 
 NQ_ORB üç kaynakta da pozitif (Dukascopy +0.082 · MT5 6ay +0.226 · canlı
 +0.067). Önceki "NQ_ORB çöktü" teşhisi fazla sertti; doğrusu "küçük ama

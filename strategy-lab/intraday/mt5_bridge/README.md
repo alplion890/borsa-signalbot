@@ -24,6 +24,30 @@ python -m intraday.mt5_bridge.apply_reality_discount
 | `reality_profiler.py` | Sembol başına gerçek tek-yön maliyet (spread + slippage + fiyat-seviye düzeltmesi). |
 | `apply_reality_discount.py` | Maliyet farkını R cezasına çevirip challenge sim'i yeniden koşar. |
 
+## ⚠️ Terminal koruması (2026-08-06)
+
+`mt5.initialize()` argümansız çağrılınca terminal kapalıysa **onu kendisi
+başlatır**. Forward EA 5 dakikada bir koştuğu için MT5 sürekli geri açılıyordu;
+bu yüzden Task Scheduler görevi kapatılmış ve veri toplama durmuştu.
+
+`initialize()` artık önce `_terminal_running()` (tasklist ile) kontrol eder;
+terminal kapalıysa `mt5.initialize()` **hiç çağrılmaz**, anlaşılır bir
+`MT5Error` fırlatır ve döngü sessizce atlar. Tespit edilemezse `True` döner —
+yanlış negatif botu sessizce öldürürdü.
+
+**Sonuç:** MT5'i sen açarsın, bot asla açmaz. Kapalıyken zarar yok, açınca
+kaldığı yerden devam eder.
+
+## Binance feed (BTC)
+
+BTC bu broker'da spot olarak yok. `live_runner._fetch_ohlcv` `BTCUSDT`/`BTC`
+anahtarlarını Binance public API'ye yönlendirir (key gerekmez).
+
+**Kritik:** Binance tz-**aware** index döner, bu modül tz-**naive** döner
+("UTC index, tz-naive" sözleşmesi). `_binance_ohlcv` normalize eder. Karışık
+kalırsa defter yazımı patlar ve hata `_save_state` içinde olduğu için o
+döngüdeki **tüm modüllerin** kaydı kaybolur.
+
 ## Sembol durumu (MavenTrade-Server — güncellendi 2026-08-05)
 | Modül sembolü | MT5 adı | Durum |
 |---|---|---|
