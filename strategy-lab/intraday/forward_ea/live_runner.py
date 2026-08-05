@@ -78,11 +78,62 @@ def _book_from_state(state: dict) -> Book:
     for d in state.get("open_positions", []):
         book.add(PaperPosition(
             module=d["module"], symbol=d["symbol"], direction=d["direction"],
-            entry_time=pd.Timestamp(d["entry_time"]), entry=d["entry"], sl=d["sl"],
+            entry_time=_naive(d["entry_time"]), entry=d["entry"], sl=d["sl"],
             tp=d["tp"], weight=d["weight"], max_hold_bars=d["max_hold_bars"],
             cost_per_side=d["cost_per_side"], bars_held=d.get("bars_held", 0),
         ))
     return book
+
+
+# Bu broker'da (Maven) spot karsiligi olmayan, Binance'ten cekilecek semboller.
+_BINANCE_KEYS = {"BTCUSDT", "BTC"}
+
+
+def _naive(ts) -> pd.Timestamp:
+    """Timestamp'i tz-naive UTC'ye indir (feed ne dondururse dondursun).
+
+    Tum defter/state tz-naive UTC varsayar (mt5_io sozlesmesi). Tek bir
+    tz-aware deger karisirsa `Invalid comparison between dtype=datetime64[ns]
+    and Timestamp` ile TUM dongu patlar -- yani yeni bir feed eklemek mevcut
+    modullerin verisini de goturur. Burasi son savunma hatti.
+    """
+    t = pd.Timestamp(ts)
+    return t.tz_convert("UTC").tz_localize(None) if t.tz is not None else t
+
+
+def _binance_ohlcv(tf: str, days: int) -> pd.DataFrame:
+    """BTCUSDT barlari Binance public API'den (key gerekmez).
+
+    `klines` bar limitini days'ten kendisi hesaplar (1000 tavanli) --
+    signalbot ile ayni yol kullanilir ki iki taraf ayni veriyi gorsun.
+
+    TZ NORMALIZASYONU ZORUNLU: Binance tz-AWARE (UTC) index dondururken
+    mt5_io tz-NAIVE donduruyor ("UTC index, tz-naive" sozlesmesi). Karisik
+    kalirsa defter yazimi patliyor:
+        ValueError: unconverted data remains ... "+00:00"
+    ve hata _save_state icinde oldugu icin TUM dongunun kaydi kayboluyor --
+    yani BTC'yi eklemek diger modullerin verisini de goturur.
+    """
+    from ..signalbot.binance_data import klines
+    df = klines("BTCUSDT", tf, days=days)
+    if df.index.tz is not None:
+        df = df.tz_convert("UTC").tz_localize(None)
+    return df
+
+
+def _fetch_ohlcv(symbol_key: str, tf: str, days: int) -> pd.DataFrame:
+    """Modul sembolune gore dogru feed'i sec.
+
+    BTC bu broker'da (Maven) spot olarak YOK -- Binance'ten gelir. Bu ayrim
+    olmadigi icin BTCUSDT_OF_ABSORPTION forward defterinde hic yer almiyordu:
+    signalbot Telegram'a sinyal atiyordu ama sonucu olculmuyordu.
+    """
+    if symbol_key in _BINANCE_KEYS:
+        try:
+            return _binance_ohlcv(tf, days)
+        except Exception as e:  # ag hatasi dongunun tamamini kirmasin
+            raise mt5_io.MT5Error(f"Binance verisi alinamadi: {e}") from e
+    return mt5_io.ohlcv(symbol_key, tf, days=days)
 
 
 def _cycle(modules: list[LiveModule], book: Book, last_bar: dict,
@@ -92,7 +143,7 @@ def _cycle(modules: list[LiveModule], book: Book, last_bar: dict,
     fetch_days = max(40, warmup_days + 5)  # indikator lookback + warmup
     for mod in modules:
         try:
-            df = mt5_io.ohlcv(mod.symbol_key, mod.tf, days=fetch_days)
+            df = _fetch_ohlcv(mod.symbol_key, mod.tf, fetch_days)
         except mt5_io.MT5Error as e:
             print(f"  [ATLA] {mod.name}: {e}")
             continue
@@ -101,7 +152,7 @@ def _cycle(modules: list[LiveModule], book: Book, last_bar: dict,
         # son bar henuz kapanmamis olabilir -> sonuncuyu disla
         df = df.iloc[:-1]
         key = f"{mod.name}:{mod.symbol_key}"
-        last = pd.Timestamp(last_bar[key]) if key in last_bar else None
+        last = _naive(last_bar[key]) if key in last_bar else None
 
         if last is None:
             # ilk calistirma: warmup yoksa sadece son bardan ileri git

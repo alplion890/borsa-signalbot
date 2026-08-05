@@ -12,6 +12,7 @@ Kullanim:
 from __future__ import annotations
 
 import contextlib
+import subprocess
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -53,8 +54,44 @@ class MT5Error(RuntimeError):
     pass
 
 
+_TERMINAL_IMAGES = ("terminal64.exe", "terminal.exe")
+
+
+def _terminal_running() -> bool:
+    """MT5 terminali su an calisiyor mu? (tasklist ile, ek bagimlilik yok)
+
+    NEDEN GEREKLI: `mt5.initialize()` argumansiz cagrildiginda terminal
+    kapaliysa ONU KENDISI BASLATIR (MT5 Python API'sinin belgelenmis
+    davranisi). Forward EA Task Scheduler'dan 5 dakikada bir kostugu icin
+    bu, kullanici MT5'i kapatsa bile terminalin surekli geri acilmasina yol
+    aciyordu -- 2026-08'de kullanici sikayeti oldu ve gorev devre disi
+    birakilmisti (yani veri toplama tamamen durmustu).
+
+    Tespit edilemezse (tasklist yok/patladi) True doner: yanlis pozitif
+    anlasilir bir baglanti hatasi verir, yanlis negatif ise botu sessizce
+    oldururdu. Sessiz olum bu repoda tekrar eden hata -- kacinilir.
+    """
+    for image in _TERMINAL_IMAGES:
+        try:
+            proc = subprocess.run(
+                ["tasklist", "/FI", f"IMAGENAME eq {image}", "/NH"],
+                capture_output=True, text=True, timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return True  # tespit edemedik -> engelleme
+        if image.lower() in (proc.stdout or "").lower():
+            return True
+    return False
+
+
 def initialize() -> None:
-    """Calisan terminale baglan. Terminal acik degilse anlasilir hata firlat."""
+    """Calisan terminale baglan. Terminal kapaliysa ACMADAN hata firlat."""
+    if not _terminal_running():
+        raise MT5Error(
+            "MT5 terminali kapali. Bilerek ACILMADI -- forward EA terminali "
+            "kendiliginden baslatmaz. MetaTrader 5'i elle ac ve Maven hesabina "
+            "giris yap; bir sonraki 5 dakikalik tetiklemede kaldigi yerden devam eder."
+        )
     if not mt5.initialize():
         code, msg = mt5.last_error()
         raise MT5Error(

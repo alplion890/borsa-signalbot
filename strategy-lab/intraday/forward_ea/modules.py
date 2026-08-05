@@ -373,6 +373,17 @@ def default_modules() -> list[LiveModule]:
     ]
 
 
+def _btc_absorption_detector():
+    """BTCUSDT 1H CVD absorption dedektoru (signalbot ile AYNI kod).
+
+    Ayri bir kopya YAZILMADI bilerek: signalbot Telegram'a bunu gonderiyor,
+    forward ayni seyi olcmeli. Kopyalansaydi ikisi zamanla ayrisir ve olcum
+    gonderilen sinyali temsil etmezdi.
+    """
+    from ..signalbot.btc_absorption import detect
+    return detect
+
+
 def candidate_modules() -> list[LiveModule]:
     """ADAYLAR: forward'da olculur, Telegram'a CIKMAZ.
 
@@ -432,6 +443,23 @@ def candidate_modules() -> list[LiveModule]:
         # NOT: CAND_SWEEP_ALLDAYS (Carsamba filtresiz sweep) bilerek EKLENMEDI.
         # Olculdu: filtre 16 haftada 13 sinyalin 1'ini kesiyor (%8), yani A/B
         # yillarca sonuclanmaz. Detay ve karar: _sweep_core_detector docstring.
+        #
+        # BTC (2026-08-06): signalbot bunu Telegram'a gonderiyordu ama forward
+        # defterinde SIFIR kaydi vardi -- olculmeden telefona dusuyordu.
+        # Backtest fena degil (138 islem, exp_R +0.073, PF 1.098, PSR 0.694) --
+        # NQ_ORB'un forward'iyla (+0.067) ayni seviyede, yani "kotu" degil
+        # "dogrulanmamis". Cozum silmek degil OLCMEK: aday olarak forward'a
+        # kondu (weight=0.0, Telegram'a cikmaz), veri Binance'ten gelir.
+        # NOT: signalbot HALA BTC'yi Telegram'a gonderiyor (ayri kod yolu,
+        # _load_modules). Yeterli forward ornegi birikene kadar o sinyallere
+        # islem acilmamali.
+        # symbol_key "BTCUSDT" (INSTRUMENTS'taki anahtar). "BTC" YAZMA:
+        # signalbot kendi sembol tablosunu kullandigi icin orada "BTC" gecerli,
+        # ama forward EA maliyeti INSTRUMENTS'tan okur -> "BTC" KeyError verir
+        # ve sinyal sessizce dusar (dedektor 4.6 sinyal/hafta uretirken defter
+        # bos kalir). Feed yonlendirmesi de bu anahtara bakar.
+        LiveModule("CAND_BTC_ABSORPTION", "BTCUSDT", "1H", 0.0, 96,
+                   _btc_absorption_detector()),
     ]
 
 
