@@ -4,3 +4,23 @@ strategy-lab/intraday/signalbot/.env
 __pycache__/
 *.pyc
 .pytest_tmp/
+
+# graphify AST onbellegi ve uretilen raporlar (~11 MB). Kaynaktan yeniden
+# uretilebilir: `graphify . --code-only`.
+graphify-out/
+
+# Lab ciktilari: ~167 MB, hepsi backtest kosumundan yeniden uretilebilir.
+#
+# ISTISNA -- forward defteri YENIDEN URETILEMEZ. Canli paper islemlerin
+# birikmis kaydi; tum modul kararlari (tier, risk, terfi) buna dayaniyor.
+# Silinirse aylarin kaniti gider, backtest'ten geri gelmez.
+#
+# NOT: `outputs/` diye tek satir yazmak yetmez -- git dislanan bir dizinin
+# ICINE HIC BAKMAZ, o yuzden alttaki `!` kurali calismaz. Her ara dizin
+# tek tek acilip yeniden kapatilmali (asagidaki */! merdiveni).
+strategy-lab/outputs/*
+!strategy-lab/outputs/intraday/
+strategy-lab/outputs/intraday/*
+!strategy-lab/outputs/intraday/forward_ea/
+strategy-lab/outputs/intraday/forward_ea/*
+!strategy-lab/outputs/intraday/forward_ea/forward_ledger.csv
