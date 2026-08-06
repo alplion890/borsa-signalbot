@@ -139,14 +139,15 @@ def test_funded_message_contains_locked_stops_and_consistency():
     assert "yuzde 2.5 kar tamponu" in msg
 
 
-def test_funded_paper_message_forces_zero_real_risk():
+def test_paper_message_forces_zero_real_risk():
+    """Gold challenge'da da PAPER: kart gercek risk sifir demeli."""
     plan = risk_plan(
-        phase="bnpl_funded", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
-        module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+        phase="bnpl_challenge", balance=5000, module_name="GOLD_NY_ORB_TREND",
+        module_weight=1.0, symbol_key="XAUUSD", entry=3000, sl=2990,
     )
     msg = format_signal(
-        tier=Tier.PAPER, module="SWEEP_CORE_AVOID_MID_VWAP", symbol_key="NASDAQ100",
-        direction=1, entry=20000, sl=19950, tp=20100,
+        tier=Tier.PAPER, module="GOLD_NY_ORB_TREND", symbol_key="XAUUSD",
+        direction=1, entry=3000, sl=2990, tp=3015,
         lot=plan.normal_lot, risk_usd=plan.normal_usd,
         risk_plan=plan, trt_time="16 45",
     )
@@ -155,14 +156,16 @@ def test_funded_paper_message_forces_zero_real_risk():
 
 
 def test_message_blocks_trade_when_minimum_lot_exceeds_risk():
+    """Stop cok genisse %1 risk 0.01 lotun altina duser -> islem alinmamali."""
     plan = risk_plan(
         phase="bnpl_challenge", balance=5000,
-        module_name="BTCUSDT_OF_ABSORPTION", module_weight=0.11,
-        symbol_key="BTC", entry=100000, sl=99000,
+        module_name="NQ_ORB_STRONG_TREND", module_weight=1.0,
+        symbol_key="NASDAQ100", entry=20000, sl=19000,
     )
+    assert plan.normal_usd > 0 and plan.normal_lot == 0
     msg = format_signal(
-        tier=Tier.PAPER, module="BTCUSDT_OF_ABSORPTION", symbol_key="BTC",
-        direction=1, entry=100000, sl=99000, tp=102000,
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=20000, sl=19000, tp=21500,
         lot=plan.normal_lot, risk_usd=plan.normal_usd,
         risk_plan=plan, trt_time="16 45",
     )
@@ -189,6 +192,44 @@ def test_live_message_has_maven_order_card():
     assert "Hedef: 19900" in msg
     assert "Lot:" in msg
     assert msg.count("|") == 0
+
+
+def test_order_card_writes_levels_as_offsets_when_ref_close_given():
+    """Sinyal ^NDX'ten, emir US100'e girilir -- ham endeks fiyati YAZILMAMALI.
+
+    Olculdu (feed_parity.py, 30 gun): basis -170 puan, gunluk kayma ~4.8.
+    Ham fiyat yazilirsa US100'de ~1.5R yanlis seviye verir.
+    """
+    plan = risk_plan(
+        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+    )
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=20020, sl=19950, tp=20125,
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45", ref_close=20000.0, tf="5m",
+    )
+    assert "Giris: P +20.0 puan" in msg
+    assert "Stop: P -50.0 puan" in msg
+    assert "Hedef: P +125.0 puan" in msg
+    assert "son kapanan 5m mumunun" in msg
+    assert "MT5'e YAZMA" in msg
+    # Kopyalanabilir alan olarak ham fiyat gorunmemeli.
+    assert "Giris: 20020" not in msg
+    # Govde de ayni dili konusmali: "20020 ten gir" DEMEMELI.
+    assert "20020 ten gir" not in msg
+
+
+def test_order_card_falls_back_to_absolute_without_ref_close():
+    """ref_close yoksa eski davranis korunur (forward EA/testler kirilmasin)."""
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=20020, sl=19950, tp=20125,
+        lot=0.1, risk_usd=75.0, trt_time="16 45",
+    )
+    assert "Giris: 20020" in msg
+    assert "puan" not in msg.split("MAVEN EMIR KARTI")[1]
 
 
 def test_paper_message_has_no_order_card():

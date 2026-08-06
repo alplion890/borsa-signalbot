@@ -27,24 +27,54 @@ _MAVEN_SYMBOL = {
 
 
 def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
-                      sl: float, tp: float, lot: float, risk_usd: float) -> str:
+                      sl: float, tp: float, lot: float, risk_usd: float,
+                      ref_close: float | None = None, tf: str = "") -> str:
     """MT5'e elle girilecek emrin kopyala-yapistir karti.
 
     Maven kurali: EA/bot yasak, emri SEN girersin. Kart sadece alanlari
     hazirlar. Duz ASCII, boru karakteri yok (telegram sade metin kurali).
+
+    FIYATLAR NEDEN FARK OLARAK VERILIYOR (2026-08-06):
+    Sinyal yfinance ^NDX ENDEKSINDEN uretiliyor, ama emir MT5'te US100 CFD'sine
+    giriliyor. Iki seri ayni degil -- 30 gunluk olcum (feed_parity.py):
+        basis (US100 - ^NDX) = -170.0 puan, std 34.9, gunluk kayma ~4.8 puan
+    Yani kart ham endeks fiyatini yazsaydi, US100'de 170 puan (medyan stop
+    111.8 puana gore ~1.5R) yanlis seviye vermis olurdu: BUY emri piyasanin
+    cok ustunde buy-stop'a donusur, stop/hedef de kayar, R hesabi bozulur.
+    Sabit 170 dusmek de cozum degil -- basis suruklenıyor, sessizce bozulur.
+
+    Fark (delta) bicimi basis'ten BAGIMSIZ: iki serinin getiri korelasyonu
+    0.9962, farklari cikardiktan sonra kalan artik gurultu std 0.030R
+    (p95 0.063R) -- ihmal edilebilir. Sen grafikten P'yi okursun, basis
+    ne olursa olsun seviye dogru cikar.
     """
     yon = "BUY" if direction == 1 else "SELL"
     sembol = _MAVEN_SYMBOL.get(symbol_key, symbol_key)
-    return (
+    head = (
         "\n\nMAVEN EMIR KARTI (elle gir, kopyala)\n"
         f"Sembol: {sembol}\n"
         f"Yon: {yon}\n"
-        f"Giris: {entry:g} (retest bekle, market kovalama)\n"
-        f"Stop: {sl:g}\n"
-        f"Hedef: {tp:g}\n"
-        f"Lot: {lot:g}\n"
-        f"Risk: {risk_usd:g} dolar"
     )
+    if ref_close is None:
+        seviye = (
+            f"Giris: {entry:g} (retest bekle, market kovalama)\n"
+            f"Stop: {sl:g}\n"
+            f"Hedef: {tp:g}\n"
+        )
+    else:
+        mum = f"son kapanan {tf} mumunun" if tf else "son kapanan mumun"
+        seviye = (
+            f"P = {sembol} grafiginde {mum} kapanisi\n"
+            f"Giris: P {entry - ref_close:+.1f} puan (retest bekle, market kovalama)\n"
+            f"Stop: P {sl - ref_close:+.1f} puan\n"
+            f"Hedef: P {tp - ref_close:+.1f} puan\n"
+            f"NOT: seviyeler FARK olarak verildi. Sinyal endeks serisinden "
+            f"geliyor, {sembol} ondan farkli fiyattadir; asagidaki ham "
+            f"sayilari MT5'e YAZMA.\n"
+            f"Ham endeks seviyeleri (sadece referans): giris {entry:g} "
+            f"stop {sl:g} hedef {tp:g}\n"
+        )
+    return head + seviye + f"Lot: {lot:g}\nRisk: {risk_usd:g} dolar"
 
 
 def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
@@ -55,7 +85,9 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                   signal_age_minutes: float | None = None,
                   live_quote: LiveQuote | None = None,
                   live_quote_supported: bool = True,
-                  data_source: str = "unknown") -> str:
+                  data_source: str = "unknown",
+                  ref_close: float | None = None,
+                  tf: str = "") -> str:
     yon = "long" if direction == 1 else "short"
     ad = _HUMAN.get(module, module)
     if risk_plan is None:
@@ -74,7 +106,7 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
     if risk_plan is not None:
         if not risk_plan.real_money_allowed:
             risk_text = (
-                "Funded hesapta bu PAPER modul icin gercek risk sifir. "
+                "Bu PAPER modul icin gercek risk sifir. "
                 "Sadece izle ve performans defterine yaz."
             )
         elif risk_plan.normal_usd > 0 and risk_plan.normal_lot == 0:
@@ -153,9 +185,20 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
             "gonderildi, Maven grafiginden mevcut fiyati kontrol et."
         )
     if tier is Tier.LIVE:
+        # Ham endeks fiyatini duz metinde de SOYLEME: kart farkla calisirken
+        # gövde "20020 ten gir" derse kullanici o sayiyi MT5'e yazar (US100 o
+        # seviyeden ~170 puan uzakta). Iki yer ayni dili konusmali.
+        if ref_close is None:
+            seviye_cumlesi = (
+                f"Yaklasik {entry:g} ten gir, stop {sl:g}, hedef {tp:g}."
+            )
+        else:
+            seviye_cumlesi = (
+                f"Seviyeler asagidaki kartta FARK olarak verildi "
+                f"(giris {entry - ref_close:+.1f} puan)."
+            )
         msg = (
-            f"{ad} {yon} sinyali geldi. Yaklasik {entry:g} ten gir, "
-            f"stop {sl:g}, hedef {tp:g}. {common_tail} "
+            f"{ad} {yon} sinyali geldi. {seviye_cumlesi} {common_tail} "
             "Retest girisi bekle, kirilimi kovalama."
         )
         # Emir karti: sadece gercek para izni + gecerli lot varsa.
@@ -167,6 +210,7 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
             msg += _maven_order_card(
                 symbol_key=symbol_key, direction=direction, entry=entry,
                 sl=sl, tp=tp, lot=lot, risk_usd=risk_usd,
+                ref_close=ref_close, tf=tf,
             )
         return msg
     return (
