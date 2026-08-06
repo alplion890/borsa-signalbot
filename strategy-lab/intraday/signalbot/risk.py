@@ -15,8 +15,15 @@ _VALUE_PER_POINT = {
     "BTC": 1.0,
 }
 
-_LIVE_MODULES = {"GOLD_NY_ORB_TREND", "NQ_ORB_STRONG_TREND"}
-_SWEEP_MODULE = "SWEEP_CORE_AVOID_MID_VWAP"
+# LIVE = gercek para. Uyelik forward test KANITIYLA kazanilir, backtest yetmez.
+# 2026-08-06 revizyonu (97 islemlik defter):
+#   GOLD_NY_ORB_TREND  CIKARILDI -- forward exp_R -0.152, 18 islem, PSR 0.203.
+#                      Elenmis modul en yuksek riski aliyordu.
+#   SWEEP_CORE         EKLENDI   -- forward exp_R +1.206, PSR 0.907, en guclu kanit.
+#                      Yanlis tarafta durdugu icin yarim riskle calisiyordu.
+# EUR/GBP London PAPER kalir: Persembe filtresi 2026-08-05'te kaldirilinca
+# config degisti, onceki 6 islem gecersiz -> su an kanitsiz (kullanici karari).
+_LIVE_MODULES = {"NQ_ORB_STRONG_TREND", "SWEEP_CORE_AVOID_MID_VWAP"}
 
 
 class Tier(str, Enum):
@@ -43,19 +50,29 @@ class RiskProfile:
 
 _PROFILES = {
     # Maven BNPL Phase 1: 4% target, no daily DD, 10% static max DD.
-    # En hizli tarihsel profil; hiz ugruna yuksek varyans bilincli kabul edilir.
+    # %1.5 normal, onceki KAPANAN islem kazandiysa %3 (anti-martingale).
+    # Kullanici karari 2026-08-06: hiz ugruna yuksek varyans BILINCLI kabul.
+    #
+    # Olculen takas (40k Monte Carlo, defterden bootstrap R, eslesmis cekilis):
+    #             gecme%  patlama%  medyan sure  p90 sure  p95 en dip
+    #   sabit %1   96.5     3.5      2.7 hafta   9.4 hf     -8.9%
+    #   %1.5->%3   84.8    15.2      1.2 hafta   4.2 hf    -10.9%
+    # Yani 1.5 hafta hiz, +11.7 puan patlama olasiligina mal oluyor.
+    # p95 en dip -%10.9: en kotu %5 senaryoda statik dip ZATEN asiliyor.
+    # PAPER moduller 0.0 -> gercek para yok, sadece defter kaydi.
     "bnpl_challenge": RiskProfile(
         "BNPL challenge hizli",
         0.015, 0.030, 0.030,
         0.030, 0.045, 0.075,
         None, None, None,
-        0.0075, 0.0075, 0.0075,
+        0.0, 0.0, 0.0,
     ),
     # Maven BNPL funded: 4% daily DD, 8% trailing DD, 20% consistency.
-    # Kazanc sonrasi risk artisi yok; payout icin kar gunlere yayilir.
+    # Challenge gecilir gecilmez BURAYA gecilir: %0.5. Funded'da %1 ile calisan
+    # hesaplarin yarisi patliyor; sermayeyi korumak hizdan onceliklidir.
     "bnpl_funded": RiskProfile(
-        "BNPL funded koruma",
-        0.0035, 0.0035, 0.0050,
+        "BNPL funded koruma %0.5",
+        0.0050, 0.0050, 0.0050,
         0.0050, 0.010, 0.020,
         0.18, 0.0050, 0.025,
         0.0, 0.0, 0.0,
@@ -120,13 +137,12 @@ def risk_plan(*, phase: str, balance: float, module_name: str, module_weight: fl
               symbol_key: str, entry: float, sl: float) -> RiskPlan:
     """Return the locked BNPL phase plan, respecting weights and hard caps.
 
-    Sweep core gets the historical 1.5x base multiplier. Portfolio weights
-    reduce/increase allocation, but no single signal may exceed the phase cap.
+    Portfolio weights reduce/increase allocation, but no single signal may
+    exceed the phase cap. The old 1.5x sweep-core multiplier was removed on
+    2026-08-06: risk is now flat per phase, sized by evidence tier only.
     """
     profile_key, profile = profile_for(phase)
     multiplier = float(module_weight)
-    if module_name == _SWEEP_MODULE:
-        multiplier *= 1.5
     is_live = module_name in _LIVE_MODULES
     if is_live:
         normal_pct = min(profile.normal_pct * multiplier, profile.trade_cap_pct)

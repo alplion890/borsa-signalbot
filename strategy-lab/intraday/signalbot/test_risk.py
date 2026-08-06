@@ -6,7 +6,7 @@ def test_risk_dollars_challenge():
 
 
 def test_risk_dollars_funded():
-    assert risk_dollars("funded", 5000) == 17.5
+    assert risk_dollars("funded", 5000) == 25.0
 
 
 def test_lot_for_xauusd():
@@ -19,55 +19,65 @@ def test_lot_never_rounds_above_dollar_risk_or_forces_minimum():
     assert lot_for("XAUUSD", 3000, 2991, 50) == 0.05
 
 
-def test_tier_gold_ny_orb_trend_is_live():
-    assert tier_of("GOLD_NY_ORB_TREND") is Tier.LIVE
-
-
-def test_tier_nq_orb_strong_trend_is_live():
+def test_tier_is_the_forward_proven_pair():
+    """Gercek para sadece forward defterinde kaniti olan ikiliye acilir."""
     assert tier_of("NQ_ORB_STRONG_TREND") is Tier.LIVE
+    assert tier_of("SWEEP_CORE_AVOID_MID_VWAP") is Tier.LIVE
 
 
-def test_tier_sweep_core_is_paper():
-    assert tier_of("SWEEP_CORE_AVOID_MID_VWAP") is Tier.PAPER
+def test_tier_gold_is_paper_after_negative_forward_evidence():
+    """GOLD forward'da -0.152 exp_R verdi (18 islem) -> gercek para YOK."""
+    assert tier_of("GOLD_NY_ORB_TREND") is Tier.PAPER
 
 
-def test_tier_eur_london_is_paper():
+def test_tier_london_modules_are_paper_until_reproven():
+    """Persembe filtresi kalkinca config degisti; onceki ornekler gecersiz."""
     assert tier_of("EUR_LONDON_FADE_EMA") is Tier.PAPER
+    assert tier_of("GBP_LONDON_STRONG_TREND") is Tier.PAPER
 
 
-def test_challenge_winner_plan_is_1_5_to_3():
+def test_challenge_live_risk_is_1_5_then_3_after_a_winner():
+    """Anti-martingale: kazanandan sonra risk iki katina cikar."""
     plan = risk_plan(
-        phase="challenge", balance=5000, module_name="GOLD_NY_ORB_TREND",
-        module_weight=1.0, symbol_key="XAUUSD", entry=3000, sl=2990,
+        phase="challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
+        module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
-    assert plan.normal_usd == 75
-    assert plan.winner_usd == 150
+    assert plan.normal_pct == 0.015
+    assert plan.normal_usd == 75.0
+    assert plan.winner_usd == 150.0
 
 
-def test_btc_weight_reduces_risk():
+def test_challenge_live_never_exceeds_cap_even_with_high_weight():
+    """Agirlik ne olursa olsun tek islem %3 tavanini asamaz."""
     plan = risk_plan(
-        phase="challenge", balance=5000, module_name="BTCUSDT_OF_ABSORPTION",
-        module_weight=0.11, symbol_key="BTC", entry=100000, sl=99000,
+        phase="challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        module_weight=4.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
-    assert plan.normal_usd == 4.12
-    assert plan.winner_usd == 4.12
+    assert plan.normal_pct == 0.030
+    assert plan.winner_pct == 0.030
 
 
-def test_challenge_paper_modules_are_capped_at_point_75_percent():
+def test_challenge_paper_modules_are_observation_only():
+    """Gold/EUR/GBP/BTC: Telegram'a duser ama gercek para ayrilmaz."""
+    for name, symbol, entry, sl in (
+        ("GOLD_NY_ORB_TREND", "XAUUSD", 3000, 2990),
+        ("EUR_LONDON_FADE_EMA", "EURUSD", 1.10, 1.099),
+        ("BTCUSDT_OF_ABSORPTION", "BTC", 100000, 99000),
+    ):
+        plan = risk_plan(
+            phase="challenge", balance=5000, module_name=name,
+            module_weight=1.0, symbol_key=symbol, entry=entry, sl=sl,
+        )
+        assert plan.normal_usd == 0.0, name
+        assert plan.real_money_allowed is False, name
+
+
+def test_funded_live_drops_to_half_percent():
     plan = risk_plan(
-        phase="bnpl_challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
+        phase="bnpl_funded", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
-    assert plan.normal_usd == 37.5
-    assert plan.winner_usd == 37.5
-    assert plan.normal_pct == 0.0075
-
-
-def test_funded_live_has_no_winner_boost_and_half_percent_cap():
-    plan = risk_plan(
-        phase="bnpl_funded", balance=5000, module_name="GOLD_NY_ORB_TREND",
-        module_weight=2.0, symbol_key="XAUUSD", entry=3000, sl=2990,
-    )
+    assert plan.normal_pct == 0.005
     assert plan.normal_usd == 25.0
     assert plan.winner_usd == 25.0
     assert plan.max_open_risk_pct == 0.005
@@ -76,8 +86,8 @@ def test_funded_live_has_no_winner_boost_and_half_percent_cap():
 
 def test_funded_paper_modules_are_observation_only():
     plan = risk_plan(
-        phase="bnpl_funded", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
-        module_weight=2.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+        phase="bnpl_funded", balance=5000, module_name="GOLD_NY_ORB_TREND",
+        module_weight=2.0, symbol_key="XAUUSD", entry=3000, sl=2990,
     )
     assert plan.normal_usd == 0.0
     assert plan.normal_lot == 0.0
