@@ -15,7 +15,6 @@ from pathlib import Path
 import pandas as pd
 
 from . import finnhub_live, free_data, sessions, telegram_notify
-from .btc_absorption import module as btc_module
 from .message import format_signal
 from .risk import risk_plan, tier_of
 from .symbols import resolve
@@ -31,8 +30,24 @@ MAX_SIGNAL_AGE_MINUTES = {"5m": 45, "15m": 90, "1H": 360}
 
 
 def _load_modules() -> list:
+    """Telegram'a CIKAN moduller. Sadece `default_modules()`.
+
+    BTC 2026-08-06'da CIKARILDI. Gecmisi: BTC aylarca buradan telefona
+    dusuyordu ama forward defterinde SIFIR kaydi vardi -- yani gonderiliyor
+    ama olculmuyordu. Olcume baglandiginda backtest'in TERSI cikti:
+        backtest  n=138  exp_R +0.073
+        forward   n= 12  exp_R -0.691  (win %17, toplam -8.29R)
+    Kanitsiz degil, NEGATIF kanitli bir sinyali telefona dusurmek kullaniciyi
+    zarar eden bir isleme davet etmek demek. Olcum DURMUYOR: modul forward
+    tarafinda `CAND_BTC_ABSORPTION` olarak weight=0.0 ile calismaya devam eder
+    (bkz forward_ea/modules.py candidate_modules), veri birikmeye devam eder.
+    Aday yeterli ornekle pozitife donerse ELLE default_modules()'e tasinir.
+
+    Kural: aday moduller Telegram'a CIKMAZ -- `candidate_modules()` bilerek
+    burada cagrilmiyor. test_candidate_isolation.py bu sizmayi bekliyor.
+    """
     from ..forward_ea.modules import default_modules
-    return [*default_modules(), btc_module()]
+    return default_modules()
 
 
 def _load_state(path: Path = STATE_PATH) -> dict:
@@ -247,6 +262,10 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
                     "structure": structure,
                     "data_source": data_source,
                     "expected_delay": expected_delay,
+                    # Emir karti seviyeleri buna gore FARK olarak yazar; sinyal
+                    # ^NDX endeksinden, emir US100 CFD'sinden -- bkz message.py
+                    # _maven_order_card ve mt5_bridge/feed_parity.py.
+                    "ref_close": float(df["close"].loc[bar_time]),
                 }
             )
         scanned_state[mod.name] = df.index[closed_positions[-1]].isoformat()
@@ -277,6 +296,8 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             live_quote=quotes.get(mod.symbol_key),
             live_quote_supported=symbol_spec.live_quote_compatible,
             data_source=item["data_source"],
+            ref_close=item["ref_close"],
+            tf=mod.tf,
         )
         if dry_run:
             print(message)

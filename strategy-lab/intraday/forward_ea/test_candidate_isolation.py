@@ -25,12 +25,40 @@ def test_forward_test_modules_includes_both() -> None:
 
 
 def test_signalbot_does_not_see_candidates() -> None:
-    """signalbot _load_modules() default_modules + BTC kullanir -- aday gormemeli."""
+    """signalbot _load_modules() SADECE default_modules kullanir."""
     from ..signalbot.signal_scan import _load_modules
 
     live = {m.name for m in _load_modules()}
     for cand in modules.candidate_modules():
         assert cand.name not in live, f"{cand.name} Telegram'a sizmis"
+
+
+def test_signalbot_sends_exactly_default_modules() -> None:
+    """Telegram listesi default_modules ile BIREBIR ayni olmali.
+
+    Onceki hali `[*default_modules(), btc_module()]` idi: liste disaridan
+    genisletilebiliyordu ve BTC aylarca olculmeden telefona dustu. Ustteki
+    'aday sizmasin' testi bunu yakalayamaz cunku BTC modulu CAND_ onekli
+    degildi. Bu test esitlik ariyor -- her turlu ekleme kirmizi verir.
+    """
+    from ..signalbot.signal_scan import _load_modules
+
+    assert {m.name for m in _load_modules()} == {
+        m.name for m in modules.default_modules()
+    }
+
+
+def test_btc_is_measured_but_never_sent() -> None:
+    """BTC forward'da olculmeye DEVAM eder, Telegram'a CIKMAZ.
+
+    Forward'da -0.691 exp_R verdi; sinyali telefona dusurmek zarar eden bir
+    isleme davettir. Ama silmek de yanlis: olcum durursa soru cevapsiz kalir.
+    """
+    from ..signalbot.signal_scan import _load_modules
+
+    fwd = {m.name for m in modules.forward_test_modules()}
+    assert "CAND_BTC_ABSORPTION" in fwd
+    assert not any("BTC" in m.name.upper() for m in _load_modules())
 
 
 def test_candidate_names_are_marked() -> None:

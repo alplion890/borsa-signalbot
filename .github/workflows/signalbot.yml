@@ -8,7 +8,9 @@ on:
     - cron: "2,17,32,47 7-11 * * 1-5"
     # NY seansinin ikinci yarisi: 30 dakikada bir.
     - cron: "7,37 17-20 * * 1-5"
-    # BTC ve geciken cronlar icin dort saatlik guvenli yedek.
+    # Geciken/atlanan cronlar icin dort saatlik guvenli yedek. (Eskiden BTC'nin
+    # 7/24 penceresi icindi; BTC 2026-08-06'da Telegram'dan cikarildi -- forward
+    # exp_R -0.691. Yedek olarak birakildi: GitHub cron'lari yogunlukta atlar.)
     - cron: "19 */4 * * *"
   workflow_dispatch:
     inputs:
@@ -102,7 +104,9 @@ jobs:
                   print(f"   {k}: {json.dumps(v, ensure_ascii=False)[:180]}")
           PY
 
-      - name: Yedi stratejiyi tara
+      # default_modules(): GOLD_ORB, NQ_ORB, SWEEP_CORE, EUR_LONDON, GBP_LONDON.
+      # Adaylar (CAND_*) ve BTC bilerek DISARIDA -- olcumleri forward EA yapar.
+      - name: Canli modulleri tara
         if: ${{ !inputs.dump_state }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
