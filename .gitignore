@@ -24,3 +24,7 @@ strategy-lab/outputs/intraday/*
 !strategy-lab/outputs/intraday/forward_ea/
 strategy-lab/outputs/intraday/forward_ea/*
 !strategy-lab/outputs/intraday/forward_ea/forward_ledger.csv
+# Icra defteri de yeniden uretilemez: gercek islemlerde kurala uyumun tek
+# kaydi. Challenge patlarsa "kural mi yanlisti, ben mi uymadim" sorusunu
+# yalnizca bu dosya cevaplar.
+!strategy-lab/outputs/intraday/forward_ea/icra_defteri.csv
