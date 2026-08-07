@@ -210,8 +210,8 @@ def test_order_card_writes_levels_as_offsets_when_ref_close_given():
         lot=plan.normal_lot, risk_usd=plan.normal_usd,
         risk_plan=plan, trt_time="16 45", ref_close=20000.0, tf="5m",
     )
-    assert "Giris: P +20.0 puan" in msg
-    assert "Stop: P -50.0 puan" in msg
+    assert "Giris: P +20.00 puan" in msg
+    assert "Stop: P -50.00 puan" in msg
     assert "Hedef: P +125.0 puan" in msg
     assert "son kapanan 5m mumunun" in msg
     assert "MT5'e YAZMA" in msg
@@ -219,6 +219,24 @@ def test_order_card_writes_levels_as_offsets_when_ref_close_given():
     assert "Giris: 20020" not in msg
     # Govde de ayni dili konusmali: "20020 ten gir" DEMEMELI.
     assert "20020 ten gir" not in msg
+
+
+def test_order_card_offsets_keep_precision_on_fx():
+    """FX farklari 0.001 mertebesinde -- sabit tek ondalik kart'i cope atardi.
+
+    EURUSD stop mesafesi defterde ~0.0011. `%+.1f` ile hepsi "+0.0" yazilir,
+    kart kullanilamaz. Endeks ve FX ayni bicimlendiriciden gecer.
+    """
+    msg = format_signal(
+        tier=Tier.LIVE, module="EUR_LONDON_FADE_EMA", symbol_key="EURUSD",
+        direction=1, entry=1.09550, sl=1.09440, tp=1.09715,
+        lot=0.1, risk_usd=75.0, trt_time="10 15",
+        ref_close=1.09500, tf="5m",
+    )
+    assert "Giris: P +0.00050" in msg
+    assert "Stop: P -0.00060" in msg
+    assert "+0.0 " not in msg          # basamak kaybi olmamali
+    assert "fiyat farki" in msg        # FX'te "puan" yaniltici
 
 
 def test_order_card_falls_back_to_absolute_without_ref_close():

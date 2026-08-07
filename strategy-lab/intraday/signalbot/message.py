@@ -26,6 +26,27 @@ _MAVEN_SYMBOL = {
 }
 
 
+def _fmt_offset(value: float) -> str:
+    """Fark seviyesini enstrumanin buyuklugune gore yeterli basamakla yaz.
+
+    Sabit `%+.1f` kullanmak endekste dogru ama FX'te FELAKET: EURUSD stop
+    mesafesi 0.0011 mertebesinde, tek ondalikla "+0.0" yazilir ve kart
+    kullanilamaz hale gelir. Esikler enstruman listesine degil buyuklugun
+    kendisine bakar -- yeni sembol eklendiginde de dogru calisir.
+    """
+    size = abs(value)
+    if size >= 100:
+        return f"{value:+.1f}"
+    if size >= 1:
+        return f"{value:+.2f}"
+    return f"{value:+.5f}"
+
+
+def _offset_unit(symbol_key: str) -> str:
+    """FX'te "puan" yaniltici (pip mi, fiyat mi?); duz "fiyat farki" denir."""
+    return "fiyat farki" if symbol_key in {"EURUSD", "GBPUSD"} else "puan"
+
+
 def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
                       sl: float, tp: float, lot: float, risk_usd: float,
                       ref_close: float | None = None, tf: str = "") -> str:
@@ -63,11 +84,13 @@ def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
         )
     else:
         mum = f"son kapanan {tf} mumunun" if tf else "son kapanan mumun"
+        d_entry, d_sl, d_tp = entry - ref_close, sl - ref_close, tp - ref_close
+        birim = _offset_unit(symbol_key)
         seviye = (
             f"P = {sembol} grafiginde {mum} kapanisi\n"
-            f"Giris: P {entry - ref_close:+.1f} puan (retest bekle, market kovalama)\n"
-            f"Stop: P {sl - ref_close:+.1f} puan\n"
-            f"Hedef: P {tp - ref_close:+.1f} puan\n"
+            f"Giris: P {_fmt_offset(d_entry)} {birim} (retest bekle, market kovalama)\n"
+            f"Stop: P {_fmt_offset(d_sl)} {birim}\n"
+            f"Hedef: P {_fmt_offset(d_tp)} {birim}\n"
             f"NOT: seviyeler FARK olarak verildi. Sinyal endeks serisinden "
             f"geliyor, {sembol} ondan farkli fiyattadir; asagidaki ham "
             f"sayilari MT5'e YAZMA.\n"
@@ -195,7 +218,8 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
         else:
             seviye_cumlesi = (
                 f"Seviyeler asagidaki kartta FARK olarak verildi "
-                f"(giris {entry - ref_close:+.1f} puan)."
+                f"(giris {_fmt_offset(entry - ref_close)} "
+                f"{_offset_unit(symbol_key)})."
             )
         msg = (
             f"{ad} {yon} sinyali geldi. {seviye_cumlesi} {common_tail} "
