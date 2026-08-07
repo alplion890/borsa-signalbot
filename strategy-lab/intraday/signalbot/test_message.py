@@ -221,6 +221,63 @@ def test_order_card_writes_levels_as_offsets_when_ref_close_given():
     assert "20020 ten gir" not in msg
 
 
+def test_card_states_target_size_in_R_and_dollars():
+    """Kart "bu islem ne kazandirir" sorusunu cevaplamali.
+
+    R olmadan iki sinyal kiyaslanamaz: 1.4R'lik ORB ile 7R'lik sweep
+    kartta ayni gorunurdu.
+    """
+    plan = risk_plan(
+        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
+    )
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=20000, sl=19950, tp=20100,   # 50 risk / 100 odul
+        lot=plan.normal_lot, risk_usd=plan.normal_usd,
+        risk_plan=plan, trt_time="16 45",
+    )
+    assert "Hedef buyuklugu: 2.0R" in msg
+    assert "+150 dolar" in msg          # 75 dolar risk x 2.0R
+    assert "-75" in msg
+
+
+def test_card_warns_when_stop_is_inside_the_noise():
+    """Dar stop R'yi payda kucukluguyle sisirir -- kart bunu soylemeli.
+
+    Gercek ornek (2026-08-07, CAND_SWEEP_SP500): SP500 7719'da giris,
+    stop 7714.65 -> 4.35 puan, fiyatin binde 0.56'si. Planlanan RR 7.5,
+    gerceklesen 7.2R. Canlida o stopu spread+gurultu rutin supurur.
+    """
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=7719.0, sl=7714.65, tp=7751.7,
+        lot=0.5, risk_usd=75.0, trt_time="17 00",
+    )
+    assert "Hedef buyuklugu: 7.5R" in msg
+    assert "stop cok dar" in msg
+    assert "gerekcesi SAYMA" in msg
+
+
+def test_normal_stop_gets_no_narrow_warning():
+    msg = format_signal(
+        tier=Tier.LIVE, module="NQ_ORB_STRONG_TREND", symbol_key="NASDAQ100",
+        direction=1, entry=20000, sl=19900, tp=20200,
+        lot=0.3, risk_usd=75.0, trt_time="17 00",
+    )
+    assert "stop cok dar" not in msg
+
+
+def test_paper_signal_also_states_R():
+    """Kagit sinyalinde kart cikmaz; R tek gorunur olcek olarak govdede."""
+    msg = format_signal(
+        tier=Tier.PAPER, module="GOLD_NY_ORB_TREND", symbol_key="XAUUSD",
+        direction=1, entry=3000, sl=2990, tp=3015,
+        lot=0.0, risk_usd=0.0, trt_time="16 45",
+    )
+    assert "Hedef buyuklugu 1.5R" in msg
+
+
 def test_order_card_offsets_keep_precision_on_fx():
     """FX farklari 0.001 mertebesinde -- sabit tek ondalik kart'i cope atardi.
 

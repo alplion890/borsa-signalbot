@@ -47,6 +47,40 @@ def _offset_unit(symbol_key: str) -> str:
     return "fiyat farki" if symbol_key in {"EURUSD", "GBPUSD"} else "puan"
 
 
+DAR_STOP_UYARI_ORANI = 0.001   # stop mesafesi fiyatin binde 1'inden azsa
+
+
+def _rr_satiri(entry: float, sl: float, tp: float, risk_usd: float) -> str:
+    """Hedefin kac R oldugunu ve dolar karsiligini yaz.
+
+    NEDEN: kart giris/stop/hedef veriyordu ama "bu islem ne kazandirir"
+    sorusunu cevaplamiyordu. R olmadan kullanici iki farkli sinyali
+    kiyaslayamaz -- 1.4R'lik ORB ile 7R'lik sweep ayni gorunur.
+
+    DAR STOP UYARISI: sweep ailesinde stop bazen fiyatin %0.06'si kadar
+    yakin oluyor (2026-08-07: SP500'de 4.35 puan) ve R'yi payda kucukluguyle
+    sisiriyor. Kagitta 7R goruntusu veren sey canlida spread+gurultunun
+    rutin olarak supurdugu bir stop olabilir. Kart bunu SOYLEMELI, cunku
+    yuksek R en cok guvenilmesi gereken yerde en az guvenilir olandir.
+    """
+    stop_mesafe = abs(entry - sl)
+    if stop_mesafe <= 0:
+        return ""
+    rr = abs(tp - entry) / stop_mesafe
+    satir = f"Hedef buyuklugu: {rr:.1f}R"
+    if risk_usd > 0:
+        satir += f" (basarirsa +{risk_usd * rr:.0f} dolar, olursa -{risk_usd:.0f})"
+    satir += "\n"
+    if entry > 0 and stop_mesafe / abs(entry) < DAR_STOP_UYARI_ORANI:
+        satir += (
+            f"DIKKAT: stop cok dar ({stop_mesafe:g} puan = fiyatin "
+            f"binde {1000 * stop_mesafe / abs(entry):.1f}'i). Yuksek R buradan "
+            "geliyor, beceriden degil; spread ve gurultu bu stopu kolay "
+            "supurur. Pozisyonu buyutme gerekcesi SAYMA.\n"
+        )
+    return satir
+
+
 def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
                       sl: float, tp: float, lot: float, risk_usd: float,
                       ref_close: float | None = None, tf: str = "") -> str:
@@ -97,7 +131,9 @@ def _maven_order_card(*, symbol_key: str, direction: int, entry: float,
             f"Ham endeks seviyeleri (sadece referans): giris {entry:g} "
             f"stop {sl:g} hedef {tp:g}\n"
         )
-    return head + seviye + f"Lot: {lot:g}\nRisk: {risk_usd:g} dolar"
+    return head + seviye + _rr_satiri(entry, sl, tp, risk_usd) + (
+        f"Lot: {lot:g}\nRisk: {risk_usd:g} dolar"
+    )
 
 
 def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
@@ -237,7 +273,13 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
                 ref_close=ref_close, tf=tf,
             )
         return msg
+    # Kagit sinyalinde de R yaz: kart cikmadigi icin tek gorunur olcek bu.
+    stop_mesafe = abs(entry - sl)
+    rr_metni = ""
+    if stop_mesafe > 0:
+        rr_metni = f" Hedef buyuklugu {abs(tp - entry) / stop_mesafe:.1f}R."
     return (
         f"Paper sinyali {ad} {yon}. Once chart ac ve setupi teyit et. "
-        f"Yaklasik {entry:g} ten gir, stop {sl:g}, hedef {tp:g}. {common_tail}"
+        f"Yaklasik {entry:g} ten gir, stop {sl:g}, hedef {tp:g}."
+        f"{rr_metni} {common_tail}"
     )
