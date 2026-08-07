@@ -33,6 +33,16 @@ def _age_minutes(entry_time: pd.Timestamp, now: dt.datetime) -> float:
     return (now - ts.to_pydatetime()).total_seconds() / 60.0
 
 
+def _is_candidate(pos: PaperPosition) -> bool:
+    """Aday mi? Iki bagimsiz isaret -- biri bozulursa digeri tutar.
+
+    `CAND_` oneki isim kuralidir (test_candidate_isolation zorunlu kiliyor),
+    weight=0.0 ise portfoy R'sine katilmayan olcum modulu demektir. Ikisinden
+    biri bile dogruysa bu pozisyon kanitlanmamis sayilir.
+    """
+    return pos.module.startswith("CAND_") or float(pos.weight) == 0.0
+
+
 def build_message(pos: PaperPosition, now: dt.datetime) -> str:
     """Tek pozisyondan signalbot formatinda Telegram mesaji uret."""
     phase = os.environ.get("PHASE", "bnpl_challenge")
@@ -67,11 +77,30 @@ def notify_new_positions(new_positions: list[PaperPosition],
         age = _age_minutes(pos.entry_time, now)
         if age > MAX_AGE_MIN:
             continue  # backfill kalintisi, bildirme
-        msg = build_message(pos, now)
+        # ADAYLAR TELEFONA CIKMAZ. Bu yol `_cycle`'in actigi TUM pozisyonlari
+        # aliyordu -- adaylar dahil. Mimari kural (bkz candidate_modules)
+        # "aday olculur ama gonderilmez" diyordu, ama o kural sadece
+        # signalbot/_load_modules tarafinda test ediliyordu; forward EA'nin
+        # kendi bildirim yolu kapsanmamisti. Kanitlanmamis bir sinyalin
+        # telefona dusmesi tam da BTC'de aylarca sessizce yasanan seydi.
+        if _is_candidate(pos):
+            print(f"  [ADAY] {pos.module}: olculur, Telegram'a gonderilmez.")
+            continue
+        try:
+            msg = build_message(pos, now)
+        except Exception as e:  # noqa: BLE001
+            # build_message risk_plan -> _VALUE_PER_POINT[symbol] okur.
+            # Tabloda olmayan bir sembol KeyError firlatir ve bu HATA
+            # ONCEDEN YAKALANMIYORDU: tum dongu coker, o cevrimdeki
+            # OrderExecutor mutabakati hic calismazdi.
+            print(f"  [MESAJ HATA] {pos.module} ({pos.symbol}): "
+                  f"{type(e).__name__}: {e}")
+            continue
         try:
             sender(msg)
         except Exception as e:  # env eksik / ag hatasi: dongu devam etsin
             print(f"  [TELEGRAM ATLA] {pos.module}: {e}")
             print(msg)
+            continue  # GONDERILMEDI -> sent'e YAZMA (yoksa "bildirildi" sayilir)
         sent.append(msg)
     return sent
