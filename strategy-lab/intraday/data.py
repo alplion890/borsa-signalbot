@@ -24,13 +24,14 @@ CACHE.mkdir(parents=True, exist_ok=True)
 
 if dk is not None:
     _INTERVALS = {
+        "1m":  dk.INTERVAL_MIN_1,
         "5m":  dk.INTERVAL_MIN_5,
         "15m": dk.INTERVAL_MIN_15,
         "1H":  dk.INTERVAL_HOUR_1,
         "4H":  dk.INTERVAL_HOUR_4,
     }
 else:
-    _INTERVALS = {"5m": "5m", "15m": "15m", "1H": "1H", "4H": "4H"}
+    _INTERVALS = {"1m": "1m", "5m": "5m", "15m": "15m", "1H": "1H", "4H": "4H"}
 
 
 def _duka_const(name: str):

@@ -3,6 +3,81 @@
 Bu dosya botun Capital.com sonrasi son pratik durumunu ozetler. Amac: bir ay
 sonra bile "biz nerede kalmistik?" sorusuna hizli ve net cevap vermek.
 
+## 1m intrabar fill-modeli — UYGULANDI ve OLCULDU (2026-08-11)
+
+**Sonuc: 1m cozumu bu stratejilerde HIC devreye girmiyor (540 gun, 0 vaka).**
+Yeni mod `1m_then_sl_first` opt-in olarak eklendi, eski `bar_sl_first`
+varsayilan ve degismemis kaldi (192/192 test yesil, 16 yeni test).
+
+| Vaka | islem | eski toplam_R | yeni toplam_R | cakisan bar |
+|---|---|---|---|---|
+| NQ_ORB / NASDAQ100 5m | 133 | +2.66 | +4.13 | 0 |
+| NQ_ORB / SP500 5m | 129 | +5.24 | +5.01 | 0 |
+| SWEEP_CORE / NASDAQ100 15m | 35 | +20.60 | +20.75 | 0 |
+| SWEEP_CORE / SP500 15m | 22 | −12.22 | −12.38 | 0 |
+| **HAVUZ** | **319** | **exp_R +0.051** | **exp_R +0.055** | **0** |
+
+**`cakisan bar = 0` BUG DEGIL, olculdu:** bir barin hem SL'e hem TP'ye degmesi
+icin menzilinin ~(1+rr)R olmasi gerekir. SWEEP'te bu 3.0R = fiyatin ~%0.425'i;
+15m bar menzili medyan %0.118, p99 %0.791. Ayrica 36 sweep isleminin 10'unda
+ILERIDE boyle bir bar var ama islem oraya varmadan zaten kapanmis — belirsizlik
+penceresine ulasilmiyor. Yani `honest_engine`'in SL-first varsayimi bu
+konfigurasyonlarda pratikte hic kullanilmiyordu.
+
+**Kalan fark tamamen giris fiyatindan geliyor** (sinyal kapanisi -> sonraki
+open), 1m'den degil. Fark havuzda +0.004R — gurultu seviyesinde, yon bile
+tutarsiz (NASDAQ100'de artiyor, SP500'de azaliyor).
+
+**Gap kurali karari: SKIP.** Giris sonraki open'da stopun otesindeyse islem
+alinmaz ve `gap_skipped` sayacinda ayri raporlanir. Gerekce proje mantigindan:
+`signalbot/signal_scan.py` `MAX_ADVERSE_ENTRY_DRIFT_R = 0.5` — stopun otesine
+gecmis bir acilis >=1.0R aleyhine kaymadir, o sinyal kullaniciya hic gitmezdi.
+Olculen donemde 0 vaka.
+
+**Kalan sinirlama:** yeni mod yalnizca saf Python referans yolunda calisir;
+numba `fast_honest_core` sadece `bar_sl_first` icindir. Bu sinirlama
+`test_new_mode_does_not_silently_use_numba_core` ile sabitlendi.
+
+**Rapor:** `python -m intraday.fill_model_ab` (MT5 venv gerekmez, dukascopy
+1m cache yeterli). Dosyalar: `intraday/honest_engine.py`,
+`intraday/fill_model_ab.py`, `intraday/test_honest_engine_1m.py`,
+`intraday/data.py` (1m interval).
+
+### Orijinal plan (tarihsel kayit)
+
+`honest_engine` sinyal 15m mumunun kapanisini giris kabul ediyordu ve sonraki
+15m mumda hem SL hem TP gorulurse muhafazakâr olarak SL sonucunu yaziyordu. Bu
+davranis kaldirilmadan, karsilastirmali bir ikinci fill modu planlanmisti.
+
+### Hedef sozlesme
+1. 15m sinyal ancak mum kapandiginda kesinlesir.
+2. Varsayimsal giris, sinyal mumunun kapanisi degil **sonraki 15m mumun open**
+   fiyatidir.
+3. SL yapisal/sinyal aninda belirlenen seviyedir; yeni giris nedeniyle RR hedefi
+   yeniden hesaplanir. Giris stopun diger tarafina gap ile acilirsa islem,
+   onceden tanimlanacak bir **skip veya gap-loss** kuralina gore ele alinmalidir.
+4. Bir sonraki 15m mumda yalniz SL veya yalniz TP gorulurse sonuc direkt yazilir.
+5. Sadece ayni 15m mumda hem SL hem TP gorulurse, o pencereye ait **1m OHLC**
+   mumlari kronolojik sirayla taranir.
+6. 1m mumlar TP veya SL siralamasini ayristiriyorsa ilk dokunan seviye sonuc
+   olur. Tek bir 1m mumda ikisi de gorulurse veya 1m veri eksikse fallback yine
+   **SL-first** olur.
+
+### Gereklilikler ve guvenlik kapilari
+- `data.py`/veri katmaninda 1m Dukascopy cache; tum indeksler UTC ve ayni
+  [15m_baslangic, 15m_bitis) penceresinde hizalanmis olmali.
+- Mevcut `bar_sl_first` modu varsayilan olarak korunmali; yeni mod
+  `1m_then_sl_first` gibi acik isimle opt-in olmali.
+- Once testler: sonraki-open girisi, long/short 1m TP-once ve SL-once,
+  1m-ici belirsizlik, eksik 1m veri, gap davranisi ve eski mod regresyonu.
+- Numba `fast_honest_core` ile saf Python referans yolunun ayni sonucu verdigi
+  yeniden dogrulanmali; ilk guvenli surumde yeni mod referans yolda calisabilir.
+- Eski ve yeni fill modeli ayni sembol/donem/fee/slippage ile karsilastirilmali:
+  islem sayisi, exp_R, PF, max drawdown, TP/SL-cakisma sayisi ve 1m ile
+  cozulen sonuc sayisi raporlanmali.
+- Bu, mevcut modulleri canliya alma gerekcesi degil; backtest varsayimini
+  olcmek icin bir arastirma katmanidir. Once paper/forward kanit korunur.
+
 ## Ana karar
 
 Capital.com Turkiye'de kullanilamadigi icin Capital demo/API yolu tamamen terk
