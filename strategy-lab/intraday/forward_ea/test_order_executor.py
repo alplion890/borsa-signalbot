@@ -99,6 +99,12 @@ sys.modules["MetaTrader5"] = FakeMT5
 from unittest.mock import MagicMock, patch
 
 from intraday.forward_ea.order_executor import OrderExecutor, ExecConfig, MAGIC
+from intraday.forward_ea.order_executor import LIVE_MODULES
+
+# Fixture modulu URETIMDEKI canli listeden turetilir, elle yazilmaz.
+# Onceki hali LIVE_MODULE idi; GOLD elenip whitelist'ten cikinca
+# bu testler asil olcmek istedikleri yere varamadan whitelist'e takildi.
+LIVE_MODULE = sorted(LIVE_MODULES)[0]
 from intraday.forward_ea.positions import Book, PaperPosition
 from intraday.mt5_bridge import mt5_io
 
@@ -117,9 +123,9 @@ def executor(fake_client):
 
 @pytest.fixture
 def paper_pos():
-    """Sample paper position (GOLD_NY_ORB_TREND, long, entry=2400, sl=2390, tp=2420)."""
+    """Sample paper position (canli modul, long, entry=2400, sl=2390, tp=2420)."""
     return PaperPosition(
-        module="GOLD_NY_ORB_TREND",
+        module=LIVE_MODULE,
         symbol="XAUUSD",
         direction=1,
         entry_time=pd.Timestamp("2026-06-17 14:00:00"),
@@ -234,7 +240,7 @@ class TestOpenForSignal:
         paper_pos.module = "EUR_LONDON_FADE_EMA"
         exec = OrderExecutor(
             client=fake_client,
-            live_modules={"GOLD_NY_ORB_TREND", "NQ_ORB_STRONG_TREND"},
+            live_modules=set(LIVE_MODULES),
         )
         result = exec.open_for_signal(paper_pos, 100_000.0)
         assert result["action"] == "skip"
@@ -255,7 +261,7 @@ class TestOpenForSignal:
         """Symbol in mt5_io.UNAVAILABLE -> action='skip'."""
         mock_resolve.side_effect = mt5_io.MT5Error("spot BTC not available")
         paper_pos.symbol = "BTCUSDT"
-        paper_pos.module = "GOLD_NY_ORB_TREND"
+        paper_pos.module = LIVE_MODULE
         exec = OrderExecutor(client=fake_client)
         result = exec.open_for_signal(paper_pos, 100_000.0)
         assert result["action"] == "skip"
@@ -282,7 +288,7 @@ class TestOpenForSignal:
             type=0,
             volume=0.1,
             magic=MAGIC,
-            comment="GOLD_NY_ORB_TREND",
+            comment=LIVE_MODULE,
             price_open=2399.0,
             sl=2389.0,
             tp=2419.0,
@@ -363,8 +369,8 @@ class TestOpenForSignal:
             assert request["deviation"] == 20
             assert request["type_time"] == fake_client.ORDER_TIME_GTC
             assert request["type_filling"] == fake_client.ORDER_FILLING_IOC
-            # comment may be truncated
-            assert "GOLD" in request.get("comment", "")
+            # comment may be truncated -> modul adinin basi yeterli
+            assert request.get("comment", "").startswith(LIVE_MODULE[:8])
 
     @patch("intraday.forward_ea.order_executor.mt5_io.resolve")
     def test_open_success_return_dict(self, mock_resolve, fake_client, paper_pos):
@@ -456,9 +462,9 @@ class TestReconcile:
             trade_tick_size=0.01,
             trade_contract_size=100000.0,
         )
-        # Paper book: 1 open GOLD_NY_ORB_TREND position
+        # Paper book: 1 open live-module position
         pos = PaperPosition(
-            module="GOLD_NY_ORB_TREND",
+            module=LIVE_MODULE,
             symbol="XAUUSD",
             direction=1,
             entry_time=pd.Timestamp("2026-06-17 14:00:00"),
@@ -485,7 +491,7 @@ class TestReconcile:
             type=0,
             volume=0.1,
             magic=MAGIC,
-            comment="GOLD_NY_ORB_TREND",
+            comment=LIVE_MODULE,
             price_open=2399.0,
             sl=2389.0,
             tp=2419.0,
@@ -606,7 +612,7 @@ class TestClosePosition:
             type=0,  # BUY
             volume=0.1,
             magic=MAGIC,
-            comment="GOLD_NY_ORB_TREND",
+            comment=LIVE_MODULE,
             price_open=2399.0,
             sl=2389.0,
             tp=2419.0,
@@ -627,7 +633,7 @@ class TestClosePosition:
             type=1,  # SELL
             volume=0.1,
             magic=MAGIC,
-            comment="GOLD_NY_ORB_TREND",
+            comment=LIVE_MODULE,
             price_open=2399.0,
             sl=2389.0,
             tp=2419.0,
@@ -691,7 +697,7 @@ class TestIntegration:
         )
         # Paper: 1 live position (missing from broker)
         paper_gold = PaperPosition(
-            module="GOLD_NY_ORB_TREND",
+            module=LIVE_MODULE,
             symbol="XAUUSD",
             direction=1,
             entry_time=pd.Timestamp("2026-06-17 14:00:00"),
@@ -731,7 +737,7 @@ class TestIntegration:
         book = Book(open_positions=[paper_gold, paper_eur])
         exec = OrderExecutor(client=fake_client)
         results = exec.reconcile(book)
-        # Should: open GOLD_NY_ORB_TREND, ignore EUR_LONDON, close orphan
+        # Should: open the live module, ignore EUR_LONDON, close orphan
         actions = [r["action"] for r in results]
         assert "open" in actions or "skip" in actions  # open or skip (if lot=0)
         assert any(r.get("action") == "close" for r in results)

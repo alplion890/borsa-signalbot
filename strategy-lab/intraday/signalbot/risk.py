@@ -117,6 +117,16 @@ def tier_of(module_name: str) -> Tier:
     return Tier.LIVE if module_name in _LIVE_MODULES else Tier.PAPER
 
 
+def live_module_names() -> frozenset[str]:
+    """Gercek para yetkisi olan moduller -- TEK kaynak.
+
+    order_executor bu listeyi kendi kopyasinda tutuyordu ve 2026-08-06'da
+    kaydi: burasi duzeltilirken orasi unutuldu, elenmis GOLD gercek emir
+    atabilir halde kaldi. Kopya yerine buradan turetilir.
+    """
+    return frozenset(_LIVE_MODULES)
+
+
 def risk_dollars(phase: str, balance: float) -> float:
     _, profile = profile_for(phase)
     return round(balance * profile.normal_pct, 2)

@@ -32,16 +32,19 @@ from typing import Any
 
 from .positions import Book, PaperPosition
 from ..mt5_bridge import mt5_io
+from ..signalbot.risk import live_module_names
 
 # Magic number for all real orders placed by this EA
 MAGIC = 202600
 
-# Modules allowed to place REAL orders. Conservative whitelist: only
-# forward-validated modules from live testing. Everything else => paper only.
-LIVE_MODULES: set[str] = {
-    "GOLD_NY_ORB_TREND",
-    "NQ_ORB_STRONG_TREND",
-}
+# Modules allowed to place REAL orders. Everything else => paper only.
+#
+# Derived from risk.py, never hand-maintained here. This list used to be a
+# second copy and it drifted on 2026-08-06: risk.py dropped the eliminated
+# GOLD_NY_ORB_TREND and added SWEEP_CORE_AVOID_MID_VWAP, this copy did not.
+# The result was that the eliminated module could place real orders while the
+# strongest one could not. One fact, one place.
+LIVE_MODULES: set[str] = set(live_module_names())
 
 
 @dataclass(frozen=True)
