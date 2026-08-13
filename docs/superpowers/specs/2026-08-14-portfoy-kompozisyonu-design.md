@@ -163,3 +163,70 @@ Bu proje sessiz sızıntılardan üç kez yara aldı; katman feda edilmez.
   Sembol genişlemesi yeni arayış değildir: aynı config, aynı dedektör.
 - Risk yüzdeleri, durma limitleri, sinyal filtreleri değiştirilmeyecek.
 - Ölçüm sonucuna bakılıp 3. maddedeki portföy listesi genişletilmeyecek.
+
+---
+
+# SONUÇ (ölçüm 2026-08-14'te koşuldu)
+
+Yukarıdaki bölümler ölçümden önce commit edildi (`5756c2b`) ve değiştirilmedi.
+Aşağısı çıktıdır.
+
+## Veri A — forward defteri
+
+| Portföy | n | exp_R | işlem/hf | metrik | P(>mevcut) |
+|---|---|---|---|---|---|
+| 1 SWEEP tek sembol | 9 | +1.206 | 0.74 | 81.3% | 71.7% |
+| 2 **MEVCUT** | 36 | +0.388 | 2.96 | 67.7% | (kıyas) |
+| 3 SWEEP 7 sembol | 16 | +1.381 | 1.32 | 75.9% | 61.3% |
+| 4 SWEEP 7 sembol + NQ_ORB | 43 | +0.587 | 3.54 | 64.9% | 46.3% |
+
+## Veri B — MT5 backtest 6 ay, 7 sembol
+
+| Portföy | n | exp_R | işlem/hf | metrik | P(>mevcut) |
+|---|---|---|---|---|---|
+| 1 SWEEP tek sembol | 18 | +1.343 | 0.70 | 89.5% | 68.3% |
+| 2 **MEVCUT** | 59 | +0.586 | 2.29 | 84.2% | (kıyas) |
+| 3 SWEEP 7 sembol | 80 | **−0.062** | 3.11 | 5.5% | 0.3% |
+| 4 SWEEP 7 sembol + NQ_ORB | 111 | +0.050 | 4.32 | 9.6% | 0.3% |
+
+## Karar: DEĞİŞİKLİK YOK
+
+Hiçbir portföy %95 eşiğini geçmedi. Mevcut portföy (SWEEP_CORE + NQ_ORB) kalır.
+
+## Ana bulgu: sembol genişlemesi tek-slot altında edge'i YOK EDİYOR
+
+Vault'taki "7 sembol havuzu +0.194, n=118, PSR 0.837" rakamı **aynı anda tek
+işlem kısıtını hesaba katmıyor.** Kısıt uygulanınca:
+
+- 118 işlem → 80 işlem (38 elendi)
+- exp_R +0.194 → **−0.062**
+
+Yani elenenler iyi olanlardı. Sebep yapısal: slot ilk gelene veriliyor, en iyi
+sembole değil. US100'ün +1.343'lük sinyalleri, önce tetiklenen zayıf sembol
+sinyalleri yüzünden kaçırılıyor. Tek başına US100 (portföy 1) exp_R +1.343
+verirken, 7 sembol birlikte −0.062 veriyor.
+
+**Bu, sembol genişlemesi fikrini çürütür** — mevcut "ilk gelen kazanır" slot
+kuralı altında. Öncelik sıralamalı bir slot tahsisi farklı sonuç verebilir ama
+o ayrı bir tasarımdır ve bu spec'in kapsamı dışındadır.
+
+## İkincil gözlem (karara etki etmedi)
+
+SWEEP tek başına (portföy 1) her iki kaynakta da mevcut portföyden yüksek metrik
+verdi (81.3 vs 67.7 ve 89.5 vs 84.2) — yani NQ_ORB seyreltiyor olabilir. Ama
+P(>mevcut) yalnızca %71.7 ve %68.3, eşiğin çok altında. **Taahhüt edilen kural
+bizi %70'lik bir sinyale göre hareket etmekten korudu.** NQ_ORB kalır.
+
+## Ölçüm sırasında düzeltilen kusur
+
+İlk koşumda backtest çıkış zamanları sabit varsayılmıştı (sweep +8sa, ORB +4sa).
+Tek-slot filtresi çıkış zamanına bağlı olduğu için bu sonucu kaydırabilirdi.
+Forward defterindeki gerçek tutma dağılımından örneklemeye çevrildi (SWEEP
+medyan 2.2sa/ort 6.2sa; NQ_ORB medyan 1.5sa/ort 3.9sa). Veri B portföy 3:
+−0.086 → −0.062. Karar değişmedi — sonuç bu varsayıma dayanıklı.
+
+## Kalan sınırlar
+
+- Veri A'da SWEEP ailesi yalnızca 16 işlem; güven aralıkları çok geniş.
+- Sembol korelasyonu modellenmedi (US100/US500/US30 yüksek korele).
+- Tek-slot kuralı "ilk gelen kazanır" olarak uygulandı; canlı sistemde de öyle.
