@@ -34,7 +34,17 @@ def _period_for(days: int) -> str:
 
 
 def ohlcv(symbol_key: str, tf: str, days: int = 60) -> pd.DataFrame:
-    spec = resolve(symbol_key)
+    return ohlcv_spec(resolve(symbol_key), tf, days)
+
+
+def ohlcv_spec(spec, tf: str, days: int = 60) -> pd.DataFrame:
+    """Cozulmus bir SymbolSpec icin barlar.
+
+    Ayri durmasinin sebebi: forward EA'nin bulut kosucusu adaylar icin
+    (US30, JAP225...) burada olmayan semboller kullaniyor. Kendi tablosunu
+    tasiyor ama normalizasyonu -- ozellikle tz ve kolon duzeni -- BU
+    fonksiyondan aliyor. Kopyalansaydi iki taraf zamanla ayrisirdi.
+    """
     if spec.source is Source.YFINANCE:
         raw = _yf_download(spec.ticker, _TF_YF[tf], _period_for(days))
         frame = _normalize(raw)

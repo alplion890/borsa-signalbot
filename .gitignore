@@ -28,3 +28,8 @@ strategy-lab/outputs/intraday/forward_ea/*
 # kaydi. Challenge patlarsa "kural mi yanlisti, ben mi uymadim" sorusunu
 # yalnizca bu dosya cevaplar.
 !strategy-lab/outputs/intraday/forward_ea/icra_defteri.csv
+# Bulut defteri de yeniden uretilemez (bedava feed'in gecmisi 60 gunle
+# sinirli). State dosyasi olmadan defter kaldigi yeri bilemez -- ikisi
+# birlikte commit'lenir.
+!strategy-lab/outputs/intraday/forward_ea/cloud_ledger.csv
+!strategy-lab/outputs/intraday/forward_ea/cloud_state.json

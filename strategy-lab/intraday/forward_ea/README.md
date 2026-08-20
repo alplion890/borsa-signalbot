@@ -229,3 +229,45 @@ GA gold adayı -> modules.py'de gold detektör paramlarını güncelle ->
 forward EA ile demo'da canlı izle -> backtest ile tutuyorsa benimse
 ```
 Çıktılar: `outputs/intraday/forward_ea/forward_ledger.csv`, `forward_state.json`
+
+---
+
+## Bulut defteri (`cloud_runner.py`) — 2026-08-20
+
+**Çözdüğü sorun:** yukarıdaki motor MT5 terminaline bağlı. Terminal kapalıyken
+döngü hiç koşmaz; 2026-08 başında bu yüzden günlerce delik oluştu
+(`runner.log`'da 1000+ "terminal kapalı" kaydı). Ölçüm durunca kanıt birikmiyor.
+
+Bulut koşucusu **aynı modülleri aynı döngüyle** (`engine.cycle`) bedava
+feed'lerden besler ve GitHub Actions'ta saatlik koşar
+(`.github/workflows/cloud_ledger.yml`). PC kapalıyken de defter ilerler.
+
+```bash
+python -m intraday.forward_ea.cloud_runner --once
+python -m intraday.forward_ea.cloud_runner --once --warmup 14   # sadece ilk kurulum
+```
+
+### İki defter AYRI tutulur — birleştirme
+| dosya | feed | ne işe yarar |
+|---|---|---|
+| `forward_ledger.csv` | MT5 (broker CFD'si) | **referans**; modül tier/risk kararları buna dayanır |
+| `cloud_ledger.csv` | yfinance vadeli + Binance | deliksiz paralel ölçüm, `source` kolonu ile |
+
+İlk 14 günlük backfill'de ölçüldü: **aynı feed'i paylaşan BTC satırları birebir
+aynı** (Binance her iki tarafta da aynı), ama endeks/FX modüllerinde işlem
+sayısı ve R farklı çıkıyor (MT5 55 işlem +21.58R, bulut 35 işlem +0.60R aynı
+pencerede). Sebep: vadeli/CFD baz farkı + seans saati ve bar hizalaması.
+
+**Bunun anlamı:** bulut defteri MT5 defterinin YERİNE geçmez. Modül terfisi
+hâlâ MT5 defterine bakar. Bulut defteri (a) terminal kapalıyken bile sinyal
+üretiminin sürdüğünü kaydeder, (b) "aynı strateji başka bir feed'de de para
+kazanıyor mu" sorusunu bağımsız olarak ölçer.
+
+### Kurallar
+- `backfill=1` satırlar geçmiş veriden üretildi = **backtest**, forward kanıtı değil.
+- Bulut koşucusu Telegram'a çıkmaz, emir atmaz, broker'a bağlanmaz — bildirim
+  işini bulut signalbot yapıyor; iki taraf da gönderse sinyal iki kere düşerdi.
+- Kalıcılık repo'da, Actions cache'inde değil: cache 7 gün dokunulmazsa silinir,
+  bu işin varlık sebebi tam olarak delikti.
+- Defter satırı `(modül, sembol, giriş zamanı)` ile tekilleştirilir; state
+  kaybolsa bile aynı işlem ikinci kez yazılmaz.

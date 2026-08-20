@@ -1,0 +1,97 @@
+name: bulut-forward-defteri
+
+# Forward olcumunun bulut kopyasi. Yerel forward EA MetaTrader terminaline
+# bagli; terminal kapaliyken defterde delik olusuyordu (2026-08'de gunlerce).
+# Bu is ayni modulleri bedava feed'lerle olcer ve sonucu repo'ya yazar.
+#
+# SAATLIK KOSMASI YETER: kosucu son islenen bardan itibaren TUM yeni barlari
+# sirayla isler (engine.cycle). Yani 5 dakikada bir kosmakla saatte bir
+# kosmak ayni defteri uretir; tek fark kaydin gec dusmesi. Gecikmis cron da
+# bu yuzden veri kaybettirmez.
+
+on:
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch:
+    inputs:
+      warmup_days:
+        description: "Ilk kurulum: N gun geriye doldur (normalde 0)"
+        required: false
+        default: "0"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bulut-forward-defteri
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    environment: telegram bot token
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Bagimliliklari kur
+        run: pip install -r strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Defteri ilerlet
+        working-directory: strategy-lab
+        run: python -m intraday.forward_ea.cloud_runner --once --warmup "${{ inputs.warmup_days || 0 }}"
+
+      # Kalicilik repo'da, cache'te DEGIL: actions/cache girdileri 7 gun
+      # dokunulmazsa silinir ve defterde delik acilir -- bu isin varlik
+      # sebebi tam olarak delikti. Repo'ya yazmak ayrica denetlenebilir bir
+      # gecmis birakir (her satirin hangi kosumda dustugu gorunur).
+      - name: Defteri repo'ya isle
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f strategy-lab/outputs/intraday/forward_ea/cloud_ledger.csv \
+                     strategy-lab/outputs/intraday/forward_ea/cloud_state.json
+          if git diff --cached --quiet; then
+            echo "Degisiklik yok."
+            exit 0
+          fi
+          git commit -m "chore(cloud_ledger): advance the cloud forward ledger [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Push tamam (deneme $attempt)."
+              exit 0
+            fi
+            echo "Push carpisti, tekrar deneniyor ($attempt)."
+            sleep 5
+          done
+          echo "Defter push edilemedi."
+          exit 1
+
+      # Sessiz basarisizliga karsi: olcum durursa haberimiz olmali. Bilerek
+      # `curl` -- bildirim, bozulmus olabilecek koda bagimli olmamali.
+      - name: Hata bildirimi (Telegram)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          # Secret bu adla kaydedilmis (harf sirasi ters); signalbot.yml de ayni.
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; hata bildirimi atlandi."
+            exit 0
+          fi
+          text="BULUT DEFTERI HATASI
+          Calisma: ${{ github.run_id }}
+          Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -sS --max-time 20 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode text="$text" >/dev/null || echo "Bildirim gonderilemedi."

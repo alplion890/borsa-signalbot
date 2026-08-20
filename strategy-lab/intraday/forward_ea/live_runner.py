@@ -24,7 +24,6 @@ import time
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
@@ -36,6 +35,11 @@ except Exception:
     pass
 
 from ..mt5_bridge import mt5_io
+from .engine import book_from_state as _book_from_state
+from .engine import bars_per_day as _bars_per_day
+from .engine import cycle as _engine_cycle
+from .engine import naive as _naive
+from .engine import pos_to_json as _pos_to_json
 from .modules import LiveModule, forward_test_modules
 from .order_executor import OrderExecutor
 from .positions import Book, PaperPosition
@@ -64,41 +68,8 @@ def _save_state(book: Book, last_bar: dict) -> None:
         led.to_csv(LEDGER_CSV)
 
 
-def _pos_to_json(p: PaperPosition) -> dict:
-    return {
-        "module": p.module, "symbol": p.symbol, "direction": p.direction,
-        "entry_time": str(p.entry_time), "entry": p.entry, "sl": p.sl, "tp": p.tp,
-        "weight": p.weight, "max_hold_bars": p.max_hold_bars,
-        "cost_per_side": p.cost_per_side, "bars_held": p.bars_held,
-    }
-
-
-def _book_from_state(state: dict) -> Book:
-    book = Book(closed=list(state.get("closed", [])))
-    for d in state.get("open_positions", []):
-        book.add(PaperPosition(
-            module=d["module"], symbol=d["symbol"], direction=d["direction"],
-            entry_time=_naive(d["entry_time"]), entry=d["entry"], sl=d["sl"],
-            tp=d["tp"], weight=d["weight"], max_hold_bars=d["max_hold_bars"],
-            cost_per_side=d["cost_per_side"], bars_held=d.get("bars_held", 0),
-        ))
-    return book
-
-
 # Bu broker'da (Maven) spot karsiligi olmayan, Binance'ten cekilecek semboller.
 _BINANCE_KEYS = {"BTCUSDT", "BTC"}
-
-
-def _naive(ts) -> pd.Timestamp:
-    """Timestamp'i tz-naive UTC'ye indir (feed ne dondururse dondursun).
-
-    Tum defter/state tz-naive UTC varsayar (mt5_io sozlesmesi). Tek bir
-    tz-aware deger karisirsa `Invalid comparison between dtype=datetime64[ns]
-    and Timestamp` ile TUM dongu patlar -- yani yeni bir feed eklemek mevcut
-    modullerin verisini de goturur. Burasi son savunma hatti.
-    """
-    t = pd.Timestamp(ts)
-    return t.tz_convert("UTC").tz_localize(None) if t.tz is not None else t
 
 
 def _binance_ohlcv(tf: str, days: int) -> pd.DataFrame:
@@ -138,55 +109,16 @@ def _fetch_ohlcv(symbol_key: str, tf: str, days: int) -> pd.DataFrame:
 
 def _cycle(modules: list[LiveModule], book: Book, last_bar: dict,
            warmup_days: int = 0) -> list[PaperPosition]:
-    """Dongu; bu turda YENI acilan pozisyonlari dondurur (Telegram icin)."""
-    opened: list[PaperPosition] = []
-    fetch_days = max(40, warmup_days + 5)  # indikator lookback + warmup
-    for mod in modules:
-        try:
-            df = _fetch_ohlcv(mod.symbol_key, mod.tf, fetch_days)
-        except mt5_io.MT5Error as e:
-            print(f"  [ATLA] {mod.name}: {e}")
-            continue
-        if len(df) < 200:
-            continue
-        # son bar henuz kapanmamis olabilir -> sonuncuyu disla
-        df = df.iloc[:-1]
-        key = f"{mod.name}:{mod.symbol_key}"
-        last = _naive(last_bar[key]) if key in last_bar else None
+    """Dongu; bu turda YENI acilan pozisyonlari dondurur (Telegram icin).
 
-        if last is None:
-            # ilk calistirma: warmup yoksa sadece son bardan ileri git
-            if warmup_days > 0:
-                start_pos = max(200, len(df) - warmup_days * _bars_per_day(mod.tf))
-            else:
-                start_pos = len(df) - 1
-        else:
-            newer = np.asarray(df.index > last)
-            start_pos = int(np.argmax(newer)) if newer.any() else len(df)
+    Govde `engine.cycle`e tasindi (2026-08-20): bulut kosucusu ayni dongueyi
+    kullanabilsin diye. MT5'e ozgu tek sey feed ve hata mesaji.
+    """
+    def _skip(name: str, exc: Exception) -> None:
+        print(f"  [ATLA] {name}: {exc}")
 
-        for k in range(start_pos, len(df)):
-            sub = df.iloc[:k + 1]
-            bar = sub.iloc[-1]
-            bt = sub.index[-1]
-            book.update_symbol(mod.symbol_key, bt, float(bar["high"]),
-                               float(bar["low"]), float(bar["close"]))
-            if not book.has_open(mod.name, mod.symbol_key):
-                sig = mod.detect(sub)
-                if sig is not None and sig.direction != 0 and abs(sig.entry - sig.sl) > 0:
-                    pos = PaperPosition(
-                        module=mod.name, symbol=mod.symbol_key, direction=sig.direction,
-                        entry_time=bt, entry=sig.entry, sl=sig.sl, tp=sig.tp,
-                        weight=mod.weight, max_hold_bars=mod.max_hold_bars,
-                        cost_per_side=mod.cost_per_side,
-                    )
-                    book.add(pos)
-                    opened.append(pos)
-            last_bar[key] = str(bt)
-    return opened
-
-
-def _bars_per_day(tf: str) -> int:
-    return {"5m": 288, "15m": 96, "1H": 24}.get(tf, 96)
+    return _engine_cycle(modules, book, last_bar, _fetch_ohlcv,
+                         warmup_days=warmup_days, on_skip=_skip)
 
 
 def _dashboard(book: Book, acc: dict) -> None:
