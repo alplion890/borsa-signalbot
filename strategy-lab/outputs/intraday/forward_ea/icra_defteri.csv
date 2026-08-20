@@ -1,1 +1,3 @@
 sinyal_saati,giris_saati,modul,sembol,yon,kart_giris,gercek_giris,kart_lot,gercek_lot,kart_stop,gercek_stop,uydum,sebep,sonuc_R,not
+2026-08-13 14:45:00,,NQ_ORB_STRONG_TREND,NASDAQ100,-1,30110.83,,,,30159.77,,H,"MT5 kapaliydi, islem hic acilmadi",+1.389,kacirilan sinyal (ledger sonucu referans) - karar kurali madde 2
+2026-08-14 20:00:00,,SWEEP_CORE_AVOID_MID_VWAP,NASDAQ100,-1,30034.10,,,,30061.63,,H,"MT5 kapaliydi, islem hic acilmadi",-1.196,kacirilan sinyal (ledger sonucu referans) - karar kurali madde 2
