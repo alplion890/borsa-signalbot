@@ -253,15 +253,36 @@ python -m intraday.forward_ea.cloud_runner --once --warmup 14   # sadece ilk kur
 | `forward_ledger.csv` | MT5 (broker CFD'si) | **referans**; modül tier/risk kararları buna dayanır |
 | `cloud_ledger.csv` | yfinance vadeli + Binance | deliksiz paralel ölçüm, `source` kolonu ile |
 
-İlk 14 günlük backfill'de ölçüldü: **aynı feed'i paylaşan BTC satırları birebir
-aynı** (Binance her iki tarafta da aynı), ama endeks/FX modüllerinde işlem
-sayısı ve R farklı çıkıyor (MT5 55 işlem +21.58R, bulut 35 işlem +0.60R aynı
-pencerede). Sebep: vadeli/CFD baz farkı + seans saati ve bar hizalaması.
+İlk 14 günlük backfill'de ölçüldü (`cloud_parity.py`, işlemler eşleştirilerek):
+**29 eşleşen işlem, %93'ü aynı sonuçla kapandı, R korelasyonu 0.82.**
 
-**Bunun anlamı:** bulut defteri MT5 defterinin YERİNE geçmez. Modül terfisi
-hâlâ MT5 defterine bakar. Bulut defteri (a) terminal kapalıyken bile sinyal
-üretiminin sürdüğünü kaydeder, (b) "aynı strateji başka bir feed'de de para
-kazanıyor mu" sorusunu bağımsız olarak ölçer.
+| modül | eşleşen | aynı sonuç | en büyük R farkı |
+|---|---|---|---|
+| NQ_ORB_STRONG_TREND | 3 | 3 | 0.00 |
+| SWEEP_CORE_AVOID_MID_VWAP | 1 | 1 | 0.01 |
+| CAND_SP500_ORB | 8 | 8 | 0.01 |
+| CAND_BTC_ABSORPTION | 7 | 7 | 0.00 |
+| CAND_SWEEP_JAP225 | 3 | 3 | **3.73** |
+| EUR_LONDON_FADE_EMA | 2 | **0** | **2.56** |
+
+Yani **canlı ikili (NQ_ORB + SWEEP_CORE, ikisi de NASDAQ) bulut feed'inde
+pratikte birebir aynı ölçülüyor.** Sapma FX'te (EUR London'ın iki işlemi de
+ters sonuçlandı) ve tek bir JAP225 işleminde. Bu, feed parity ölçümüyle
+tutarlı: NASDAQ gürültüsü p95 0.074R, FX'te getiri korelasyonu 0.86.
+
+**Kapsama (kaç işlem hiç eşleşmedi) yalnızca `backfill=0` satırlarda anlamlı.**
+Backfill koşumunda her modül farklı uzunlukta geriye gider, o yüzden "sadece
+MT5'te" görünen işlemlerin bir kısmı bulut defterinin o modülde henüz
+başlamamış olmasından gelir — gerçek kaçırma değildir.
+
+**Bunun anlamı:** bulut defteri MT5 defterinin YERİNE geçmez (modül terfisi
+hâlâ MT5 defterine bakar), ama endekslerde onu yakından takip eder. Terminal
+kapalıyken bile ölçüm devam eder.
+
+Karşılaştırmayı tekrar üretmek için:
+```bash
+python -m intraday.forward_ea.cloud_parity
+```
 
 ### Kurallar
 - `backfill=1` satırlar geçmiş veriden üretildi = **backtest**, forward kanıtı değil.
