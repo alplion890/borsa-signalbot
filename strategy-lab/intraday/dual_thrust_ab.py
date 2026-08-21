@@ -39,7 +39,6 @@ from .config import INSTRUMENTS
 from .edge_lab import _adx
 from .honest_engine import metrics, oos_metrics, simulate_trades
 from .internet_seed_strategies import ORBCase, _build_orb, _one_signal_per_day
-from .overfit_stats import deflated_from_trials
 
 SYMBOL = "NASDAQ100"
 DAYS = 1080
@@ -153,6 +152,12 @@ def run() -> None:
             trials[label] = r
 
     print("\n--- coklu-karsilastirma denetimi (baseline dahil tum varyantlar aday) ---")
+    # Tembel import: bu modulun sinyal uretici kismi (`build_dual_thrust`)
+    # forward EA'nin bulut kosucusundan cagriliyor ve orada scipy KURULU
+    # DEGIL. Ust seviyede import edilirse bulut defteri her saat cokur --
+    # 2026-08-21'de tam bu oldu, olcum 14 saat durdu.
+    from .overfit_stats import deflated_from_trials
+
     out = deflated_from_trials(trials)
     print(f"  aday sayisi      : {out['n_trials']}")
     print(f"  en iyi           : {out['best']}")
