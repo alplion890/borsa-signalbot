@@ -1,4 +1,4 @@
-# Signalbot Current Status - 2026-06-24
+# Signalbot Durum Notu (canli tutulur)
 
 Bu dosya botun Capital.com sonrasi son pratik durumunu ozetler. Amac: bir ay
 sonra bile "biz nerede kalmistik?" sorusuna hizli ve net cevap vermek.

@@ -1,98 +1,89 @@
-# Intraday Regime Router Lab
+# Intraday Lab
 
-Ana hedef artik tek strateji bulmak degil:
+Bu klasor **arastirma** katmani: strateji arar, backtest eder, elenenlerin
+kaydini tutar. Canli/karar katmani burada DEGIL:
 
 ```text
-Rejim secici + kucuk strateji portfoyu + prop risk motoru
+intraday/signalbot/     Telegram sinyali (GitHub Actions, bedava veri)
+intraday/forward_ea/    Forward olcum defteri (MT5 + bulut) -- KARAR BURAYA BAKAR
+intraday/mt5_bridge/    Broker koprusu, feed paritesi
 ```
 
-Guncel notlar:
+> **Guncel durum bu dosyada DEGIL.** Modul tier'lari, risk politikasi ve
+> "hangi sinyale girilir" karari surekli degisiyor; tek gecerli kaynak
+> `forward_ea/README.md` + Obsidian vault (`Borsa MOC`). Asagisi laboratuvarin
+> nasil calistigidir, ne karar verildigi degil.
+
+## Cekirdek
 
 ```text
-../REGIME_ROUTER_RUNBOOK.md
-../FAILED_EXPERIMENTS.md
-```
-
-## Aktif stack
-
-```text
+honest_engine.py                Muhafazakar bar-by-bar R backtest -- KARAR MOTORU
 fast_honest_core.py             Opsiyonel numba hiz cekirdegi
-honest_engine.py                Muhafazakar bar-by-bar R backtest
-sweep_regime_scan.py            NASDAQ100 sweep edge/regime ledger
-internet_seed_strategies.py     ORB/London modullerini uretir
-internet_seed_smart_run.py      Internet seed dar liste testi
-internet_seed_regime_scan.py    ORB/London rejim ledger'i
-wall_street_diagnosis.py        Edge nerede yasiyor otopsisi
+config.py                       INSTRUMENTS: maliyet, seans, tick
+indicators.py                   atr, swing, rolling high/low
+data.py                         Dukascopy/cache okuma
+overfit_stats.py                DSR / PSR / PBO (scipy gerektirir)
+```
+
+**Kural:** karar her zaman `honest_engine.simulate_trades` ile verilir.
+vectorbt yalnizca hizli tarama icindi ve `from_signals` sl/tp doldurmasi
+iyimser cikti (NASDAQ sweep vectorbt'te +0.10..+0.33R, dogru modelde
+-0.027R). Bu ders MT5 forward testinde ikinci kez dogrulandi.
+
+## Strateji ureticileri
+
+```text
+internet_seed_strategies.py     ORB/London modulleri (canli portfoyun kaynagi)
 regime_router_factory.py        Sweep + ORB + London router
-regime_router_risk_cycle.py     1%->2% risk cycle testi
-regime_router_risk_policy_scan.py
-regime_router_winner_report.py
-regime_router_final_tweak_scan.py
+btc_cvd_sweep.py                BTC order flow (forward'da curudu)
+intermarket_divergence.py       NQ/ES divergence (SWEEP_ES_DIV -- elendi)
 ```
 
-## Guncel finalist
+## Denetim ve A/B
 
 ```text
-Policy: 09_hybrid_1_5_3_sweep_cap3
-
-Normal trade: 1.5% risk
-Kazanan trade sonrasi: 3.0%
-Kayip sonrasi: tekrar 1.5%
-Sweep trade: 2.25% base boost, maksimum 3.0% cap
-```
-
-## Finalist metrikleri
-
-```text
-Haftalik islem: 4.01
-Win rate: 51.29%
-Expectancy: +0.089R / trade
-PF: 1.372
-30g pass: 24.45%
-Median pass: 16 gun
-Daily DD fail: 1.24%
-Total DD fail: 2.47%
+overfit_audit.py                DSR/PBO denetimi
+portfolio_ab.py                 Portfoy kompozisyonu A/B
+fill_model_ab.py                Dolum modeli A/B (1m intrabar)
+challenge_sim.py                Challenge Monte Carlo
+funded_sim.py                   Funded faz simulasyonu
+liquidity_profiler.py           Parite karakter/likidite haritasi
+inside_day_lab.py               Inside-day iddiasi (curutuldu)
 ```
 
 ## Calistirma
 
 ```powershell
 cd C:\Users\quantum\OneDrive\Masaüstü\borsa\strategy-lab
-python -m intraday.regime_router_factory
-python -m intraday.regime_router_risk_policy_scan
-python -m intraday.regime_router_winner_report
+python -m pytest intraday/ -q          # once testler
+python -m intraday.overfit_audit       # istatistik denetimi
+python -m intraday.portfolio_ab        # portfoy A/B
 ```
 
-Final tweak scan checkpoint'lidir:
-
-```powershell
-python -m intraday.regime_router_final_tweak_scan
-```
-
-Kapanirsa ayni komut kaldigi yerden devam eder.
+MT5 gerektiren isler icin venv: `%USERPROFILE%\vectorbt-lab\.venv\Scripts\python.exe`
 
 ## Korunan ciktilar
 
 ```text
-outputs/intraday/sweep_regime_ledger.csv
-outputs/intraday/internet_seed_regime_ledgers.csv
-outputs/intraday/wall_street_*.csv
-outputs/intraday/regime_router_*.csv
+outputs/intraday/forward_ea/forward_ledger.csv    yeniden URETILEMEZ
+outputs/intraday/forward_ea/cloud_ledger.csv      yeniden URETILEMEZ
+outputs/intraday/forward_ea/icra_defteri.csv      yeniden URETILEMEZ
+outputs/intraday/sweep_regime_ledger.csv          arastirma ciktisi
+outputs/intraday/regime_router_*.csv              arastirma ciktisi
 ```
 
-## Silinen eski deneyler
+Geri kalan `outputs/` icerigi backtest kosumundan yeniden uretilebilir ve
+gitignore'dadir.
 
-Detayli liste:
+## Elenen yaklasimlar
 
-```text
-../FAILED_EXPERIMENTS.md
-```
-
-Kisa ozet:
+Ayrintili gerekce Obsidian vault'ta (`Borsa - Strategy Lab`, `Borsa - Sans mi
+Edge mi`, `Borsa - Inside Day Sahte Edge`). Kisa liste:
 
 ```text
-AMD/FVG ana strateji olmadi.
-Crypto derivatives four-gate edge vermedi.
-Day-filter tek basina prop gecirmedi.
-Eski tek-strateji/vectorbt raporlari yerine regime router'a gecildi.
+AMD/FVG bagimsiz edge vermedi.
+FX/kripto/SP500'e sweep edge'i tasinmadi.
+Meta-labeling (RandomForest) ve Kronos transformer: OOS negatif.
+Gun filtreleri (dow=X) overfit cikti; post-hoc filtre bu projede YASAK.
+Tek-strateji vectorbt raporlari yerine honest_engine + forward defteri.
 ```
