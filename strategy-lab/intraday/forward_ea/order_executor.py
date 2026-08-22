@@ -24,6 +24,7 @@ Example:
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from math import floor
@@ -32,7 +33,7 @@ from typing import Any
 
 from .positions import Book, PaperPosition
 from ..mt5_bridge import mt5_io
-from ..signalbot.risk import live_module_names
+from ..signalbot.risk import live_module_names, profile_for, risk_plan
 
 # Magic number for all real orders placed by this EA
 MAGIC = 202600
@@ -49,12 +50,20 @@ LIVE_MODULES: set[str] = set(live_module_names())
 
 @dataclass(frozen=True)
 class ExecConfig:
-    """Order execution configuration."""
+    """Emir icra ayarlari.
 
-    risk_pct: float = 1.5  # base risk % of balance per trade
-    sweep_risk_pct: float = 2.25  # override for sweep modules
-    max_risk_pct: float = 3.0  # hard cap
-    daily_dd_halt_pct: float = 4.5  # stop opening if day loss exceeds this
+    RISK ALANLARI BILEREK YOK. Lot buyuklugu ve hesap koruma esikleri
+    `signalbot/risk.py`'den gelir -- TEK kaynak. Burada ikinci bir kopya
+    tutulmasi 2026-08-21'de tespit edildi: bu dosya kendi `risk_pct=1.5`,
+    `sweep_risk_pct=2.25`, `daily_dd_halt_pct=4.5` degerlerini tasiyordu; faz
+    (challenge/funded) farkindaligi, PAPER modul korumasi, toplam acik risk
+    tavani, haftalik stop hicbiri yoktu. Whitelist'te AYNI hata olmustu
+    (commit 57bbb04): iki elle yazilmis kopya, biri guncellendi otekisi
+    unutuldu, elenmis modul gercek emir atabilir kaldi.
+
+    Buradaki alanlar yalnizca ICRA mekanigidir -- politika degil.
+    """
+
     deviation_points: int = 20  # max slippage in points for order_send
     magic: int = MAGIC
 
@@ -82,6 +91,7 @@ class OrderExecutor:
         client=None,
         config: ExecConfig = ExecConfig(),
         live_modules: set[str] | None = None,
+        phase: str | None = None,
     ):
         """Initialize executor.
 
@@ -93,7 +103,17 @@ class OrderExecutor:
         self.client = client if client is not None else _get_default_client()
         self.config = config
         self.live_modules = live_modules if live_modules is not None else LIVE_MODULES
+        # Faz (challenge/funded) risk profilini secer. Ortamdan okunur ki
+        # signalbot'un karti ile emir yolu ayni profili gorsun.
+        self.phase = phase or os.environ.get("PHASE", "bnpl_challenge")
         self._day_start_equity: dict[str, float] = {}  # UTC date -> start_equity
+        self._week_start_equity: dict[str, float] = {}  # ISO hafta -> start_equity
+
+    @property
+    def profile(self):
+        """Aktif faz risk profili -- politikanin TEK kaynagi."""
+        _, profile = profile_for(self.phase)
+        return profile
 
     def lot_for(
         self, broker_name: str, entry: float, sl: float, risk_amount: float
@@ -219,9 +239,62 @@ class OrderExecutor:
             return False, ""
 
         day_loss_pct = (start_equity - account.equity) / start_equity * 100.0
-        if day_loss_pct > self.config.daily_dd_halt_pct:
-            return True, f"Daily DD {day_loss_pct:.1f}% > {self.config.daily_dd_halt_pct}%"
+        limit = self.profile.daily_stop_pct * 100.0
+        if day_loss_pct > limit:
+            return True, f"Gunluk stop {day_loss_pct:.1f}% > {limit:.1f}% ({self.phase})"
 
+        return False, ""
+
+    def _weekly_dd_halt(self) -> tuple[bool, str]:
+        """Haftalik stop -- risk.py profilinden.
+
+        Gunluk stop tek gunu korur; ust uste uc kotu gun gunluk esigi hic
+        asmadan haftalik butceyi bitirebilir. Profil bu esigi tasiyordu ama
+        emir yolu hic okumuyordu.
+        """
+        account = self.client.account_info()
+        if account is None:
+            return False, ""
+
+        start_equity = self._get_week_start_equity()
+        if start_equity <= 0:
+            return False, ""
+
+        week_loss_pct = (start_equity - account.equity) / start_equity * 100.0
+        limit = self.profile.weekly_stop_pct * 100.0
+        if limit > 0 and week_loss_pct > limit:
+            return True, f"Haftalik stop {week_loss_pct:.1f}% > {limit:.1f}% ({self.phase})"
+
+        return False, ""
+
+    def _get_week_start_equity(self) -> float:
+        """ISO haftasinin ilk gorulen equity'si (gunluk mekanizmanin aynisi)."""
+        account = self.client.account_info()
+        if account is None:
+            return 0.0
+        year, week, _ = datetime.now(timezone.utc).isocalendar()
+        key = f"{year}-W{week:02d}"
+        if key not in self._week_start_equity:
+            self._week_start_equity[key] = account.equity
+        return self._week_start_equity[key]
+
+    def _open_risk_halt(self, plan) -> tuple[bool, str]:
+        """Toplam acik risk tavani -- risk.py profilinden.
+
+        Acik her pozisyon politika geregi `normal_pct` ile boyutlandirildi, o
+        yuzden toplam risk = acik pozisyon sayisi x normal_pct olarak sayilir.
+        Broker'dan lot/SL geri hesaplamak yerine politikaya guvenmek, yanlis
+        yonde hata yapmaz: gercek risk bundan buyuk olamaz.
+        """
+        cap = plan.max_open_risk_pct * 100.0
+        if cap <= 0:
+            return False, ""
+        ours = [p for p in (self.client.positions_get() or [])
+                if getattr(p, "magic", None) == self.config.magic]
+        planned = (len(ours) + 1) * plan.normal_pct * 100.0
+        if planned > cap:
+            return True, (f"Toplam acik risk {planned:.1f}% > {cap:.1f}% "
+                          f"({len(ours)} acik pozisyon)")
         return False, ""
 
     def _position_exists(self, symbol: str, comment_module: str) -> bool:
@@ -280,8 +353,10 @@ class OrderExecutor:
                 "reason": f"trade_allowed: {reason}",
             }
 
-        # Guard: daily DD halt
+        # Guard: gunluk ve haftalik stop (ikisi de risk.py profilinden)
         halt, reason = self._daily_dd_halt()
+        if not halt:
+            halt, reason = self._weekly_dd_halt()
         if halt:
             return {
                 "action": "skip",
@@ -310,12 +385,33 @@ class OrderExecutor:
                 "reason": f"Position already open for {pos.module}",
             }
 
-        # Calculate risk amount (with SWEEP override)
-        risk_pct = (
-            self.config.sweep_risk_pct if "SWEEP" in pos.module else self.config.risk_pct
+        # Risk buyuklugu risk.py'den -- burada ikinci bir politika YOK.
+        # Eski hali modul adinda "SWEEP" arayip %2.25 veriyordu; o carpan
+        # 2026-08-06'da politikadan kaldirilmisti ama burada yasamaya devam
+        # etmisti.
+        plan = risk_plan(
+            phase=self.phase, balance=balance, module_name=pos.module,
+            module_weight=pos.weight, symbol_key=pos.symbol,
+            entry=pos.entry, sl=pos.sl,
         )
-        risk_pct = min(risk_pct, self.config.max_risk_pct)
-        risk_amount = balance * risk_pct / 100.0
+        if not plan.real_money_allowed:
+            return {
+                "action": "skip",
+                "module": pos.module,
+                "symbol": pos.symbol,
+                "reason": f"PAPER tier: gercek risk sifir ({plan.profile_name})",
+            }
+
+        # Toplam acik risk tavani
+        halt, reason = self._open_risk_halt(plan)
+        if halt:
+            return {"action": "skip", "module": pos.module,
+                    "symbol": pos.symbol, "reason": reason}
+
+        # DAIMA normal risk. Kazanc sonrasi %3'e cikan boost gercek emir
+        # yolunda BILEREK kullanilmaz: kartta insan gorup onaylar, otomatik
+        # emir kendi kendine kaldirac artiramaz.
+        risk_amount = plan.normal_usd
 
         # Calculate lot
         lot = self.lot_for(broker_symbol, pos.entry, pos.sl, risk_amount)

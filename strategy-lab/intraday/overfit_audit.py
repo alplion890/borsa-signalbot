@@ -78,7 +78,9 @@ def _audit(label: str, trials: dict[str, pd.Series], freq: str = "W") -> dict:
 
 
 def _forward_psr(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, parse_dates=["entry_time"])
+    # Backfill satirlari kanit degil: `forward_ea.ledger` tek kapi.
+    from .forward_ea.ledger import load_forward
+    df = load_forward(path)
     rows = []
     print("\n=== 3. Forward EA canli defteri (PSR -- deflate YOK, tek teyit testi)")
     for name, g in df.groupby("module"):

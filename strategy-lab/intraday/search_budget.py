@@ -95,8 +95,8 @@ def main() -> None:
 
     fwd = LEDGER_DIR / "forward_ea" / "forward_ledger.csv"
     if fwd.exists():
-        led = pd.read_csv(fwd, parse_dates=["entry_time"])
-        led = led[~led["module"].str.startswith("CAND_")]
+        from .forward_ea.ledger import load_forward
+        led = load_forward(fwd, include_candidates=False)
         r = led.set_index("entry_time")["r"]
         sr, n = weekly_sharpe(r)
         report(sr, n, f"FORWARD defteri havuz ({len(r)} islem)")

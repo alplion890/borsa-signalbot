@@ -418,31 +418,16 @@ class TestOpenForSignal:
         assert result["retcode"] == 10014
         assert "reason" in result
 
-    @patch("intraday.forward_ea.order_executor.mt5_io.resolve")
-    def test_sweep_uses_override_risk(self, mock_resolve, fake_client, paper_pos):
-        """SWEEP module uses sweep_risk_pct override."""
-        mock_resolve.return_value = "XAUUSD"
-        paper_pos.module = "SWEEP_CORE_AVOID_MID_VWAP"
-        fake_client.symbol_info_data["XAUUSD"] = SimpleNamespace(
-            point=0.00001,
-            digits=5,
-            volume_min=0.01,
-            volume_step=0.01,
-            volume_max=1000.0,
-            trade_tick_value=100.0,
-            trade_tick_size=0.01,
-            trade_contract_size=100000.0,
-        )
-        exec = OrderExecutor(
-            client=fake_client,
-            config=ExecConfig(risk_pct=1.5, sweep_risk_pct=2.25),
-            live_modules={"SWEEP_CORE_AVOID_MID_VWAP"},
-        )
-        # Just verify it doesn't crash and respects the override
-        result = exec.open_for_signal(paper_pos, 100_000.0)
-        # If it opens, risk_pct was applied (we can't easily check which ratio was used
-        # without exposing internal state, so just verify no crash)
-        assert "action" in result
+    def test_sweep_override_KALDIRILDI(self):
+        """Sweep'e ozel %2.25 carpani artik yok.
+
+        Politika 2026-08-06'da duzlestirilmisti ama bu dosyadaki kopya
+        carpani yasatmaya devam ediyordu. Boyutlandirma testleri artik
+        `test_order_executor_risk.py`'de -- kaynak risk.py.
+        """
+        alanlar = ExecConfig().__dataclass_fields__
+        assert "sweep_risk_pct" not in alanlar
+        assert "risk_pct" not in alanlar
 
 
 class TestReconcile:
@@ -656,12 +641,12 @@ class TestDailyDDHalt:
         with patch.object(executor, "_get_day_start_equity", return_value=100_000.0):
             halt, reason = executor._daily_dd_halt()
         assert halt is True
-        assert "Daily DD" in reason
+        assert "Gunluk stop" in reason
 
     def test_daily_dd_halt_not_tripped(self, fake_client):
         """Loss under threshold => halt False."""
         executor = OrderExecutor(client=fake_client)
-        fake_client.account_info_data.equity = 98_000.0  # 2% loss < 4.5%
+        fake_client.account_info_data.equity = 98_000.0  # 2% < profil esigi %4.5
         with patch.object(executor, "_get_day_start_equity", return_value=100_000.0):
             halt, reason = executor._daily_dd_halt()
         assert halt is False
@@ -674,7 +659,7 @@ class TestDailyDDHalt:
         with patch.object(executor, "_get_day_start_equity", return_value=100_000.0):
             result = executor.open_for_signal(paper_pos, balance=95_000.0)
         assert result["action"] == "skip"
-        assert "Daily DD" in result["reason"]
+        assert "Gunluk stop" in result["reason"]
         assert fake_client.order_results == []  # no real order placed
 
 

@@ -42,6 +42,14 @@ TRADING_DAYS_WEEK = 5
 LEDGER = (Path(__file__).resolve().parents[1] / "outputs" / "intraday" /
           "forward_ea" / "forward_ledger.csv")
 
+def _load_ledger():
+    """Backfill haric defter -- tek kapi (`forward_ea.ledger`)."""
+    from .forward_ea.ledger import load_forward
+    d = load_forward(LEDGER)
+    d["exit_time"] = pd.to_datetime(d["exit_time"])
+    return d
+
+
 SWEEP_SYMBOLS = ["US100", "US500", "US30", "US2000", "UK100", "FRA40", "JAP225"]
 
 
@@ -184,7 +192,7 @@ def _pool(df: pd.DataFrame, span_weeks: float) -> tuple[np.ndarray, float]:
 
 
 def build_forward() -> dict[str, tuple[np.ndarray, float]]:
-    d = pd.read_csv(LEDGER, parse_dates=["entry_time", "exit_time"])
+    d = _load_ledger()
     span = (d["entry_time"].max() - d["entry_time"].min()).days / 7
     out = {}
     for name, cfg in PORTFOLIOS.items():
@@ -203,7 +211,7 @@ def _hold_hours(family: str) -> np.ndarray:
     sonucu dogrudan kaydirir. Bunun yerine ayni modul ailesinin canli
     defterdeki ampirik tutma dagilimindan orneklenir.
     """
-    d = pd.read_csv(LEDGER, parse_dates=["entry_time", "exit_time"])
+    d = _load_ledger()
     if family == "sweep":
         m = d["module"].str.contains("SWEEP") & ~d["module"].str.contains("ES_DIV")
     else:

@@ -45,8 +45,8 @@ def load_sweep_r() -> np.ndarray:
     fr, co = fetch(["US100"], 180)
     df = fr["US100"]
     mt5_r = run_sweep(df, _instrument("US100", co["US100"], float(df["close"].iloc[-1])))
-    led = Path(__file__).resolve().parents[1] / "outputs" / "intraday" / "forward_ea" / "forward_ledger.csv"
-    live = pd.read_csv(led)
+    from .forward_ea.ledger import load_forward
+    live = load_forward()   # backfill haric -- kanit sayimi
     live_r = live[live["module"] == "SWEEP_CORE_AVOID_MID_VWAP"]["r"].to_numpy()
     return np.concatenate([mt5_r.to_numpy(), live_r])
 
