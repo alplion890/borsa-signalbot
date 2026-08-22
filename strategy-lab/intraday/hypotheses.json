@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "donchian_xau_1h",
+    "tarih": "2026-08-23",
+    "yazan": "claude",
+    "neden_var": "Turtle-tipi Donchian kirilim: trend baslangicinda range genislemesini yapisal olarak yakalar (klasik momentum-devam mekanizmasi, backtest'e bakip secilmedi). XAUUSD makro surucusu (Fed/DXY/jeopolitik) NASDAQ-agirlikli mevcut kitaptan (SWEEP_CORE, NQ_ORB) yapisal olarak farkli -- dusuk korelasyon beklentisi enstrumandan geliyor.",
+    "enstruman": "XAUUSD",
+    "tutus": "saat bazli, 1h bar, max_hold ~200 bar (~8 gun)",
+    "min_n": 30,
+    "deneme_sayisi": 2,
+    "durum": "kosuldu",
+    "sonuc": "N=20: 848 islem, exp_R=+0.085, haftalik SR=+0.082, aktif_hafta=573. N=55: 531 islem, exp_R=+0.078, haftalik SR=+0.072, aktif_hafta=479. Veri: XAUUSD 5m->1h resample, 2012-2026 (87588 bar). Korelasyon (haftalik R): SWEEP_CORE=-0.013, NQ_ORB=+0.039 -- kapi gecti (|r|<0.30). Maliyet: round-trip/ort.risk=%1.83 -- kapi gecti (<=%5). Sonuc pozitif ama zayif (SR~0.08, mevcut kitaptaki SWEEP_CORE/NQ_ORB'un forward SR'lerinden dusuk); backtest, forward degil. Denetim: Hermes (yazar!=denetci kurali)."
+  }
+]
