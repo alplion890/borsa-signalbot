@@ -48,6 +48,12 @@ MAGIC = 202600
 LIVE_MODULES: set[str] = set(live_module_names())
 
 
+def _default_state_dir() -> Path:
+    """Calisma durumunun yazildigi gercek dizin (repo ciktisi)."""
+    return (Path(__file__).resolve().parent.parent.parent
+            / "outputs" / "intraday" / "forward_ea")
+
+
 @dataclass(frozen=True)
 class ExecConfig:
     """Emir icra ayarlari.
@@ -92,6 +98,7 @@ class OrderExecutor:
         config: ExecConfig = ExecConfig(),
         live_modules: set[str] | None = None,
         phase: str | None = None,
+        state_dir: Path | None = None,
     ):
         """Initialize executor.
 
@@ -99,8 +106,13 @@ class OrderExecutor:
             client: MT5 client (duck-typed wrapper). Defaults to real MetaTrader5.
             config: ExecConfig with risk/sizing parameters.
             live_modules: Set of module names allowed to trade real. Defaults to LIVE_MODULES.
+            state_dir: Calisma durumunun (exec_day.json) yazilacagi dizin.
+                Varsayilan gercek cikti dizini. TESTLER tmp_path VERMELI --
+                vermezlerse gunluk zarar freninin tabanini sahte ozvarlikla
+                sabitlerler (bkz test_exec_state_isolation.py).
         """
         self.client = client if client is not None else _get_default_client()
+        self.state_dir = Path(state_dir) if state_dir is not None else _default_state_dir()
         self.config = config
         self.live_modules = live_modules if live_modules is not None else LIVE_MODULES
         # Faz (challenge/funded) risk profilini secer. Ortamdan okunur ki
@@ -201,13 +213,7 @@ class OrderExecutor:
             return 0.0
 
         today_utc = datetime.now(timezone.utc).date().isoformat()
-        day_file = (
-            Path(__file__).resolve().parent.parent.parent
-            / "outputs"
-            / "intraday"
-            / "forward_ea"
-            / "exec_day.json"
-        )
+        day_file = self.state_dir / "exec_day.json"
         day_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing
