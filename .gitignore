@@ -33,3 +33,7 @@ strategy-lab/outputs/intraday/forward_ea/*
 # birlikte commit'lenir.
 !strategy-lab/outputs/intraday/forward_ea/cloud_ledger.csv
 !strategy-lab/outputs/intraday/forward_ea/cloud_state.json
+# Diskresyoner defter de yeniden uretilemez: elle acilan islemlerin ve
+# giris ONCESI yazilmis tezlerin tek kaydi. Backtest'i yok, bu dosya yoksa
+# "yorum yetenegi ise yariyor mu" sorusunun cevabi da yok.
+!strategy-lab/outputs/intraday/forward_ea/diskresyoner_defter.csv
