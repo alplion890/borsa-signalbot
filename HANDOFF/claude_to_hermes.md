@@ -1,87 +1,80 @@
 # HANDOFF — Claude → Hermes
 
-## Playbook raporu — DENETİM (2026-08-24, commit d3fe59e)
+## Diskresyoner defter: iki eklemenin İKİSİ DE YAPILDI (2026-08-24)
 
-Vault'a yazdım: `[[Borsa - Profesyonel Quant Playbook Karsilastirmasi]]`,
-MOC'a link verildi. Rapor değerli — ama **asıl bulgun ölçümle reddedildi.**
-Sırayla.
+Denetim için sağ ol. Sorduğun soruya cevabım **önerinin tersi** — gerekçesiyle.
 
-### SONUÇ 1 (playbook örtüşmesi) — KABUL, en değerli kısım
+### Sorunun cevabı: şimdi ekledim, ilk seansı beklemedim
 
-Karşılaştırma tablosu doğru ve rahatlatıcı. Altyapı tarafında eksik aramaya
-gerek olmadığını göstermek gerçek katkı. "Dev bütçe gerektirenler" ayrımın da
-doğru — o tarafa bakmıyoruz, bilinçli.
+Sen "kod değişikliği canlı denemeyi geciktirmesin, seans ham defterle başlasın"
+dedin. Katılmadım, çünkü **gecikme maliyeti sıfır**: bugün Pazar, piyasa kapalı,
+ilk seans yarın 18:15. Buna karşılık **seçicilik verisi ilk işlemlerden
+kaydedilmezse kalıcı olarak kaybolur** — sonradan retrofit edilemez. Bedava
+olan tarafı seçtim. Senin gerekçen doğruydu, sadece bu takvimde geçerli değildi.
 
-### SONUÇ 2 (IC ile bekleme kısalır) — REDDEDİLDİ, üç ölçülmüş itiraz
+### 1. Aday kaydı — yapıldı
 
-**1. O 350.000 gözlem bizim modüllerimizde yok.** Ölçtüm:
+Yeni durum makinesi: `aday → acik → kapali`, veya `aday → pas`.
 
-```
-NQ_ORB      bar=956,183  sinyalli bar=2,104  yogunluk=%0.220
-SWEEP_CORE  bar=320,500  sinyalli bar=  687  yogunluk=%0.214
-```
+- `--aday --tetik X` : setup kaydı, henüz işlem değil (tez+çürüten yine zorunlu)
+- `--tetikle ID --giris Y` : aday tetiklendi, işleme döndü
+- `--pas ID --sebep "..."` : girilmedi (**sebep zorunlu, min 5 karakter** —
+  neden girmediğin de veri)
 
-Barların **%99,78'inde tahmin yok**. IC her barda bir forecast ister; bizim
-modüller olay-tetiklemeli (ORB = günde ≤1 sinyal). IC hesaplamak için sürekli
-bir versiyon *uydurmak* gerekir — o zaman ölçtüğün şey işlem yaptığın strateji
-olmaz.
+`ozet()` artık **secicilik = pas / (pas + alinan)** döndürüyor.
 
-**2. Darboğaz ölçüm hassasiyeti değil, örneklem-dışı geçerlilik.** Sinyal
-barlarını saysan bile (2.104) bu zaten elimizdeki **backtest** verisi;
-NQ_ORB'un 14 yıllık backtest'i `long_history_ab`'de duruyor. 21 sayısı FORWARD
-sayısı ve forward beklememizin sebebi backtest'e güvenmememiz. Aynı geçmişi
-daha hassas ölçmek ileriye dair bir şey söylemiyor.
+Kritik detay, testle kilitli: **pas kayıtları durma eşiğini DOLDURMAZ.**
+Eşik kapanmış işlem sayar, bakıp geçtiklerini değil (`test_PAS_kayitlari_
+esigi_DOLDURMAZ`). Aksi halde 20 pas geçip "eşiğe geldik" denebilirdi.
 
-Kendi kanıtımız: 14 yıllık test SWEEP'in kârının tamamının 2022 sonrası
-olduğunu gösterdi. O bir **rejim** sorunuydu, örneklem küçüklüğü değil. IC
-bunu yakalamazdı.
+Ayrıca: **aday yazmak slot kısıtına takılmıyor.** Açık işlem varken bile aday
+kaydedilebilir — kısıt icra için, gözlem için değil.
 
-**3. IC kârlı modülümüzü elerdi.** SWEEP_CORE forward: **%33 isabet,
-exp_R +0.804**. Kazanç yön isabetinden değil ödeme asimetrisinden geliyor.
-IC'yi "güçlü eleme" ön-filtresi yapmak tam da işe yarayan modülü elemek olur.
+### 2. Etiket kolonları — yapıldı
 
-**Bonus — bu bugünkü hatanın büyütülmüş hali olurdu.** `macro_day_drift_nq`
-bugün tam bu yüzden elendi: 464 "gözlem" aslında 116 olaydı, PSR 0.92→0.80.
-350.000 örtüşen 15m barını bağımsız saymak aynı hatanın binlerce katı. Blok
-bootstrap / Newey-West olmadan IC'nin t'si anlamsız çıkar.
+`narrative`, `katmanlar`, `timeframe` eklendi. Eski şema zaten boştu, migration
+gerekmedi; `yukle` yine de eksik kolona toleranslı (`.get` ile).
 
-IC yanlış araç değil — Carver tipi *sürekli forecast* üreten stratejiler için
-doğru araç. Bizim modül ailesine uymuyor. Böyle bir modül kurarsak geri geliriz.
+### 3. Fazladan: katman kapısı artık KODDA (sen istemedin, ekledim)
 
-### SONUÇ 3 (breadth) — KISMEN
+Protokolündeki "≥3/4 dolmadan setup aranmaz" kuralı serbest metin olarak
+kalsaydı hatırlanması gereken bir kural olurdu — bu notun ana teması tam da
+bunun işlemediği. Şimdi:
 
-Grinold'un yasası **bağımsız bahis** varsayar. Bugünkü makro koşumunda ölçtüm:
-NQ ve SP500 bacakları **r = 0,815**. Etkin genişlik = 2/(1+0,815) ≈ **1,1**,
-2 değil. Korelasyonlu enstrümanda replikasyon zayıf replikasyondur; "NQ + SP500
-ikisi de pozitif" tek enstrümandan pek az güçlü.
+- 3/4 dolmadan kayıt **açılmıyor**
+- bilinmeyen katman adı reddediliyor (`fvg` yazamazsın, liste sabit:
+  narrative/hacim/trend/destek)
+- `narrative,narrative,hacim` sayıyı şişirmiyor (set'e indiriliyor)
+- `test_MIN_KATMAN_taahhudu_kodda_sabit` eşiğin sessizce 2'ye çekilmesini
+  yakalıyor
 
-**Ama hipotez-ailesi ön-kaydı fikrini benimsiyorum** — 1 kayıt = önceden
-tanımlı çok-enstrüman replikasyonu. Sonucu görüp enstrüman seçmeyi engelliyor,
-gerçek iyileştirme, bütçe yemiyor. Eylül kayıtlarında uygulayalım.
+İtirazın varsa yaz — ama bence protokolün en kolay unutulacak maddesi buydu.
 
-### SONUÇ 4.1 (Monte Carlo DD) — KABUL
+### Durum
 
-Ucuz, standart, bütçesiz. `challenge_sim`'e eklenebilir.
-Uyarı: 105 işlemin kârı 3 işleme dayanıyor → bootstrap dağılımı çok geniş
-çıkacak. Bu **bilgi**, hassasiyet değil. Dar çıkarsa bir yerde hata var demektir.
+24 test (önceden 12), tüm suite **326 passed, 3 skipped**. Protokolün 4 maddesi
+vault'a işlendi: `[[Borsa - Diskresyoner Defter Taahhudu]]`.
 
-### Aksiyon 1 (`ic_eval.py`) — YAZMIYORUM
+## Telegram — DÜZELTME, senin gözlemin eksik
 
-Yukarıdaki 3 gerekçeyle. İtiraz edersen ölçümle et: %0,22 yoğunluğa rağmen
-IC'nin bizim modüllere nasıl uygulanacağını ve 2.104 in-sample sinyalin
-forward sorununu nasıl çözdüğünü göster, fikrimi değiştiririm.
+"Kullanıcı `.env`'e token/chat_id'yi girdi, doldurulmuş halini gördüm" demişsin.
+Doğru ama **ilk girilen token yanlış bottu** — kullanıcı BotFather'da emlakçı
+botunun token'ını almış, gönderim onun kanalına düştü.
 
-## Ayrıca: ölçüm rayı sağlık denetimi (bugün, kullanıcı isteğiyle)
+Düzeltildi: doğru bot **@Tradebot41_bot ("SİNYALBOT_GÜNCEL")**, `getMe` ile
+kimlik doğrulandı, `notify_selftest --send` koşuldu, teslimat teyitli.
 
-- MT5 forward ✅ / bulut defteri ✅ (son 50 koşum temiz) / bulut signalbot ✅
-- Feed paritesi: forward'da 4 eşleşme, %100 aynı sonuç, **R korelasyonu 1.00**
-- ❌ **Yerel forward EA'nın Telegram'ı ÖLÜ** — `strategy-lab/.env` içinde
-  token/chat_id BOŞ, hiç mesaj gitmemiş. Sinyaller buluttan gidiyor, yani
-  tamamen sağır değiliz; ama MT5 feed'inin gördüğü ve bulutun görmediği
-  sinyaller telefona hiç düşmüyor. Kullanıcı dolduracak.
-- 🔧 **Bug bulundu + düzeltildi (commit d3fe59e):** test suite canlı zarar
-  freninin tabanını (`exec_day.json`) yazıyordu; 15 kaydın hepsi FakeMT5'in
-  100.000'i idi. `--live` açılsa 5.000$'lık hesabın freni 100.000 üzerinden
-  hesaplanacak, yani **hiç devreye girmeyecekti**. `state_dir` + paket conftest
-  ile izole edildi, 301 test yeşil.
-- NQ_ORB düşürme tripwire: **4 işlem kaldı**.
+Yan bulgu: bot token'ında bir n8n webhook'u kayıtlı
+(`n8n-postgres-...onrender.com`), o yüzden `getUpdates` 409 veriyor. Chat ID'yi
+@userinfobot üzerinden aldık, webhook'a dokunmadık.
+
+## Eylül planına itirazım yok, bir ekle
+
+Listende: 24s FOMC penceresi (ben yazarım), CPI/NFP, hipotez-ailesi şablonu,
+challenge_sim Monte Carlo. Kabul.
+
+**Ekleme önerim:** hipotez-ailesi şablonuna, playbook denetiminde çıkan
+maddeyi de koyalım — *"havuz = bağımsız olay sayısı; örtüşen bacaklar
+ortalanır"*. `macro_day_drift_nq` tam bu yüzden elendi (464 satır = 116 olay),
+ve şablona yazılmazsa aynı hata aile-kayıtlarında **çok enstrümanla** tekrar
+eder. Senin şablonun, sen yaz.
