@@ -6,7 +6,79 @@ Denetimin `hypotheses.json`'daki `sonuc` alanına ve vault notuna işlendi
 (commit `3324e54`). "Kullanıcıya açıklamama" ifadesini düzelttiğin için
 sağ ol.
 
-## GÖREV 1 (macro_day_drift_nq) — SORU: giriş saati tanımı belirsiz, koşmadan önce netleştirme lazım
+## GÖREV 1 — İLERLEME + 2 BULGU + 1 BLOKAJ (2026-08-24)
+
+Yeni: `intraday/event_calendar.py` + `test_event_calendar.py` (9 test, tüm
+suite 282 yeşil). FOMC tarafı bitti, CPI/NFP tıkandı.
+
+### Yapıldı: FOMC takvimi 2012-2026, resmi kaynaktan
+
+119 düzenli karar günü. Kaynak: `fomchistorical{yıl}.htm` (2012-2020) +
+`fomccalendars.htm` (2021-2026). Plansız konferans görüşmeleri (2013-10-16,
+2014-03-04, 2019-10-04, 2020-03-02, 2020-03-15) **dışarıda** — önceden ilan
+edilmemişlerdi, işlem gününde bilinemezlerdi, listeye koymak look-ahead olurdu.
+
+### BULGU 1 (spec'ini kırıyor): FOMC duyuru saati 2013'te değişti
+
+Kaydında "FOMC: 13:55 ET çıkış" var, yani 14:00 duyuru varsayımı. Bu
+**2013 Mart'tan öncesi için yanlış**. Fed'in 2013-03-13 duyurusu
+(`monetary20130313a.htm`) metni 14:00'a sabitledi. Öncesinde ikili düzen vardı:
+
+- basın toplantılı toplantılar → metin **~12:30 ET** (2012-01-25'te 12:20)
+- basın toplantısız toplantılar → metin **14:15 ET**
+
+Etkisi ciddi: 12:30 rejimindeki günlerde 13:55 çıkışı, kararın açıklanmasından
+**85 dakika SONRA** olur. Yani pozisyon duyuruyu taşır — senin "spike
+fat-tail'ine bilerek girilmez, theta avcısı" ana varsayımının tam tersi.
+9 gün etkileniyor (2012'nin 8'i + 2013-01-30).
+
+Takvimde bu günler `erken_aciklama=True` ile işaretli, gerçek saatleriyle.
+**Kararı sana bırakıyorum**, ikisi de savunulabilir ama ön-kayıt değişikliği
+sayılır, o yüzden sen yazmalısın:
+- (a) bu 9 günü örneklemden **dışla** (2012 + Oca 2013 FOMC gitmiş olur), veya
+- (b) çıkışı sabit 13:55 yerine **duyuru−5dk** olarak tanımla (takvim gerçek
+  saati taşıyor, kod destekler). Bence (b) daha temiz — mekanizmaya sadık
+  kalıyor ve örneklem kaybetmiyorsun.
+
+### BULGU 2: 2020'de 7 düzenli toplantı var, 8 değil
+
+17-18 Mart 2020 toplantısı iptal edildi (yerine 15 Mart acil toplantısı).
+`beklenen_frekans` hesabında "~8 FOMC/yıl" var — 14 yıllık toplamda ufak
+sapma, n tahminini etkiler ama kritik değil. Testte açıkça kodlandı.
+
+### BLOKAJ: CPI/NFP tarihleri alınamıyor — senden kaynak lazım
+
+Üç yolu da denedim, üçü de kapalı:
+- `bls.gov/schedule/news_release/{yıl}_sched.htm` → **403**
+- `fred.stlouisfed.org/release/dates?rid=10` (CPI) ve `rid=50` (NFP) → **403**
+- FRED `releases/dates` API → **API anahtarı istiyor**, repoda/ortamda yok
+
+Kaydında "FRED releases/dates API (ucretsiz, resmi)" yazıyordu — ücretsiz
+evet ama anahtarsız değil.
+
+Tarihleri kafadan üretmedim ve üretmeyeceğim ("CPI ayın 10-15'i arası bir
+salı" tipi kural bu projede tam olarak sahte-edge üretme biçimi).
+`cpi_events()` / `nfp_events()` şu an `NotImplementedError` fırlatıyor —
+bilerek: boş liste dönseydi backtest 0 işlemle sessizce geçer, hata görünmez
+olurdu. Test bunu da kilitliyor.
+
+**Senden istediğim, şunlardan biri:**
+1. Alparslan'a FRED API anahtarı aldırt (ücretsiz, 1 dk) — sonra ben çekerim.
+2. Senin ortamından erişimin varsa tarihleri çek, buraya yapıştır, ben modüle
+   işlerim (kaynak + çekim tarihi belirt).
+3. Apify/ForexFactory alternatifini onayla (kaydında "tavana tabi" demişsin —
+   bütçe ağustosta dolu, o yüzden sormadan gitmiyorum).
+
+### Ara karar: FOMC-only ile başlayalım mı?
+
+Sırf FOMC ile grid 12'den **4'e** düşer (2 enstrüman × 1 olay × 2 giriş).
+Literatürdeki en güçlü kanıt (Lucca-Moench) zaten FOMC'ye ait; CPI/NFP daha
+zayıf gerekçeliydi. FOMC-only koşup CPI/NFP'yi veri gelince ayrı ekleme
+seçeneği var — ama bu ön-kayıt değişikliği, **onayın olmadan yapmam**.
+Onaylarsan `deneme_sayisi`'nı 12→4 düşürüp (DSR lehine) koşarım, sonra veri
+gelince kalan 8 ayrı kayıtla eklenir.
+
+## SORU (hâlâ açık): giriş saati tanımı belirsiz
 
 Kodlamaya başladım, veri hazır (NASDAQ100/SP500 15m cache, 2012-2026,
 UTC index). Ama sinyal tanımında tutarsızlık var, tahminle kod yazmak
