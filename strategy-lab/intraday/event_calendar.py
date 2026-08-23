@@ -26,8 +26,10 @@ DUYURU SAATI -- DIKKAT, GECMISTE DEGISTI:
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import date, time
+from pathlib import Path
 
 # ----------------------------------------------------------------------------
 # FOMC -- duzenli toplantilar. Tarih = KARARIN aciklandigi gun (son gun).
@@ -117,28 +119,40 @@ def fomc_events() -> list[MacroEvent]:
     return sorted(olaylar, key=lambda e: e.gun)
 
 
-def cpi_events() -> list[MacroEvent]:
-    """CPI yayin gunleri -- HENUZ YOK.
+_BLS_ONBELLEK = Path(__file__).resolve().parent / "event_dates_bls.json"
+BLS_SAAT = time(8, 30)  # CPI ve Employment Situation ikisi de 08:30 ET
 
-    Kaynak sorunu: BLS (bls.gov/schedule) ve FRED (fred.stlouisfed.org/release
-    /dates) ikisi de bu ortamdan 403 donuyor; FRED'in releases/dates API'si
-    ise API anahtari istiyor. Tarihleri elle/tahminle doldurmak YASAK --
-    "CPI ayin 10-15'i arasi bir sali" gibi bir kural bu projede tam olarak
-    sahte-edge uretme bicimi. Gercek liste gelene kadar bos.
-    """
-    raise NotImplementedError(
-        "CPI yayin tarihleri henuz yok. Kaynak secimi bekliyor "
-        "(FRED API anahtari veya elle indirilmis BLS takvimi). "
-        "Bkz HANDOFF/claude_to_hermes.md"
-    )
+
+def _bls_yukle() -> dict:
+    if not _BLS_ONBELLEK.exists():
+        raise FileNotFoundError(
+            f"{_BLS_ONBELLEK} yok. Once `python -m intraday.event_calendar_fetch` "
+            "calistir (FRED_API_KEY gerekir)."
+        )
+    return json.loads(_BLS_ONBELLEK.read_text(encoding="utf-8"))
+
+
+def cpi_events() -> list[MacroEvent]:
+    """CPI yayin gunleri (FRED onbellegi, revizyonlar elenmis)."""
+    return _mk(_bls_yukle()["CPI"], "CPI", BLS_SAAT)
 
 
 def nfp_events() -> list[MacroEvent]:
-    """NFP (Employment Situation) yayin gunleri -- HENUZ YOK. Bkz cpi_events."""
-    raise NotImplementedError(
-        "NFP yayin tarihleri henuz yok. Kaynak secimi bekliyor. "
-        "Bkz HANDOFF/claude_to_hermes.md"
-    )
+    """NFP (Employment Situation) yayin gunleri (FRED onbellegi)."""
+    return _mk(_bls_yukle()["NFP"], "NFP", BLS_SAAT)
+
+
+def all_events() -> list[MacroEvent]:
+    """Tum makro olaylar, tarihe gore sirali.
+
+    ON-KAYIT KURALI (hypotheses.json / macro_day_drift_nq): CPI ve NFP ayni
+    gune duserse gun CPI sayilir, NFP islemi ATLANIR. Kural testte kilitli.
+    """
+    cpi_gunleri = {e.gun for e in cpi_events()}
+    olaylar = fomc_events() + cpi_events() + [
+        e for e in nfp_events() if e.gun not in cpi_gunleri
+    ]
+    return sorted(olaylar, key=lambda e: (e.gun, e.tip))
 
 
 def main() -> None:
@@ -150,6 +164,19 @@ def main() -> None:
     print(f"  ERKEN aciklama  : {len(erken)}  <- 13:55 cikis kurali bu gunlerde KIRIK")
     for e in erken:
         print(f"    {e.gun}  {e.aciklama_et.strftime('%H:%M')} ET")
+
+    try:
+        hepsi = all_events()
+    except FileNotFoundError as e:
+        print(f"\nCPI/NFP: {e}")
+        return
+    from collections import Counter
+    sayim = Counter(o.tip for o in hepsi)
+    print(f"\nTum olaylar: {len(hepsi)}  ({hepsi[0].gun} -> {hepsi[-1].gun})")
+    for tip, n in sorted(sayim.items()):
+        print(f"  {tip:5} {n}")
+    cakisma = len(cpi_events()) + len(nfp_events()) + len(fomc_events()) - len(hepsi)
+    print(f"  (CPI ile ayni gune dusup atlanan NFP: {cakisma})")
 
 
 if __name__ == "__main__":
