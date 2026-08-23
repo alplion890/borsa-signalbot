@@ -23,13 +23,15 @@
     "stop_hedef": "RR 1.0, stop = giris - 0.5*ATR(14,gunluk), hedef yok -> pencere sonu zaman-cikisi (Gold ORB kalibi)",
     "min_n": 60,
     "beklenen_frekans": "~8 FOMC + ~12 CPI + ~12 NFP/yil = ~32 islem/yil/enstruman; 14 yilda toplam ~900",
-    "deneme_sayisi": 12,
-    "deneme_gridi": "2 enstruman x 3 olay tipi x 2 giris varyanti (16:05 ET | acilis-sonrasi-ilk-ATR-kirma) = 12 kombinasyon TAM listesi; baska hicbir varyant kosulmaz",
+    "deneme_sayisi": 4,
+    "deneme_gridi": "REVIZYON 2026-08-24 (yazan hermes onayi, HANDOFF/hermes_to_claude.md): 12 -> 4. 2 enstruman (NASDAQ100, SP500) x FOMC x 2 giris varyanti (duyuru-1bar | duyuru-2bar) = 4 kombinasyon TAM listesi. CPI/NFP bu kayittan CIKARILDI (ayri kayitla, bu sonucu gormeden yazilacak). Duyurudan sonra giris varyanti taranmaz.",
+    "revizyon_2026_08_24": "Uc on-kayit degisikligi, kosumdan ONCE ve yazan (hermes) onayiyla: (1) CIKIS = duyuru-5dk yerine takvimdeki GERCEK duyuru saatine gore, cunku FOMC metin saati 2013-03-13'te degisti (oncesinde basin toplantili toplantilar ~12:30 ET, digerleri 14:15 ET); sabit 13:55 kurali 9 gunde pozisyonu duyurunun ICINDEN gecirecekti. (2) GIRIS = '16:05 ET' hermes'in yazim hatasiydi; ayrica tek sabit saat uc olay tipinde mekanizmayla celisiyordu -> giris duyurudan geriye sayilan 15m bar kapanisi olarak yeniden tanimlandi. Ikinci varyant 'acilis-sonrasi-ATR-kirma' iptal, yerine 'duyuru-2bar'. (3) FOMC-only baslangic. AYRICA 15m granularite sapmasi: 13:55 diye bar siniri yok, cikis p-1 barinin kapanisi (=duyuru ani, spike bir sonraki barda; veriyle dogrulandi).",
     "veri": "Dukascopy 15m 2012-2026 (diskte mevcut), olay tarihleri FRED releases/dates API (ucretsiz, resmi). Alternatif ikincil: ForexFactory feed (Apify, tavana tabi) - FRED yetmezse.",
     "adopt_kriteri": "havuz exp_R>0 VE havuz PSR>=0.90 VE yil-tutarliligi >=%50 pozitif yil VE mevcut NQ modulleriyle islem-bazli R korelasyonu <0.30 VE maliyet <=%5 R payi",
     "alternatif_cikis": "korelasyon >=0.30 ama diger kapilar gecerse: bagimsiz modul DEGIL, mevcut SWEEP_CORE/NQ_ORB icin 'makro-gun filtresi' olarak AYRI on-kayitla degerlendirilir (bu kayittan adopte EDILEMEZ)",
     "red_kriteri": "havuz exp_R<=0 veya PSR<0.90 -> ELENDI; deneme_sayisi=12 DSR'ye islenir",
-    "durum": "kayitli",
+    "durum": "elendi",
+    "sonuc": "KOSULDU 2026-08-24, kod intraday/macro_day_lab.py (+9 zamanlama testi), veri NASDAQ100/SP500 15m 2012-01 -> 2026-08. Her bacak 116 FOMC olayi. Bacak bacak exp_R: NQ_1bar +0.0227 (SR 0.150), NQ_2bar +0.0095, SP_1bar +0.0144, SP_2bar +0.0050. Havuz (464 satir): exp_R +0.0129, SR +0.0659, PSR 0.9198, 9/15 pozitif yil. Maliyet payi %2.56/%3.32 (kapi gecti). Korelasyon SWEEP_CORE +0.064, NQ_ORB -0.001 (kapi gecti). ELENME GEREKCESI -- havuz istatistigi GECERSIZ: 4 bacak ayni 116 olayi olcuyor, aralarindaki korelasyon 0.47-0.82. Bagimsiz gozlem 464 degil 116. Olay bazina ortalama alininca PSR 0.9198 -> 0.8031, yani PSR>=0.90 kapisi DUSUYOR (t=0.845). Havuz PSR'nin kapiyi gecmesi tamamen n'in 4 katina sisirilmesinden kaynaklaniyor. Ek yorum sinirlari: (a) Lucca-Moench primi duyuru oncesi 24 SAATTE olculmustur, bu kosum 15-30 dakikalik pencereyi test etti -- bu null literaturu CURUTMEZ, farkli bir soruyu olcer; (b) R birimi 0.5*gunluk ATR iken tutus 15-30dk, yani stop/hedef pratikte hic vurulmuyor, exp_R buyuklugu ATR carpanina gore keyfi olcekleniyor ve diger modullerin R'siyle kiyaslanamaz. Denetci: claude (yazan=hermes).",
     "notlar": "(1) FOMC cikisi duyurudan ONCE -> spike fat-tail'ine bilerek girilmez, theta avcisi. (2) CPI ve NFP ayni saat (08:30 ET): ayni gun ikisi birden gelirse gun CPI sayilir, NFP islemi atlanir. (3) Denetci: CLAUDE (yazan=hermes, denetci=claude - anlasma geregi)."
   }
 ]
