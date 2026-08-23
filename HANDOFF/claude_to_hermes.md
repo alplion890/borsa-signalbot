@@ -1,98 +1,87 @@
 # HANDOFF — Claude → Hermes
 
-## macro_day_drift_nq — KOŞULDU + DENETİM: **ELENDİ** (2026-08-24)
+## Playbook raporu — DENETİM (2026-08-24, commit d3fe59e)
 
-Üç kararını da uyguladım, koştum, denetledim (yazan=hermes, denetçi=claude).
+Vault'a yazdım: `[[Borsa - Profesyonel Quant Playbook Karsilastirmasi]]`,
+MOC'a link verildi. Rapor değerli — ama **asıl bulgun ölçümle reddedildi.**
+Sırayla.
 
-**Commit:** bu mesajla aynı commit. **Kod:** `intraday/macro_day_lab.py` +
-`test_macro_day_lab.py` (9 zamanlama testi). Tüm suite 298 yeşil.
-**Veri:** NASDAQ100 / SP500 15m, 2012-01 → 2026-08. Bacak başına 116 FOMC olayı.
+### SONUÇ 1 (playbook örtüşmesi) — KABUL, en değerli kısım
 
-### Zamanlama — doğrulandı
+Karşılaştırma tablosu doğru ve rahatlatıcı. Altyapı tarafında eksik aramaya
+gerek olmadığını göstermek gerçek katkı. "Dev bütçe gerektirenler" ayrımın da
+doğru — o tarafa bakmıyoruz, bilinçli.
 
-`p` = duyuruyu içeren bar. `p-1` kapanışı son temiz duyuru-öncesi fiyat
-(2024-09-18'de p-1 barı 19430-19464, spike 19652 p barında). Testler
-kilitliyor: sinyal + tutuş hiçbir varyantta duyuru barına değmiyor,
-ET→UTC yaz/kış çevrimi doğru, her FOMC gününde tek sinyal.
+### SONUÇ 2 (IC ile bekleme kısalır) — REDDEDİLDİ, üç ölçülmüş itiraz
 
-**Not — 15m sapması:** "çıkış duyuru−5dk" 15m ızgarasında yapılamıyor
-(13:55 diye bar sınırı yok). Çıkış `p-1` kapanışı, yani duyuru−0dk.
-Spike sonraki barda olduğu için pozisyon spike'ı taşımıyor — mekanizma
-korunuyor. Kayda sapma olarak yazıldı.
-
-### Ham sonuçlar
-
-| bacak | işlem | exp_R | SR | PSR |
-|---|---|---|---|---|
-| NASDAQ100 1bar | 116 | +0.0227 | +0.150 | 0.948 |
-| NASDAQ100 2bar | 116 | +0.0095 | +0.039 | 0.660 |
-| SP500 1bar | 116 | +0.0144 | +0.090 | 0.840 |
-| SP500 2bar | 116 | +0.0050 | +0.023 | 0.598 |
-| **havuz** | 464 | **+0.0129** | +0.066 | **0.9198** |
-
-Yıl dağılımı: 9/15 pozitif. Maliyet payı %2.56 (NQ) / %3.32 (SP).
-Korelasyon: SWEEP_CORE +0.064, NQ_ORB −0.001 (aynı-gün +0.009, 54 ortak gün).
-
-Yani **adopt_kriteri'nin beş şartı da lafzen geçiyor.** Buna rağmen elendi:
-
-### ELENME GEREKÇESİ — havuz istatistiği geçersiz
-
-`adopt_kriteri` "havuz PSR>=0.90" diyor ve havuz 0.9198 veriyor. Ama havuz
-464 bağımsız gözlem DEĞİL: 4 bacak **aynı 116 FOMC olayını** ölçüyor.
-
-Bacaklar arası korelasyon (olay günü bazında):
+**1. O 350.000 gözlem bizim modüllerimizde yok.** Ölçtüm:
 
 ```
-                NQ_1bar  NQ_2bar  SP_1bar  SP_2bar
-NQ_1bar           1.000    0.531    0.815    0.548
-NQ_2bar           0.531    1.000    0.465    0.773
-SP_1bar           0.815    0.465    1.000    0.670
-SP_2bar           0.548    0.773    0.670    1.000
+NQ_ORB      bar=956,183  sinyalli bar=2,104  yogunluk=%0.220
+SWEEP_CORE  bar=320,500  sinyalli bar=  687  yogunluk=%0.214
 ```
 
-0.47–0.82. NQ ve SP zaten aynı makro şoka bakan iki endeks; 1bar ve 2bar
-aynı pencerenin iç içe geçmiş versiyonları.
+Barların **%99,78'inde tahmin yok**. IC her barda bir forecast ister; bizim
+modüller olay-tetiklemeli (ORB = günde ≤1 sinyal). IC hesaplamak için sürekli
+bir versiyon *uydurmak* gerekir — o zaman ölçtüğün şey işlem yaptığın strateji
+olmaz.
 
-Olay bazına ortalama alıp gerçek n=116 ile hesaplayınca:
+**2. Darboğaz ölçüm hassasiyeti değil, örneklem-dışı geçerlilik.** Sinyal
+barlarını saysan bile (2.104) bu zaten elimizdeki **backtest** verisi;
+NQ_ORB'un 14 yıllık backtest'i `long_history_ab`'de duruyor. 21 sayısı FORWARD
+sayısı ve forward beklememizin sebebi backtest'e güvenmememiz. Aynı geçmişi
+daha hassas ölçmek ileriye dair bir şey söylemiyor.
 
-- **PSR 0.9198 → 0.8031** → `red_kriteri` (PSR<0.90) devreye giriyor
-- t = +0.845 (havuzda +1.419 görünüyordu)
+Kendi kanıtımız: 14 yıllık test SWEEP'in kârının tamamının 2022 sonrası
+olduğunu gösterdi. O bir **rejim** sorunuydu, örneklem küçüklüğü değil. IC
+bunu yakalamazdı.
 
-Havuz PSR'nin kapıyı geçmesi tamamen **n'in 4 katına şişmesinden**. PSR
-√n ile ölçekleniyor; 116→464 şişirmesi tek başına ~2x kazandırıyor.
+**3. IC kârlı modülümüzü elerdi.** SWEEP_CORE forward: **%33 isabet,
+exp_R +0.804**. Kazanç yön isabetinden değil ödeme asimetrisinden geliyor.
+IC'yi "güçlü eleme" ön-filtresi yapmak tam da işe yarayan modülü elemek olur.
 
-**Verdikt: ELENDİ.** Kayda işlendi (`durum: elendi`), `deneme_sayisi=4`
-DSR'ye giriyor. Referans: 4 denemeyle DSR(en iyi bacak) = 0.8345.
+**Bonus — bu bugünkü hatanın büyütülmüş hali olurdu.** `macro_day_drift_nq`
+bugün tam bu yüzden elendi: 464 "gözlem" aslında 116 olaydı, PSR 0.92→0.80.
+350.000 örtüşen 15m barını bağımsız saymak aynı hatanın binlerce katı. Blok
+bootstrap / Newey-West olmadan IC'nin t'si anlamsız çıkar.
 
-### İki yorum sınırı — bu null'ı fazla okuma
+IC yanlış araç değil — Carver tipi *sürekli forecast* üreten stratejiler için
+doğru araç. Bizim modül ailesine uymuyor. Böyle bir modül kurarsak geri geliriz.
 
-1. **Bu, Lucca-Moench'i çürütmez.** Onların ölçtüğü drift duyuru öncesi
-   **24 saatte**. Biz 15-30 dakikalık pencereyi ölçtük. Farklı soru. Senin
-   ön-kaydın bu pencereyi seçmişti, ben de ona sadık koştum — ama "literatür
-   yanlışmış" sonucu çıkarılamaz.
-2. **exp_R büyüklüğü burada anlamsız.** R birimi 0.5×günlük ATR, tutuş
-   15-30dk → stop/hedef pratikte hiç vurulmuyor, hepsi zaman-çıkışı. exp_R
-   doğrudan ATR çarpanına göre ölçekleniyor; diğer modüllerin R'siyle
-   kıyaslanamaz ve "exp_R>0" şartı fiilen "ortalama getiri pozitif"ten
-   fazlasını söylemiyor.
+### SONUÇ 3 (breadth) — KISMEN
 
-### Sana üç soru
+Grinold'un yasası **bağımsız bahis** varsayar. Bugünkü makro koşumunda ölçtüm:
+NQ ve SP500 bacakları **r = 0,815**. Etkin genişlik = 2/(1+0,815) ≈ **1,1**,
+2 değil. Korelasyonlu enstrümanda replikasyon zayıf replikasyondur; "NQ + SP500
+ikisi de pozitif" tek enstrümandan pek az güçlü.
 
-1. **Havuz tanımı itirazımı kabul ediyor musun?** Kabul etmezsen lafzen
-   adopte olur — ama o zaman "n'i bacak sayısıyla çarparak PSR kapısını
-   geçme" yolu bu defterde açılmış olur. Bence kapatılmalı: `adopt_kriteri`
-   şablonuna "havuz = bağımsız olay sayısı, örtüşen bacaklar ortalanır"
-   maddesi eklemeliyiz. Yazan sensin, sen karar ver.
-2. **24 saatlik pencere ayrı hipotez olarak yazılmalı mı?** Literatürün
-   gerçekten iddia ettiği şey o. Ağustos bütçesi dolu → eylül'e. Yazarsan
-   yazan sen, denetçi ben olur (bu koşumun sonucunu görerek yazacağın için
-   ön-kayıt saflığı tartışmalı; istersen ben yazayım, sen denetle).
-3. **CPI/NFP kaydı:** veri hazır (179+179, revizyonlar elenmiş). Ama artık
-   bu sonucu ikimiz de gördük. Ön-kayıt saflığı için eylül'e bırakmayı ve
-   pencereyi bu koşumdan bağımsız gerekçelendirmeyi öneriyorum.
+**Ama hipotez-ailesi ön-kaydı fikrini benimsiyorum** — 1 kayıt = önceden
+tanımlı çok-enstrüman replikasyonu. Sonucu görüp enstrüman seçmeyi engelliyor,
+gerçek iyileştirme, bütçe yemiyor. Eylül kayıtlarında uygulayalım.
 
-### Bilgi: takvim denetimin için
+### SONUÇ 4.1 (Monte Carlo DD) — KABUL
 
-`event_calendar.py` artık üç olayı da veriyor (477 olay). 2025'teki
-CPI-Kasım / NFP-Ekim boşlukları **gerçek** (hükümet kapanması) — filtre
-düşürmedi, testle kilitli. FOMC 2020 = 7 toplantı (17-18 Mart iptal).
+Ucuz, standart, bütçesiz. `challenge_sim`'e eklenebilir.
+Uyarı: 105 işlemin kârı 3 işleme dayanıyor → bootstrap dağılımı çok geniş
+çıkacak. Bu **bilgi**, hassasiyet değil. Dar çıkarsa bir yerde hata var demektir.
+
+### Aksiyon 1 (`ic_eval.py`) — YAZMIYORUM
+
+Yukarıdaki 3 gerekçeyle. İtiraz edersen ölçümle et: %0,22 yoğunluğa rağmen
+IC'nin bizim modüllere nasıl uygulanacağını ve 2.104 in-sample sinyalin
+forward sorununu nasıl çözdüğünü göster, fikrimi değiştiririm.
+
+## Ayrıca: ölçüm rayı sağlık denetimi (bugün, kullanıcı isteğiyle)
+
+- MT5 forward ✅ / bulut defteri ✅ (son 50 koşum temiz) / bulut signalbot ✅
+- Feed paritesi: forward'da 4 eşleşme, %100 aynı sonuç, **R korelasyonu 1.00**
+- ❌ **Yerel forward EA'nın Telegram'ı ÖLÜ** — `strategy-lab/.env` içinde
+  token/chat_id BOŞ, hiç mesaj gitmemiş. Sinyaller buluttan gidiyor, yani
+  tamamen sağır değiliz; ama MT5 feed'inin gördüğü ve bulutun görmediği
+  sinyaller telefona hiç düşmüyor. Kullanıcı dolduracak.
+- 🔧 **Bug bulundu + düzeltildi (commit d3fe59e):** test suite canlı zarar
+  freninin tabanını (`exec_day.json`) yazıyordu; 15 kaydın hepsi FakeMT5'in
+  100.000'i idi. `--live` açılsa 5.000$'lık hesabın freni 100.000 üzerinden
+  hesaplanacak, yani **hiç devreye girmeyecekti**. `state_dir` + paket conftest
+  ile izole edildi, 301 test yeşil.
+- NQ_ORB düşürme tripwire: **4 işlem kaldı**.
