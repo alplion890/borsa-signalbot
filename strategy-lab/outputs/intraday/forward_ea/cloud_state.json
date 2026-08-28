@@ -1,35 +1,48 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-28T00:26:58+00:00",
+  "updated_at": "2026-08-28T12:48:57+00:00",
   "last_bar": {
-    "GOLD_NY_ORB_TREND:XAUUSD": "2026-08-28 00:10:00",
-    "NQ_ORB_STRONG_TREND:NASDAQ100": "2026-08-28 00:10:00",
-    "SWEEP_CORE_AVOID_MID_VWAP:NASDAQ100": "2026-08-28 00:00:00",
-    "EUR_LONDON_FADE_EMA:EURUSD": "2026-08-28 00:20:00",
-    "GBP_LONDON_STRONG_TREND:GBPUSD": "2026-08-28 00:20:00",
-    "CAND_NQ_DUAL_THRUST:NASDAQ100": "2026-08-28 00:10:00",
-    "CAND_SP500_ORB:SP500": "2026-08-28 00:10:00",
-    "CAND_SWEEP_SP500:SP500": "2026-08-28 00:00:00",
-    "CAND_SWEEP_US30:US30": "2026-08-28 00:00:00",
-    "CAND_SWEEP_US2000:US2000": "2026-08-28 00:00:00",
-    "CAND_SWEEP_UK100:UK100": "2026-08-27 15:00:00",
-    "CAND_SWEEP_FRA40:FRA40": "2026-08-27 15:00:00",
-    "CAND_SWEEP_JAP225:JAP225": "2026-08-28 00:00:00",
-    "CAND_BTC_ABSORPTION:BTCUSDT": "2026-08-27 23:00:00"
+    "GOLD_NY_ORB_TREND:XAUUSD": "2026-08-28 12:30:00",
+    "NQ_ORB_STRONG_TREND:NASDAQ100": "2026-08-28 12:30:00",
+    "SWEEP_CORE_AVOID_MID_VWAP:NASDAQ100": "2026-08-28 12:15:00",
+    "EUR_LONDON_FADE_EMA:EURUSD": "2026-08-28 12:40:00",
+    "GBP_LONDON_STRONG_TREND:GBPUSD": "2026-08-28 12:40:00",
+    "CAND_NQ_DUAL_THRUST:NASDAQ100": "2026-08-28 12:30:00",
+    "CAND_SP500_ORB:SP500": "2026-08-28 12:30:00",
+    "CAND_SWEEP_SP500:SP500": "2026-08-28 12:15:00",
+    "CAND_SWEEP_US30:US30": "2026-08-28 12:15:00",
+    "CAND_SWEEP_US2000:US2000": "2026-08-28 12:15:00",
+    "CAND_SWEEP_UK100:UK100": "2026-08-28 12:15:00",
+    "CAND_SWEEP_FRA40:FRA40": "2026-08-28 12:15:00",
+    "CAND_SWEEP_JAP225:JAP225": "2026-08-28 12:15:00",
+    "CAND_BTC_ABSORPTION:BTCUSDT": "2026-08-28 11:00:00"
   },
   "open_positions": [
+    {
+      "module": "EUR_LONDON_FADE_EMA",
+      "symbol": "EURUSD",
+      "direction": -1,
+      "entry_time": "2026-08-28 09:25:00",
+      "entry": 1.1645511388778687,
+      "sl": 1.1655012369155884,
+      "tp": 1.163125991821289,
+      "weight": 1.0,
+      "max_hold_bars": 48,
+      "cost_per_side": 7e-05,
+      "bars_held": 39
+    },
     {
       "module": "CAND_BTC_ABSORPTION",
       "symbol": "BTCUSDT",
       "direction": 1,
-      "entry_time": "2026-08-25 21:00:00",
-      "entry": 78570.0,
-      "sl": 77181.59900309764,
-      "tp": 81346.80199380472,
+      "entry_time": "2026-08-28 10:00:00",
+      "entry": 79565.89,
+      "sl": 78541.89736286605,
+      "tp": 81613.8752742679,
       "weight": 0.0,
       "max_hold_bars": 96,
       "cost_per_side": 0.0006,
-      "bars_held": 50
+      "bars_held": 1
     }
   ]
 }
