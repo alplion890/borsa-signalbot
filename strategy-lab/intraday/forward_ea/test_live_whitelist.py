@@ -58,3 +58,26 @@ def test_strongest_module_can_place_real_orders() -> None:
 
 def test_no_candidate_can_ever_place_real_orders() -> None:
     assert not any(n.startswith("CAND_") for n in oe.LIVE_MODULES)
+
+
+def test_GOLD_artik_default_modules_de_DEGIL() -> None:
+    """GOLD_NY_ORB_TREND EMEKLI (2026-08-28, kullanici karari).
+
+    Uc olcum:
+      - forward exp_R -0.411, n=9, t=-2.05 -> defterdeki TEK |t|>2 sonuc,
+        ve negatif tarafta
+      - 2026-07-09'dan beri SIFIR sinyal (ATR filtresi modulu %88 kesti;
+        50 gun boyunca kanit biriktiremedi -- ne dogrulanabilir ne curutulebilir)
+      - PAPER olduğu icin para riski yoktu AMA default_modules'te oldugu icin
+        atesledigimde Telefona "sinyal" olarak dusuyordu
+
+    Gecmis 9 satir defterde ADIYLA duruyor; silinmedi, sadece yeni sinyal
+    uretmiyor. Geri donus kosulu: ATR filtresi yeniden gerekcelendirilir ve
+    aday katmaninda (CAND_) yeniden olculur.
+    """
+    from .modules import default_modules
+    isimler = {m.name for m in default_modules()}
+    assert "GOLD_NY_ORB_TREND" not in isimler, (
+        "GOLD emekli edildi; default_modules'e geri eklenecekse once "
+        "ATR filtresi gerekcelendirilmeli ve CAND_ olarak olculmeli."
+    )

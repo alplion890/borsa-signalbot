@@ -337,7 +337,15 @@ def default_modules() -> list[LiveModule]:
     """
     nq_orb = ORBCase("NASDAQ100", 14.5, 15, 20.5, "retest", "none", 1.5, "other_side", 1.0, 48)
     return [
-        LiveModule("GOLD_NY_ORB_TREND", "XAUUSD", "5m", 1.0, 48, _gold_orb_detector()),
+        # GOLD_NY_ORB_TREND EMEKLI EDILDI 2026-08-28 (kullanici karari).
+        #   forward exp_R -0.411, n=9, t=-2.05 -> defterdeki tek |t|>2 sonuc
+        #   ve negatif tarafta; ayrica 2026-07-09'dan beri SIFIR sinyal, cunku
+        #   ATR filtresi kurulumlarin ~%88'ini kesiyor. Yani modul 50 gundur ne
+        #   dogrulanabilir ne curutulebilir durumdaydi -- PAPER oldugu icin para
+        #   riski yoktu ama atesledigi anda telefona sinyal olarak dusuyordu.
+        #   Gecmis 9 satir defterde adiyla duruyor. Geri donus: ATR filtresi
+        #   yeniden gerekcelendirilir ve CAND_ katmaninda olculur.
+        #   Kilit: test_live_whitelist.test_GOLD_artik_default_modules_de_DEGIL
         LiveModule("NQ_ORB_STRONG_TREND", "NASDAQ100", "5m", 1.0, 48,
                    _orb_detector(nq_orb, adx_min=28.0)),
         LiveModule("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", "15m", 1.0, 480,

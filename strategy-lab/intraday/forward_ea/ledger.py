@@ -49,3 +49,58 @@ def load_forward(path: Path | None = None, include_backfill: bool = False,
 def live_only(path: Path | None = None) -> pd.DataFrame:
     """Aday olmayan, gercek forward satirlari -- karar rakamlari icin."""
     return load_forward(path, include_backfill=False, include_candidates=False)
+
+
+CLOUD_CSV = (Path(__file__).resolve().parent.parent.parent
+             / "outputs" / "intraday" / "forward_ea" / "cloud_ledger.csv")
+
+# Ayni islemin iki defterdeki zaman damgasi birebir tutmaz: bulut bedava
+# feed'in kapanmis barini, MT5 kendi terminalinin barini kullanir. Parite
+# raporu da ayni toleransi kullaniyor -- tek sayi, iki yer.
+EPS_ZAMAN = pd.Timedelta("90min")
+
+
+def birlesik_forward(mt5_path: Path | None = None, cloud_path: Path | None = None,
+                     include_candidates: bool = True,
+                     tolerance: pd.Timedelta = EPS_ZAMAN) -> pd.DataFrame:
+    """MT5 ve bulut defterlerinin BIRLESIMI -- ayni islem iki kez sayilmaz.
+
+    NEDEN VAR (2026-08-28): dusurme tripwire'i sadece MT5 defterini sayiyordu.
+    MT5 terminali kapaliyken (olculdu: cevrimlerin ~%16'si) olusan islemler
+    esige girmiyordu. Sonuc: bir modulun LIVE kalip kalmayacagi, kullanicinin
+    PC'sinin kac saat acik oldugna baglaniyordu. Modulun kac islem urettigi
+    ile PC uptime'i ayri seylerdir; esik birincisini saymali.
+
+    Bulut MT5'in YERINE gecmez, deligini kapatir: MT5 satirlari esas alinir,
+    buluttan yalnizca MT5'te KARSILIGI OLMAYANLAR eklenir.
+    """
+    mt5 = load_forward(mt5_path, include_backfill=False,
+                       include_candidates=include_candidates)
+    if not mt5.empty:
+        mt5 = mt5.assign(kaynak="mt5")
+
+    p = Path(cloud_path) if cloud_path is not None else CLOUD_CSV
+    if not p.exists():
+        return mt5.sort_values("entry_time").reset_index(drop=True)
+
+    bulut = pd.read_csv(p, parse_dates=["entry_time"])
+    if "backfill" in bulut.columns:
+        bulut = bulut[bulut["backfill"] == 0]
+    if not include_candidates:
+        bulut = bulut[~bulut["module"].str.startswith("CAND_")]
+
+    eklenecek = []
+    for _, b in bulut.iterrows():
+        ayni_modul = mt5[mt5["module"] == b["module"]] if not mt5.empty else mt5
+        if not ayni_modul.empty:
+            fark = (ayni_modul["entry_time"] - b["entry_time"]).abs()
+            if (fark <= tolerance).any():
+                continue          # MT5'te karsiligi var, tekrar sayma
+        eklenecek.append(b)
+
+    if not eklenecek:
+        return mt5.sort_values("entry_time").reset_index(drop=True)
+
+    ek = pd.DataFrame(eklenecek).assign(kaynak="bulut")
+    hepsi = pd.concat([mt5, ek], ignore_index=True) if not mt5.empty else ek
+    return hepsi.sort_values("entry_time").reset_index(drop=True)

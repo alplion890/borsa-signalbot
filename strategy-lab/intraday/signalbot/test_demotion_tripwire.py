@@ -20,15 +20,22 @@ from __future__ import annotations
 
 import pytest
 
-from ..forward_ea.ledger import live_only
+from ..forward_ea.ledger import birlesik_forward
 from .risk import live_module_names
 
 MIN_N = 25
 
 
 def _forward_ozet() -> dict[str, tuple[int, float]]:
+    """Esik sayimi MT5 U BULUT.
+
+    2026-08-28: sadece MT5 sayilirken, terminal kapaliyken olusan islemler
+    esige girmiyordu (cevrimlerin ~%16'si kapaliydi) -- modulun LIVE kalip
+    kalmayacagi PC uptime'ina baglaniyordu. Modulun urettigi islem sayisi ile
+    PC'nin acik kaldigi saat ayri seylerdir; taahhut birincisini olcer.
+    """
     try:
-        d = live_only()
+        d = birlesik_forward(include_candidates=False)
     except (FileNotFoundError, ValueError):
         return {}
     if d.empty:
