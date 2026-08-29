@@ -6,8 +6,11 @@ import pandas as pd
 from .cloud_parity import match, summarize
 
 
-def _row(mod, t, r, status="tp"):
-    return {"module": mod, "entry_time": pd.Timestamp(t), "r": r, "status": status}
+def _row(mod, t, r, status="tp", symbol="NASDAQ100", dir=1):
+    # symbol/dir kimlik alani: tolerans icinde zit yonlu ya da baska sembolde
+    # AYRI islemler olabiliyor (Hermes denetimi 2026-08-28, BULGU 2).
+    return {"module": mod, "entry_time": pd.Timestamp(t), "r": r,
+            "status": status, "symbol": symbol, "dir": dir}
 
 
 def test_MT5_in_eski_kayitlari_kayip_islem_sayilmaz():

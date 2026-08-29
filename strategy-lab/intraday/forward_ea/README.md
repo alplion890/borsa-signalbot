@@ -193,7 +193,7 @@ Binance-spot altyapısı istediği için hâlâ bağlanmadı.
 
 | Modül | Ağırlık | Durum |
 |---|---|---|
-| GOLD_NY_ORB_TREND | 1.0 | ✅ devrede (45g: 14 trade, win %57.1, +0.026R — backtest uyumlu) |
+| GOLD_NY_ORB_TREND | — | ❌ **EMEKLI 2026-08-28** — forward exp_R −0.411 (n=9, t=−2.05, defterdeki tek \|t\|>2 sonuc ve negatif); 2026-07-09'dan beri sifir sinyal (ATR filtresi ~%88 kesiyor). Gecmisi defterde duruyor. |
 | NQ_ORB_STRONG_TREND | 1.0 | ✅ devrede (45g: 14 trade, win %57.1, +0.389R — yönü doğru, örneklem küçük) |
 | SWEEP_CORE_AVOID_MID_VWAP | 1.0 | ✅ devrede (45g: 3 trade, win %66.7, +1.883R — yönü doğru, örneklem çok küçük) |
 | EUR_LONDON_FADE_EMA | 1.0 | ✅ devrede (45g: 0 trade — sinyal hiç tetiklenmedi, filtre aşırı seyrek) |
@@ -210,7 +210,8 @@ gürültüsünde aynı stop'lar anında vuruluyor (bars_held 1-4): forward'da
 10 trade, **%20 win, −0.330R net, avg_loss −1.14R**. En yüksek ağırlığa
 (w=2.0) sahip olması riski büyütüyordu — `default_modules()`'tan silindi.
 
-**Doğrulanmış canlı portföy (45g backfill, 5 modül, sembol düzeltmesi sonrası):**
+**Portföy (45g backfill, sembol düzeltmesi sonrası) — TARIHSEL, 5 modüllük hali.**
+> GÜNCEL küme 4 modül: GOLD 2026-08-28'de emekli edildi. Aşağısı o tarihten öncesini anlatır.
 44 trade, win %47.7, toplam +8.45R, weighted +4.93R.
 
 > Forward testin değeri: hem eski EUR/GBP wiring sorununu hem de bugün

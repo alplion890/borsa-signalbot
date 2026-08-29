@@ -72,3 +72,39 @@ def test_summary_reports_pass_fail_open():
     assert out["pass_pct"] == 50.0
     assert out["fail_pct"] == 25.0
     assert out["open_pct"] == 25.0
+
+
+# --- portfoy etiketleri risk.py ile senkron kalmali -----------------------
+#
+# 2026-08-28 denetiminde bulundu: "forward_verified_2" portfoyu
+# GOLD_NY_ORB_TREND + NQ_ORB_STRONG_TREND olarak SABIT yazilmisti. Etiket
+# 2026-08-06'da dogruydu; o tarihten sonra (a) defter backfill'den temizlendi
+# ve rakamlar degisti, (b) GOLD emekli edildi, (c) NQ_ORB dusurme esigine
+# 3 islem kaldi. Yani "forward dogrulanmis" diye etiketlenen kume, defterdeki
+# EN KOTU iki modulu gosterir olmustu.
+#
+# Ayni hata sinifi bu projede daha once ucusu: whitelist'in ikinci kopyasi,
+# ExecConfig'in kendi risk politikasi, defterin bes ayri okuyucusu. Cozum hep
+# ayni: tek kaynak. Portfoy artik risk.py'den turuyor.
+
+
+def test_canli_portfoy_risk_py_den_TURUYOR_sabit_liste_degil():
+    """Sabit modul listesi tier degisince sessizce yanlislasir."""
+    import inspect
+
+    from . import challenge_sim
+    from .signalbot.risk import live_module_names
+
+    kaynak = inspect.getsource(challenge_sim.compare_bot_portfolios)
+    assert "live_module_names" in kaynak, (
+        "portfoy kumesi risk.py'den turemeli; sabit liste tier degisikliginde "
+        "sessizce eskiyor (2026-08-28 denetimi)")
+    for eski in ("GOLD_NY_ORB_TREND", "NQ_ORB_STRONG_TREND"):
+        assert f'"{eski}"' not in kaynak, (
+            f"{eski} sabit yazilmis -- risk.py tek kaynak olmali")
+    assert live_module_names(), "risk.py bos LIVE listesi donduruyor"
+    # Kaynak metni gormek YETMEZ: ilk denemede metin dogruydu ama import
+    # eklenmemisti ve test yine gecti. Calisma zamaninda cozuldugunu dogrula.
+    assert challenge_sim.live_module_names() == live_module_names(), (
+        "challenge_sim live_module_names'i import etmemis -- kaynakta geciyor "
+        "ama calisma zamaninda cozulmuyor")

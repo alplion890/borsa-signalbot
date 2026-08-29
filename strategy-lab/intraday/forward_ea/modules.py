@@ -321,19 +321,18 @@ def _es_div_detector(lookback: int = 40, rr: float = 3.0, buf_mult: float = 0.25
 
 
 def default_modules() -> list[LiveModule]:
-    """DOGRULANMIS canli moduller (forward test backtest ile uyumlu).
+    """Telefona sinyal ureten moduller (mekanik ray).
 
-    Sadece ORB-ailesi temiz tasinabiliyor: Gold + NQ ORB. Her ikisi de 30g
-    warmup'ta backtest win-rate'iyle uyumlu ve pozitif cikti.
+    Bu liste tier DEGILDIR: LIVE/PAPER ayrimi `signalbot/risk.py`'de tutulur,
+    burasi yalnizca "hangi modul taranir ve bildirilir" sorusunu cevaplar.
 
-    Devre disi (forward test / altyapi engeli):
-      EUR/GBP London : forward test wiring'in dogrulanmis modulle ESLESMEDIGINI
-                       gosterdi (EUR 30g'de 28 trade, -6.01R, asiri tetik). Backtest
-                       EUR/GBP modulunun tam filtre config'i (fade + rejim) portlanmali.
-                       experimental_modules() icinde, varsayilan KAPALI.
-      SWEEP_CORE (w=1.0)  : NQ likidite-sweep ureteci mevcut kodda yok.
-      SWEEP_ES_DIV (w=2.0): NQ+ES cift-feed + divergence gerekir.
-      BTC (w=0.11)        : bu broker'da spot BTC yok (Binance feed).
+    GUNCEL (2026-08-28): NQ_ORB, SWEEP_CORE, EUR_LONDON, GBP_LONDON.
+    Kume `test_module_parity.test_final_module_count_and_weights` ile kilitli;
+    degistiren once gerekce yazar.
+
+    GOLD_NY_ORB_TREND EMEKLI (asagida gerekce). Eski docstring "Gold + NQ ORB"
+    diyordu ve EUR/GBP'yi "devre disi" olarak anlatiyordu -- ikisi de artik
+    yanlis: EUR/GBP 2026-08-05'te devreye alindi, GOLD 2026-08-28'de cikti.
     """
     nq_orb = ORBCase("NASDAQ100", 14.5, 15, 20.5, "retest", "none", 1.5, "other_side", 1.0, 48)
     return [

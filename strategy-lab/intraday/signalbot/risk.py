@@ -17,9 +17,15 @@ _VALUE_PER_POINT = {
 
 # LIVE = gercek para. Uyelik forward test KANITIYLA kazanilir, backtest yetmez.
 # 2026-08-06 revizyonu (97 islemlik defter):
-#   GOLD_NY_ORB_TREND  CIKARILDI -- forward exp_R -0.152, 18 islem, PSR 0.203.
-#                      Elenmis modul en yuksek riski aliyordu.
-#   SWEEP_CORE         EKLENDI   -- forward exp_R +1.206, PSR 0.907, en guclu kanit.
+#   GOLD_NY_ORB_TREND  CIKARILDI -- Elenmis modul en yuksek riski aliyordu.
+#   SWEEP_CORE         EKLENDI   -- yanlis tarafta durdugu icin yarim riskle
+#                      calisiyordu.
+#
+# UYARI: bu satirlarda EskiDEN forward rakamlari yaziliydi (gold -0.152/18 islem,
+# sweep +1.206). O sayilar BACKFILL KIRLI defterden geliyordu; 2026-08-21'de
+# defter temizlenince degistiler. Guncel forward icin tek kaynak:
+#   python -m intraday.forward_ea.ledger  (veya birlesik_forward)
+# Yorumda sayi dondurmak, sayi degisince yalana donusuyor -- o yuzden cikarildi.
 #                      Yanlis tarafta durdugu icin yarim riskle calisiyordu.
 # EUR/GBP London PAPER kalir: Persembe filtresi 2026-08-05'te kaldirilinca
 # config degisti, onceki 6 islem gecersiz -> su an kanitsiz (kullanici karari).

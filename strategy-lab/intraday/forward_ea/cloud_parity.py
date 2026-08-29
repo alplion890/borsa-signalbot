@@ -27,12 +27,19 @@ import pandas as pd
 OUT_DIR = Path(__file__).resolve().parent.parent.parent / "outputs" / "intraday" / "forward_ea"
 MT5_LEDGER = OUT_DIR / "forward_ledger.csv"
 CLOUD_LEDGER = OUT_DIR / "cloud_ledger.csv"
-TOLERANCE = pd.Timedelta("90min")
+# TEK ESLESTIRICI: tolerans ve eslesme mantigi ledger.py'de.
+# Hermes denetimi (2026-08-28) BULGU 2: burada dogru olan bir-bir/en-yakin
+# semantik `birlesik_forward()`ta tekrarlanmamis, iki eslestirici ayrismisti.
+# Ayni hata sinifi: whitelist iki kopya, ExecConfig kendi risk politikasi,
+# defterin bes ayri okuyucusu. Cozum hep tek kaynak.
+from .ledger import EPS_ZAMAN, eslestir_bir_bir
+
+TOLERANCE = EPS_ZAMAN
 
 
 def match(cloud: pd.DataFrame, mt5: pd.DataFrame,
           tolerance: pd.Timedelta = TOLERANCE) -> dict:
-    """Modul bazinda islemleri eslestir.
+    """Modul+sembol+yon bazinda islemleri eslestir.
 
     ORTAK PENCERE = bulut defterinin basladigi an. MT5 defteri aylardir
     birikiyor; ondan onceki kayitlari saymak, bulutta "kayip islem" varmis
@@ -40,36 +47,30 @@ def match(cloud: pd.DataFrame, mt5: pd.DataFrame,
     kirpmak, iki taraftan biri o modulde gec sinyal urettiginde otekinin
     gercekten kacirdigi islemi de siler.
     """
-    matched, only_cloud, only_mt5 = [], [], []
     if cloud.empty:
-        return {"matched": pd.DataFrame(), "only_cloud": pd.DataFrame(),
-                "only_mt5": pd.DataFrame()}
+        bos = pd.DataFrame()
+        return {"matched": bos, "only_cloud": bos, "only_mt5": bos}
+
     cutoff = cloud["entry_time"].min()
     mt5 = mt5[mt5["entry_time"] >= cutoff]
-    for mod in sorted(set(cloud["module"]) | set(mt5["module"])):
-        cm = cloud[cloud["module"] == mod].sort_values("entry_time")
-        mm = mt5[mt5["module"] == mod].sort_values("entry_time")
-        if cm.empty or mm.empty:
-            continue
-        used: set = set()
-        for _, cr in cm.iterrows():
-            gap = (mm["entry_time"] - cr["entry_time"]).abs()
-            near = [i for i in gap[gap <= tolerance].sort_values().index if i not in used]
-            if not near:
-                only_cloud.append({"module": mod, "entry_time": cr["entry_time"], "r": cr["r"]})
-                continue
-            used.add(near[0])
-            mr = mm.loc[near[0]]
-            matched.append({
-                "module": mod, "entry_time": cr["entry_time"],
-                "cloud_r": cr["r"], "mt5_r": mr["r"],
-                "cloud_status": cr["status"], "mt5_status": mr["status"],
-            })
-        only_mt5 += [{"module": mod, "entry_time": r["entry_time"], "r": r["r"]}
-                     for i, r in mm.iterrows() if i not in used]
-    return {"matched": pd.DataFrame(matched),
-            "only_cloud": pd.DataFrame(only_cloud),
-            "only_mt5": pd.DataFrame(only_mt5)}
+
+    ciftler, sadece_bulut, sadece_mt5 = eslestir_bir_bir(cloud, mt5, tolerance)
+
+    matched = pd.DataFrame([{
+        "module": cloud.loc[ci, "module"],
+        "entry_time": cloud.loc[ci, "entry_time"],
+        "cloud_r": cloud.loc[ci, "r"], "mt5_r": mt5.loc[mi, "r"],
+        "cloud_status": cloud.loc[ci, "status"], "mt5_status": mt5.loc[mi, "status"],
+    } for ci, mi in ciftler])
+
+    def _kesit(df: pd.DataFrame, idx: list) -> pd.DataFrame:
+        if not idx:
+            return pd.DataFrame()
+        return df.loc[idx, ["module", "entry_time", "r"]].reset_index(drop=True)
+
+    return {"matched": matched,
+            "only_cloud": _kesit(cloud, sadece_bulut),
+            "only_mt5": _kesit(mt5, sadece_mt5)}
 
 
 def summarize(matched: pd.DataFrame) -> pd.DataFrame:

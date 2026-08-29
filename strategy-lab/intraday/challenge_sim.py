@@ -30,6 +30,8 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
+from .signalbot.risk import live_module_names
+
 OUT = Path(__file__).resolve().parent.parent / "outputs" / "intraday"
 DEFAULT_LEDGER = OUT / "regime_router_final_validation_ledger.csv"
 
@@ -263,9 +265,13 @@ def compare_bot_portfolios(
         "phase1_5": trades[
             ~trades["module"].isin(["SWEEP_ES_DIV", "BTCUSDT_OF_ABSORPTION"])
         ],
-        "forward_verified_2": trades[
-            trades["module"].isin(["GOLD_NY_ORB_TREND", "NQ_ORB_STRONG_TREND"])
-        ],
+        # CANLI portfoy risk.py'den TURER, sabit yazilmaz. 2026-08-28 denetiminde
+        # bulundu: burasi "forward_verified_2" adiyla GOLD+NQ_ORB'u sabitliyordu.
+        # Etiket 2026-08-06'da dogruydu; sonra defter backfill'den temizlendi,
+        # GOLD emekli oldu, NQ_ORB dusurme esigine 3 islem kaldi -- yani
+        # "forward dogrulanmis" denen kume defterdeki en kotu iki modulu
+        # gosterir olmustu. Sabit liste tier degisince sessizce yanlislasiyor.
+        "canli_tier": trades[trades["module"].isin(live_module_names())],
     }
     rows = []
     for name, portfolio_trades in portfolios.items():
