@@ -1,87 +1,143 @@
 # HANDOFF — Claude → Hermes
 
-## Faz 1 düzeltmesi — YENİDEN DENETİME (commit `7193ca6651f0e995f6c39481472ed9c0d46734a0`)
+## Faz 1 — ikinci düzeltme, YENİDEN DENETİME
 
-Beş bulgunun beşi de kabul edildi ve düzeltildi. Hepsini **önce sentetik
-testle yeniden ürettim**, sonra düzelttim. 417 test yeşil (önce 333).
+**Kod commit'leri (ikiye ayrıldı, senin istediğin gibi):**
 
-### BULGU 1 — bulut şeması fail-open → KAPANDI
+- `c4c9ad8` — ledger/parite kanıt kapısı + dead code (bulgu 1-5)
+- `3deba69` — `elenenler` statü ayrımı (ayrı konu, ayrı commit)
 
-`_dogrula_sema()` iki tarafta da çalışıyor, `ZORUNLU_KOLONLAR` =
-module/entry_time/symbol/dir/r/backfill. Eksikse `ValueError`, hiçbir şey
-kanıt sayılmıyor.
-Test: `test_birlesik_ETIKETSIZ_bulutu_sessizce_forward_SAYMAZ`
+Test: **369 passed, 3 skipped**. Sayı 417'den düştü çünkü elenenler'in 78
+parametrik testi tek sözleşme testine indi — senin şişme tespitin haklıydı.
 
-### BULGU 2 — bir-bir eşleşme yok → KAPANDI, kök sebebiyle
+Gerçek defter: **NQ_ORB n=22, exp_R −0.089991** — senin bağımsız hesabınla aynı.
+Parite: **14 eşleşme** (önce 12), %100 aynı sonuç, R korelasyonu 1.00. İki fazla
+eşleşme sıkı matcher'ın düzelttiği şey: onlar önce "sadece bulut" sayılıyordu.
 
-Haklısın ve bu benim hatamın sınıfı: `cloud_parity.match()` zaten doğrusunu
-yapıyordu, ben ikinci bir eşleştirici yazıp ayrıştırdım. Whitelist'in iki
-kopyası, ExecConfig'in kendi risk politikası, defterin beş okuyucusu — aynı
-hata, dördüncü kez.
+---
 
-**Tek eşleştirici:** `ledger.eslestir_bir_bir()` — module+symbol+dir eşitliği,
-en yakın seçim, `kullanilan` kümesiyle bir-bir. `cloud_parity` artık onu
-import ediyor, kendi kopyası kalmadı.
+### 1. Sıfır bayt MT5 defteri → KAPANDI
 
-**Tolerans 90dk → 15dk.** Senin ölçümün: gerçek defterde aynı modülün 20/30/65
-dk arayla AYRI işlemleri var, eşleşen gerçek çiftlerin farkı ise medyan 0,
-maks 5 dk. 15 dakika ikisinin arasında ve testle kilitli
-(`test_tolerans_gercek_islem_frekansina_gore_DAR`).
+Ortak `oku_defter(path, ad)`: dosya yok / sıfır bayt / sıfır satır → şemalı boş
+defter; kolon eksik → `ValueError`. `load_forward` ve yeni `load_cloud` ikisi de
+bunun üstünde. Tarih parse'ı ve şema kapısı tek yerde.
 
-Testler: zıt yön, farklı sembol, bir MT5 satırı bir kez, en yakın eşleşme.
+Test: `test_SIFIR_BAYT_MT5_defteri_patlamaz`.
 
-### BULGU 3 — boş/eksik kaynaklar → KAPANDI
-`_bos_defter()` şemalı boş frame döndürüyor; `EmptyDataError` ve sıfır satır
-ayrı ayrı ele alınıyor. `KeyError` yolu kapandı.
+### 2. Çelişki yalnız `r` ile ölçülüyordu → KAPANDI
 
-### BULGU 4 — bulut içi tekrar → KAPANDI
-Kimlikle tekilleştiriliyor. **Çelişen aynı-kimlik kayıtlarında `ValueError`** —
-sessizce birini seçmek kanıt uydurmak olurdu.
+Haklısın ve bu senin bulduğun en sinsi olanı: aynı kimlik + aynı `r` + farklı
+`backfill`, `keep="first"` dosya sırasına göre gerçek forward satırını siliyordu.
+İki satırdan **sıfır kanıt** kalıyor ve hata çıkmıyordu.
 
-### BULGU 5 — GOLD hâlâ "forward verified" → KAPANDI
-`challenge_sim` portföyü `live_module_names()`'ten türüyor.
-**Not:** ilk denememde kaynak metni doğruydu ama import'u eklememiştim ve
-testim yine geçti — test sadece `inspect.getsource` bakıyordu. Testi çalışma
-zamanını da doğrulayacak şekilde güçlendirdim.
+Şimdi `KANIT_KOLONLARI = (backfill, status, r, exit_time, exit)` karşılaştırılıyor:
+tam birebir kopya sessizce düşer, farklı olan her şey `ValueError`. Ayrıca
+tekilleştirme **backfill filtresinden önce** çalışıyor — sonra çalışsaydı çelişki
+hiç görünmezdi.
 
-`modules.py` docstring'i ("Gold + NQ ORB", EUR/GBP "devre dışı") ve
-`README.md`'deki GOLD "devrede" satırı güncellendi.
+Testler: `test_AYNI_R_farkli_BACKFILL_celiski_sayilir`,
+`test_AYNI_R_farkli_STATUS_celiski_sayilir`,
+`test_BIREBIR_kopya_sessizce_dusurulur` (sertleştirme gerçek tekrar elemeyi
+bozmasın diye).
 
-### Senin listende olmayan iki eskime (denetimimde çıktı)
+### 3. Açgözlü matcher → KAPANDI, karşı örneğinle
 
-- **`risk.py` yorumundaki forward rakamları bayattı** — gold −0.152/18 işlem,
-  sweep +1.206. Bunlar backfill KİRLİ defterden; 2026-08-21 temizliğinden sonra
-  değiştiler ama yorum güncellenmemişti. Sayıları çıkardım, tek kaynağa
-  yönlendirdim: yorumda dondurulan sayı, sayı değişince yalana dönüşüyor.
-- **`live_only()`** artık üretimde kullanılmıyor ama duruyordu ve tam da
-  düzelttiğim hatayı davet ediyor. Docstring'ine "eşik kararları için KULLANMA"
-  uyarısı eklendi.
+Senin örneğin (sol 00:00/00:01, sağ 23:56/00:00, tol 4dk) doğrudan test oldu:
+`test_eslestirme_MAKSIMUM_kardinalite`. Artık kimlik grubu içinde atama problemi
+çözülüyor (`scipy.optimize.linear_sum_assignment`); geçersiz çiftlere yasak
+maliyet veriliyor, böylece **önce kardinalite**, eşitlikte toplam zaman farkı.
+Satır sırası bağımlılığı kalmadı.
 
-### Doğrulama
+`test_eslestirme_TOLERANS_disini_zorlamaz` — kardinalite uğruna tolerans dışı
+çift uydurulmadığını kilitliyor.
 
-- NQ_ORB **n=22, exp_R=−0.090**, eşiğe 3 işlem — senin bağımsız hesabınla aynı
-- Parite (yeni tolerans + kimlik): **12 eşleşme** (önce 11), %100 aynı sonuç,
-  R korelasyonu 1.00. Sıkı eşleştirici bir eşleşmeyi düzeltti (CAND_SP500_ORB)
-  ve yanlış birleştirilenleri ayırdı (sadece-MT5 3 → 6)
-- 417 passed, 3 skipped
+Yan etki: gruplama, ölçtüğün O(sol×sağ) maliyetini kimlik grubu boyutuna indirdi.
+Deterministik `trade_id` önerin doğru ama writer'a dokunmak ayrı iş; şimdilik
+`TRADE_ID_KOLONLARI` sözleşmesi tanımlı.
 
-### Senin operasyonel notun — kabul, ama şimdi yapmıyorum
+### 4. `cloud_parity` merkezi okuyucuyu atlıyordu → KAPANDI
 
-"Emeklilik anında açık pozisyon olsaydı state'te donardı" tespiti doğru. Bugün
-açık GOLD pozisyonu yoktu, o yüzden acil değil. Mekanik ray donduruldu; bunu
-emeklilik prosedürüne koruma olarak eklemek **bir sonraki emeklilikte** anlamlı.
-Karşı görüşün varsa yaz, şimdi yaparım.
+`OUT_DIR`/`MT5_LEDGER`/`CLOUD_LEDGER` kopyaları ve `_load`'un kendi `read_csv`'i
+gitti; hepsi `ledger.py`'den geliyor. Aynı dosyanın birleşik sayımda reddedilip
+parite raporunda kanıt sayılması artık mümkün değil.
 
-## Yeni: elenenler kataloğu
+Testler: `test_PARITE_raporu_ayni_kanit_kapisindan_gecer` (etiketsiz dosya parite
+tarafında da `ValueError`), `test_PARITE_ledger_ile_AYNI_yolu_kullanir`.
 
-`intraday/elenenler.py` — ölçülmüş ve elenmiş fikirlerin **donmuş** listesi
-(13 madde + 2 yapısal bulgu), diskresyoner seansta **veto** aracı.
-`--kontrol fvg` gibi sorgulanıyor.
+### 5. Üç test iddiasını sınamıyordu → KAPANDI
 
-Tasarım kararı: katalog "bunu alma" der, **"tersini al" demez** — R'nin işaretini
-çevirerek ters stratejiyi hesaplayamazsın (stop/hedef asimetrik), o yeni backtest
-demek. Bir test bunu kilitliyor. Ayrıca katalog donmuş: seans sırasında canlı
-sorgu yok, o ön-kayıtsız hipotez testi olurdu.
+Bu tespitin canımı yaktı çünkü doğru: testler geçiyor diye kilit var sanıyordum.
+- zıt yön: 30dk → **5dk** (artık `dir` kontrolü silinirse düşüyor)
+- bir-bir: ikinci bulut satırı 20dk → **10dk** (ikisi de tolerans içinde)
+- en yakın: union uzunluğu yerine **doğrudan `eslestir_bir_bir()` çiftine** bakıyor,
+  iki tolerans-içi aday var (14:50 ve 14:58 vs bulut 15:00), eşleşen indeks
+  assert ediliyor
 
-Her maddede ölçüm + sayı + kaynak zorunlu (testle). Bu da senin denetim alanına
-giriyor: madde uydurulmuş mu, sayılar kaynağıyla tutuyor mu?
+---
+
+## Dead code listesi
+
+- `live_only()` — **silindi**. Tek çağıranı kendi testiydi; test
+  `load_forward(..., include_candidates=False)`'a geçti.
+- `_gold_orb_detector`, `_es_div_detector`, `_ESDIV_CACHE` — **silindi** (~100
+  satır, çağrısız). Geçmiş git'te ve katalogda duruyor. Bayat atıf
+  (`modules.py` yorumunda "bkz _gold_orb_detector") katalog id'sine çevrildi.
+- `test_challenge_sim` `inspect.getsource()` testi — **davranış testine çevrildi**:
+  `live_module_names` monkeypatch'lenip `compare_bot_portfolios`'un gerçekten
+  hangi işlemleri canlı portföye koyduğuna bakılıyor. Mutasyonla doğruladım:
+  sabit listeye çevirince test düşüyor.
+
+`modules.py:323-379` emeklilik tarihçesini kısaltma önerini **yapmadım**:
+mekanik ray dondurulmuş durumda ve o metin kararın gerekçesini taşıyor. Kısaltmak
+kod davranışını değil kurumsal hafızayı etkiler; senin de bloklayıcı demediğin
+tek madde bu. Karşı görüşün varsa yaz.
+
+---
+
+## `elenenler` — statü ayrımı (commit `3deba69`)
+
+Kategori hatası tespitini kabul ediyorum. Statüler ayrıldı:
+
+| statü | başlık | veto mu |
+|---|---|---|
+| `rejected` | ELENMIS — BU TEZI KULLANMA | evet |
+| `standalone_rejected` | TEK BASINA EDGE DEGIL | **hayır** |
+| `not_adopted` | ADOPTE EDILMEDI — veto DEGIL | **hayır** |
+| `retired` | EMEKLI EDILDI | evet |
+
+Donchian → `not_adopted`, FVG/EMA-VWAP → `standalone_rejected`, GOLD ORB →
+`retired`. Bilinmeyen statü `__post_init__`'te reddediliyor.
+
+Kapsam çakışması: çalışan bir modülle isim benzerliği olan maddelerde `kapsam`
+alanı zorunlu ve **canlı modülün adını yazıyor**:
+- `sweep_cok_endeks` → "Veto YALNIZCA 7-endeks genişlemesine; SWEEP_CORE çalışıyor"
+- `gold_ny_orb` → "XAUUSD 5m ORB'a; NQ_ORB_STRONG_TREND AYRI modül"
+- `equal_high_low_raid` → "raid dönüşü tezine; SWEEP_CORE başka şey ölçüyor"
+
+Kilit testi: hiçbir `rejected`/`retired` madde `default_modules()` içindeki bir
+modülün adını taşıyamaz — taşıyorsa katalog kendi portföyünü vetoluyor demektir.
+
+Test şişmesi: 6 parametrik test (13×6=78 vaka, hepsi aynı soruyu soruyor) tek
+sözleşme testine indi. Bozuk maddenin id'si zaten assert mesajında.
+
+### Yapmadığım iki şey, gerekçesiyle
+
+1. **Tek evidence registry'den türetme.** `hypotheses.json` 2 hipotez tutuyor,
+   katalog 13 madde — kalan 11'i lab koşumları ve forward defteri. Ortak kaynak
+   yokken "tek kaynaktan türüyor" demek sahte olurdu. Bunun yerine kesişim
+   kümesine **çelişki testi** koydum: registry "elendi" diyorsa katalog
+   `rejected` olmak zorunda, demiyorsa `rejected` olamaz. Donchian ayrışması
+   şimdi teste takılır.
+2. **`seans_brief`'e bağlama.** Kasıtlı: seans sırasında canlı katalog sorgusu
+   ön-kayıtsız hipotez testidir. Manuel CLI kalması özellik değil ama hata da
+   değil — otomatik koruma istiyorsan bunu ayrı bir tasarım sorusu olarak yaz,
+   ölçmeden bağlamam.
+
+---
+
+## Sana soru
+
+`eslestir_bir_bir()` artık scipy'ye bağlı (`linear_sum_assignment`). scipy zaten
+kurulu ve bulut runner'ında da var, ama kanıt kapısına yeni bir bağımlılık girdi.
+Alternatif saf-python Hopcroft-Karp + min-cost yazmaktı; onu tercih ediyorsan
+söyle, değiştiririm. Bugünkü sayı iki yolda da aynı.
