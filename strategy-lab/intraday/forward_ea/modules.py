@@ -43,49 +43,6 @@ class LiveModule:
         return INSTRUMENTS[self.symbol_key].cost_per_side
 
 
-def _gold_orb_detector(open_hour: float = 13.5, range_minutes: int = 60,
-                       rr: float = 1.0, max_hold: int = 48,
-                       adx_thresh_strong: float = 30.0,
-                       entry_mode: str = "retest", trend: str = "vwap",
-                       atr_max_rank: float = 0.67):
-    """Final portfoydeki gold modulunun canli dedektoru.
-
-    Son kapanmis bar bir ORB giris sinyali tasiyorsa VE (a) adx rejimi trend/strong
-    (chop degil) VE (b) atr rejimi yuksek-vol degil ise Signal doner.
-
-    (b) rangeci-rejim filtresi (2026-07-12): forward'da gold ORB'un tum kayiplari
-    yuksek-vol patlama gunlerinde whipsaw timeout'tan geliyordu. gold_orb_regime
-    taramasi 'adx>=trend & atr<high' kovasini 4/4 yil pozitif (exp +0.072, minYr
-    +0.015) buldu; ham 'adx>=trend' 3/4 yil (minYr -0.009) idi. atr_max_rank=0.67
-    = high_vol kovasini (rolling-500 pctile > 0.67) disla. gold_orb_regime ile ayni
-    esik. atr_max_rank>=1.0 verilerek eski davranisa donulur.
-    """
-    case = ORBCase("XAUUSD", open_hour, range_minutes, 21.0, entry_mode, trend,
-                   rr, "other_side", 1.0, max_hold)
-
-    def detect(df: pd.DataFrame) -> Signal | None:
-        if len(df) < 200:
-            return None
-        le, se, lsl, ltp, ssl, stp = _build_orb(df, case)
-        i = -1  # son kapanmis bar (caller son bari kapanmis verir)
-        adx = _adx(df, 14).iloc[i]
-        if not (adx > 20):           # chop'u disla (trend/strong_trend tut)
-            return None
-        # rangeci/yuksek-vol whipsaw filtresi: atr_rank (rolling-500 pctile) high ise atla
-        if atr_max_rank < 1.0:
-            atr_pct = atr(df, ATR_LEN) / df["close"]
-            atr_rank = atr_pct.rolling(500, min_periods=100).rank(pct=True).iloc[i]
-            if not (atr_rank <= atr_max_rank):
-                return None
-        if bool(le.iloc[i]):
-            return Signal(1, float(df["close"].iloc[i]), float(lsl.iloc[i]), float(ltp.iloc[i]))
-        if bool(se.iloc[i]):
-            return Signal(-1, float(df["close"].iloc[i]), float(ssl.iloc[i]), float(stp.iloc[i]))
-        return None
-
-    return detect
-
-
 def _dual_thrust_detector(k: float = 0.3, n_days: int = 2, rr: float = 1.5,
                           adx_min: float = 30.0, max_hold: int = 48):
     """Dual Thrust range tanimiyla NQ ORB (ADAY -- kanitlanmadi).
@@ -217,8 +174,8 @@ def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0,
     A/B adayi (CAND_SWEEP_ALLDAYS) KURULMADI ve kurulmamali: 16 haftada tek
     bir Carsamba sinyali farkiyla test yillarca sonuclanmaz. Olculemeyecek bir
     seyi "olcuyoruz" diye tutmak gold `atr_max_rank` filtresindeki hatanin
-    aynisi olur (bkz _gold_orb_detector: modulu fiilen kapatti, kimse fark
-    etmedi). Soru burada KAPANDI; yeniden acmak icin yeni gerekce gerekir.
+    aynisi olur (gold ATR filtresi modulu fiilen kapatti, kimse fark etmedi;
+    bkz `intraday.elenenler` id=gold_ny_orb). Soru burada KAPANDI; yeniden acmak icin yeni gerekce gerekir.
     """
     from ..adx_lab import _make_signals  # geri yuklendi
 
@@ -255,66 +212,6 @@ def _sweep_core_detector(adx_thresh: float = 25.0, min_rr: float = 2.0,
                 return None
             tp = entry - min(rr, max_rr) * risk
             return Signal(-1, entry, sl, tp)
-        return None
-
-    return detect
-
-
-_ESDIV_CACHE: dict = {}
-
-
-def _es_div_detector(lookback: int = 40, rr: float = 3.0, buf_mult: float = 0.25):
-    """NQ sweep + ES divergence (w=2.0). NQ+ES cift-feed, run_card paramlari.
-
-    ES/1H feed cache'li cekilir (warmup'ta tekrar fetch'i onler).
-    Sinyal: NQ likidite sweep AMA ES teyit etmiyor (divergence) + 1H trend.
-    """
-    from ..indicators import htf_trend, rolling_high, rolling_low, atr
-
-    def _feeds(n_nq: int):
-        from ..mt5_bridge import mt5_io
-        key = n_nq // 500  # kaba cache anahtari (warmup boyunca sabit kalir)
-        if "es" not in _ESDIV_CACHE:
-            _ESDIV_CACHE["es"] = mt5_io.ohlcv("SP500", "15m", days=120)
-            _ESDIV_CACHE["h1"] = mt5_io.ohlcv("NASDAQ100", "1H", days=120)
-        return _ESDIV_CACHE["es"], _ESDIV_CACHE["h1"]
-
-    def detect(df_nq: pd.DataFrame) -> Signal | None:
-        if len(df_nq) < lookback + 60:
-            return None
-        df_es, df_h1 = _feeds(len(df_nq))
-        idx = df_nq.index.intersection(df_es.index)
-        if len(idx) < lookback + 60 or df_nq.index[-1] not in idx:
-            return None
-        nq = df_nq.loc[idx]; es = df_es.loc[idx]
-        trend = htf_trend(nq.index, df_h1)
-        a = atr(nq, 14); buf = a * buf_mult
-        rlo = rolling_low(nq, lookback); rhi = rolling_high(nq, lookback)
-        rlo_es = rolling_low(es, lookback); rhi_es = rolling_high(es, lookback)
-        i = -1
-        swept_low = (nq["low"].iloc[i] < rlo.iloc[i]) and (nq["close"].iloc[i] > rlo.iloc[i])
-        swept_high = (nq["high"].iloc[i] > rhi.iloc[i]) and (nq["close"].iloc[i] < rhi.iloc[i])
-        div_long_series = (
-            (nq["low"] < rlo) & (nq["close"] > rlo) & (es["low"] >= rlo_es)
-            & (trend > 0)
-        )
-        div_short_series = (
-            (nq["high"] > rhi) & (nq["close"] < rhi) & (es["high"] <= rhi_es)
-            & (trend < 0)
-        )
-        div_long = bool(div_long_series.iloc[i]) and not bool(div_long_series.shift(1).fillna(False).iloc[i])
-        div_short = bool(div_short_series.iloc[i]) and not bool(div_short_series.shift(1).fillna(False).iloc[i])
-        entry = float(nq["close"].iloc[i])
-        if div_long:
-            sl = float(nq["low"].iloc[i] - buf.iloc[i]); risk = entry - sl
-            if risk <= 0:
-                return None
-            return Signal(1, entry, sl, entry + rr * risk)
-        if div_short:
-            sl = float(nq["high"].iloc[i] + buf.iloc[i]); risk = sl - entry
-            if risk <= 0:
-                return None
-            return Signal(-1, entry, sl, entry - rr * risk)
         return None
 
     return detect

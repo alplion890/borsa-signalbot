@@ -13,16 +13,19 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from .ledger import load_forward, live_only
+from .ledger import eslestir_bir_bir, load_forward
 
 KOK = Path(__file__).resolve().parent.parent
 
 
 def _defter(tmp_path: Path, backfill_var: bool = True) -> Path:
     satirlar = [
-        {"entry_time": "2026-05-20 14:30:00", "module": "NQ_ORB", "r": 2.0, "backfill": 1},
-        {"entry_time": "2026-07-01 14:30:00", "module": "NQ_ORB", "r": -1.0, "backfill": 0},
-        {"entry_time": "2026-07-02 14:30:00", "module": "CAND_X", "r": 5.0, "backfill": 0},
+        {"entry_time": "2026-05-20 14:30:00", "module": "NQ_ORB",
+         "symbol": "NASDAQ100", "dir": 1, "r": 2.0, "backfill": 1},
+        {"entry_time": "2026-07-01 14:30:00", "module": "NQ_ORB",
+         "symbol": "NASDAQ100", "dir": 1, "r": -1.0, "backfill": 0},
+        {"entry_time": "2026-07-02 14:30:00", "module": "CAND_X",
+         "symbol": "US30", "dir": 1, "r": 5.0, "backfill": 0},
     ]
     df = pd.DataFrame(satirlar)
     if not backfill_var:
@@ -44,7 +47,7 @@ def test_backfill_istenirse_ACIKCA_istenir(tmp_path):
 
 
 def test_adaylar_ayiklanabilir(tmp_path):
-    d = live_only(_defter(tmp_path))
+    d = load_forward(_defter(tmp_path), include_candidates=False)
     assert list(d["module"]) == ["NQ_ORB"]
 
 
@@ -200,13 +203,18 @@ def test_birlesik_ETIKETSIZ_bulutu_sessizce_forward_SAYMAZ(tmp_path):
 
 
 def test_birlesik_zit_yonlu_islemleri_AYNI_SAYMAZ(tmp_path):
-    """BULGU 2a: 30 dk arayla zit yonlu iki islem ayni islem degildir."""
+    """BULGU 2a: zit yonlu iki islem ayni islem degildir.
+
+    ARALIK 5 DAKIKA (yeniden denetim, bulgu 5): once 30 dk kullaniliyordu ve
+    tolerans 15 dk oldugu icin `dir` kontrolu silinse de test geciyordu --
+    yani test iddia ettigi seyi sinamiyordu.
+    """
     from .ledger import birlesik_forward
     mt5 = _mt5_yaz(tmp_path, [
         {"entry_time": "2026-08-21 14:00:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": 1, "r": 1.40, "status": "tp", "backfill": 0}])
     bulut = _bulut_yaz(tmp_path, [
-        {"entry_time": "2026-08-21 14:30:00", "module": "NQ_ORB",
+        {"entry_time": "2026-08-21 14:05:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": -1, "r": -1.0, "status": "sl", "backfill": 0}])
     d = birlesik_forward(mt5, bulut)
     assert len(d) == 2, "zit yonlu islemler tekillestirilmis"
@@ -218,7 +226,7 @@ def test_birlesik_farkli_sembolu_AYNI_SAYMAZ(tmp_path):
         {"entry_time": "2026-08-21 14:00:00", "module": "CAND_SWEEP",
          "symbol": "US30", "dir": 1, "r": 1.0, "status": "tp", "backfill": 0}])
     bulut = _bulut_yaz(tmp_path, [
-        {"entry_time": "2026-08-21 14:10:00", "module": "CAND_SWEEP",
+        {"entry_time": "2026-08-21 14:02:00", "module": "CAND_SWEEP",
          "symbol": "UK100", "dir": 1, "r": -1.0, "status": "sl", "backfill": 0}])
     d = birlesik_forward(mt5, bulut)
     assert len(d) == 2, "farkli sembol tekillestirilmis"
@@ -235,28 +243,33 @@ def test_birlesik_bir_MT5_satiri_BIR_KEZ_kullanilir(tmp_path):
         {"entry_time": "2026-08-21 14:00:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": 1, "r": 1.40, "status": "tp", "backfill": 0}])
     bulut = _bulut_yaz(tmp_path, [
+        # IKISI DE TOLERANS ICINDE (5 ve 10 dk). Once ikincisi 20 dk uzaktaydi;
+        # o halde `used` kumesi silinse de test geciyordu (yeniden denetim,
+        # bulgu 5) -- yani bir-bir kisiti sinanmiyordu.
         {"entry_time": "2026-08-21 14:05:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": 1, "r": 1.40, "status": "tp", "backfill": 0},
-        {"entry_time": "2026-08-21 14:20:00", "module": "NQ_ORB",
+        {"entry_time": "2026-08-21 14:10:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": 1, "r": -0.5, "status": "sl", "backfill": 0}])
     d = birlesik_forward(mt5, bulut)
     assert len(d) == 2, ("bir MT5 satiri iki bulut satirini birden emmis; "
                          "ikinci gercek islem kayboldu")
 
 
-def test_birlesik_EN_YAKIN_eslesmeyi_secer(tmp_path):
-    """Tolerans icinde birden fazla aday varsa en yakini eslesmeli."""
-    from .ledger import birlesik_forward
-    mt5 = _mt5_yaz(tmp_path, [
-        {"entry_time": "2026-08-21 14:00:00", "module": "NQ_ORB",
-         "symbol": "NASDAQ100", "dir": 1, "r": 1.0, "status": "tp", "backfill": 0},
-        {"entry_time": "2026-08-21 15:00:00", "module": "NQ_ORB",
-         "symbol": "NASDAQ100", "dir": 1, "r": 2.0, "status": "tp", "backfill": 0}])
-    bulut = _bulut_yaz(tmp_path, [
-        {"entry_time": "2026-08-21 14:55:00", "module": "NQ_ORB",
-         "symbol": "NASDAQ100", "dir": 1, "r": 2.0, "status": "tp", "backfill": 0}])
-    d = birlesik_forward(mt5, bulut)
-    assert len(d) == 2, "bulut satiri 15:00 ile eslesmeliydi (5dk), 14:00 ile degil"
+def test_EN_YAKIN_eslesmeyi_secer():
+    """Tolerans icinde IKI aday varsa en yakini eslesmeli.
+
+    Yeniden denetim, bulgu 5: eski hali union uzunluguna bakiyordu ve tek
+    tolerans-ici aday vardi -- hangi adayin secildigi gorunmuyordu. Simdi
+    dogrudan `eslestir_bir_bir()` ciftine ve eslesen MT5 indeksine bakiliyor.
+    """
+    ortak = {"module": "NQ_ORB", "symbol": "NASDAQ100", "dir": 1}
+    mt5 = pd.DataFrame([
+        {**ortak, "entry_time": pd.Timestamp("2026-08-21 14:50"), "r": 1.0},
+        {**ortak, "entry_time": pd.Timestamp("2026-08-21 14:58"), "r": 2.0}])
+    bulut = pd.DataFrame([
+        {**ortak, "entry_time": pd.Timestamp("2026-08-21 15:00"), "r": 2.0}])
+    ciftler, _, _ = eslestir_bir_bir(bulut, mt5)
+    assert ciftler == [(0, 1)], f"en yakin (14:58) secilmedi: {ciftler}"
 
 
 def test_birlesik_IKI_DEFTER_de_yoksa_KeyError_ATMAZ(tmp_path):
@@ -324,3 +337,122 @@ def test_tolerans_gercek_islem_frekansina_gore_DAR(tmp_path):
         {"entry_time": "2026-08-21 14:20:00", "module": "NQ_ORB",
          "symbol": "NASDAQ100", "dir": 1, "r": -1.0, "status": "sl", "backfill": 0}])
     assert len(birlesik_forward(mt5, bulut)) == 2, "20dk arayla iki islem birlestirilmis"
+
+
+# --- Hermes YENIDEN denetimi 2026-08-29 ----------------------------------
+#
+# Faz 1 duzeltmesi onaylanmadi: uc uc acik kalmisti.
+#   1) sifir bayt MT5 defteri hala EmptyDataError firlatiyordu (yalniz bulut
+#      tarafi kapanmisti) -> iki taraf tek `oku_defter()` sozlesmesinde
+#   2) celiski yalniz `r` ile olculuyordu; ayni kimlikte farkli `backfill`
+#      celiski sayilmiyor ve keep="first" gercek forward satirini SILEBILIYORDU
+#   3) acgozlu eslestirici maksimum eslesmeyi garanti etmiyordu -> fazladan
+#      "bulut-only" kanit
+
+
+def test_SIFIR_BAYT_MT5_defteri_patlamaz(tmp_path):
+    """Bulgu 1: `load_forward` EmptyDataError yakalamiyordu."""
+    from .ledger import birlesik_forward
+    bos = tmp_path / "forward_ledger.csv"
+    bos.write_text("", encoding="utf-8")
+    assert load_forward(bos).empty
+    d = birlesik_forward(bos, tmp_path / "yok.csv")
+    assert d.empty
+    for kolon in ("module", "entry_time", "r"):
+        assert kolon in d.columns
+
+
+def test_AYNI_R_farkli_BACKFILL_celiski_sayilir(tmp_path):
+    """Bulgu 2: gercek forward satiri sessizce kaybolabiliyordu.
+
+    Ayni kimlik, ayni `r`, farkli `backfill`. Eski kod celiski gormuyor,
+    ilk satiri (backfill=1) tutuyor, sonra backfill filtresi onu da atiyordu:
+    iki satirdan SIFIR kanit kaliyor ve hicbir hata cikmiyordu.
+    """
+    from .ledger import birlesik_forward
+    mt5 = _mt5_yaz(tmp_path, [
+        {"entry_time": "2026-08-01 14:45:00", "module": "SWEEP_CORE",
+         "symbol": "US30", "dir": 1, "r": 1.0, "status": "tp", "backfill": 0}])
+    ayni = {"entry_time": "2026-08-25 15:25:00", "module": "NQ_ORB",
+            "symbol": "NASDAQ100", "dir": 1, "r": -0.05, "status": "sl"}
+    bulut = _bulut_yaz(tmp_path, [{**ayni, "backfill": 1}, {**ayni, "backfill": 0}])
+    with pytest.raises(ValueError, match="CELISEN"):
+        birlesik_forward(mt5, bulut)
+
+
+def test_AYNI_R_farkli_STATUS_celiski_sayilir(tmp_path):
+    from .ledger import birlesik_forward
+    mt5 = _mt5_yaz(tmp_path, [
+        {"entry_time": "2026-08-01 14:45:00", "module": "SWEEP_CORE",
+         "symbol": "US30", "dir": 1, "r": 1.0, "status": "tp", "backfill": 0}])
+    ayni = {"entry_time": "2026-08-25 15:25:00", "module": "NQ_ORB",
+            "symbol": "NASDAQ100", "dir": 1, "r": 0.0, "backfill": 0}
+    bulut = _bulut_yaz(tmp_path, [{**ayni, "status": "sl"},
+                                  {**ayni, "status": "timeout"}])
+    with pytest.raises(ValueError, match="CELISEN"):
+        birlesik_forward(mt5, bulut)
+
+
+def test_BIREBIR_kopya_sessizce_dusurulur(tmp_path):
+    """Celiski sertlestirmesi, gercek tekrari eleme davranisini bozmamali."""
+    from .ledger import birlesik_forward
+    mt5 = _mt5_yaz(tmp_path, [
+        {"entry_time": "2026-08-01 14:45:00", "module": "SWEEP_CORE",
+         "symbol": "US30", "dir": 1, "r": 1.0, "status": "tp", "backfill": 0}])
+    ayni = {"entry_time": "2026-08-25 15:25:00", "module": "NQ_ORB",
+            "symbol": "NASDAQ100", "dir": 1, "r": -0.05, "status": "sl",
+            "backfill": 0}
+    bulut = _bulut_yaz(tmp_path, [ayni, dict(ayni), dict(ayni)])
+    assert len(birlesik_forward(mt5, bulut)) == 2
+
+
+def test_eslestirme_MAKSIMUM_kardinalite(tmp_path):
+    """Bulgu 3: acgozlu matcher Hermes'in karsi orneginde bir cift kaciriyordu.
+
+    sol 00:00 / 00:01, sag 23:56 / 00:00, tolerans 4 dk.
+    Acgozlu: 00:00 once 00:00'i kapiyor, 00:01'e aday kalmiyor -> 1 cift.
+    Dogrusu: 00:00<->23:56 ve 00:01<->00:00 -> 2 cift. Eksik cift birlesimde
+    FAZLADAN bulut kaniti demek.
+    """
+    ortak = {"module": "NQ_ORB", "symbol": "NASDAQ100", "dir": 1, "r": 1.0}
+    sol = pd.DataFrame([
+        {**ortak, "entry_time": pd.Timestamp("2026-08-22 00:00")},
+        {**ortak, "entry_time": pd.Timestamp("2026-08-22 00:01")}])
+    sag = pd.DataFrame([
+        {**ortak, "entry_time": pd.Timestamp("2026-08-21 23:56")},
+        {**ortak, "entry_time": pd.Timestamp("2026-08-22 00:00")}])
+    ciftler, sadece_sol, sadece_sag = eslestir_bir_bir(
+        sol, sag, tolerance=pd.Timedelta("4min"))
+    assert len(ciftler) == 2, f"maksimum eslesme bulunamadi: {ciftler}"
+    assert not sadece_sol and not sadece_sag
+
+
+def test_eslestirme_TOLERANS_disini_zorlamaz():
+    """Maksimum kardinalite ugruna tolerans disi cift uydurulmamali."""
+    ortak = {"module": "NQ_ORB", "symbol": "NASDAQ100", "dir": 1, "r": 1.0}
+    sol = pd.DataFrame([{**ortak, "entry_time": pd.Timestamp("2026-08-22 00:00")}])
+    sag = pd.DataFrame([{**ortak, "entry_time": pd.Timestamp("2026-08-22 03:00")}])
+    ciftler, sadece_sol, sadece_sag = eslestir_bir_bir(sol, sag)
+    assert ciftler == [] and sadece_sol == [0] and sadece_sag == [0]
+
+
+def test_PARITE_raporu_ayni_kanit_kapisindan_gecer(tmp_path):
+    """Bulgu 4: `cloud_parity` kendi read_csv'siyle fail-open kaliyordu.
+
+    Ayni dosya birlesik sayimda reddedilip parite raporunda kanit
+    sayilabiliyordu; iki okuyucu = iki gercek.
+    """
+    from . import cloud_parity
+    etiketsiz = _bulut_yaz(tmp_path, [
+        {"entry_time": "2026-08-25 15:25:00", "module": "NQ_ORB",
+         "symbol": "NASDAQ100", "dir": 1, "r": 777.0, "status": "tp"}])
+    with pytest.raises(ValueError, match="backfill"):
+        cloud_parity._load(etiketsiz)
+
+
+def test_PARITE_ledger_ile_AYNI_yolu_kullanir():
+    """Iki dosya yolu sabiti ayrisirsa rapor baska deftere bakar."""
+    from . import cloud_parity, ledger
+    assert cloud_parity.MT5_LEDGER == ledger.LEDGER_CSV
+    assert cloud_parity.CLOUD_LEDGER == ledger.CLOUD_CSV
+    assert cloud_parity.TOLERANCE == ledger.EPS_ZAMAN

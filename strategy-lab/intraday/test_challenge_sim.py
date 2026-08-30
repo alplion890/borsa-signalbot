@@ -88,23 +88,37 @@ def test_summary_reports_pass_fail_open():
 # ayni: tek kaynak. Portfoy artik risk.py'den turuyor.
 
 
-def test_canli_portfoy_risk_py_den_TURUYOR_sabit_liste_degil():
-    """Sabit modul listesi tier degisince sessizce yanlislasir."""
-    import inspect
+def test_canli_portfoy_risk_py_den_TURUYOR_sabit_liste_degil(monkeypatch):
+    """Sabit modul listesi tier degisince sessizce yanlislasir.
+
+    DAVRANIS TESTI (Hermes yeniden denetimi 2026-08-29): eski hali
+    `inspect.getsource()` ile KAYNAK METNI okuyordu -- yani "risk.py'den
+    turuyor" iddiasini degil, o metnin yazildigini sinaiyordu. Simdi
+    `live_module_names` degistirilip `compare_bot_portfolios`'un GERCEKTEN
+    hangi islemleri canli portfoye koydugu olculuyor.
+    """
+    import pandas as pd
 
     from . import challenge_sim
     from .signalbot.risk import live_module_names
 
-    kaynak = inspect.getsource(challenge_sim.compare_bot_portfolios)
-    assert "live_module_names" in kaynak, (
-        "portfoy kumesi risk.py'den turemeli; sabit liste tier degisikliginde "
-        "sessizce eskiyor (2026-08-28 denetimi)")
-    for eski in ("GOLD_NY_ORB_TREND", "NQ_ORB_STRONG_TREND"):
-        assert f'"{eski}"' not in kaynak, (
-            f"{eski} sabit yazilmis -- risk.py tek kaynak olmali")
     assert live_module_names(), "risk.py bos LIVE listesi donduruyor"
-    # Kaynak metni gormek YETMEZ: ilk denemede metin dogruydu ama import
-    # eklenmemisti ve test yine gecti. Calisma zamaninda cozuldugunu dogrula.
-    assert challenge_sim.live_module_names() == live_module_names(), (
-        "challenge_sim live_module_names'i import etmemis -- kaynakta geciyor "
-        "ama calisma zamaninda cozulmuyor")
+
+    trades = pd.DataFrame([
+        {"module": "AYYY", "entry_time": pd.Timestamp("2026-08-01"), "r": 1.0},
+        {"module": "BXXX", "entry_time": pd.Timestamp("2026-08-02"), "r": -1.0},
+        {"module": "SWEEP_ES_DIV", "entry_time": pd.Timestamp("2026-08-03"), "r": 0.5},
+    ])
+    monkeypatch.setattr(challenge_sim, "live_module_names", lambda: ["AYYY"])
+
+    sira: list[list[str]] = []
+
+    def sahte_run_scan(portfolio_trades, **kw):
+        sira.append(sorted(portfolio_trades["module"].unique()))
+        return pd.DataFrame([{"policy": "p", "horizon_days": 30}]), pd.DataFrame()
+
+    monkeypatch.setattr(challenge_sim, "run_scan", sahte_run_scan)
+    challenge_sim.compare_bot_portfolios(trades, horizons=(30,),
+                                         validate_vectorbt=False)
+    assert sira[-1] == ["AYYY"], (
+        f"canli portfoy risk.py'den turemiyor: {sira[-1]}")

@@ -24,15 +24,16 @@ from pathlib import Path
 
 import pandas as pd
 
-OUT_DIR = Path(__file__).resolve().parent.parent.parent / "outputs" / "intraday" / "forward_ea"
-MT5_LEDGER = OUT_DIR / "forward_ledger.csv"
-CLOUD_LEDGER = OUT_DIR / "cloud_ledger.csv"
-# TEK ESLESTIRICI: tolerans ve eslesme mantigi ledger.py'de.
+# TEK KAYNAK: yol, okuyucu, sema ve eslestirme mantigi ledger.py'de.
 # Hermes denetimi (2026-08-28) BULGU 2: burada dogru olan bir-bir/en-yakin
 # semantik `birlesik_forward()`ta tekrarlanmamis, iki eslestirici ayrismisti.
-# Ayni hata sinifi: whitelist iki kopya, ExecConfig kendi risk politikasi,
-# defterin bes ayri okuyucusu. Cozum hep tek kaynak.
-from .ledger import EPS_ZAMAN, eslestir_bir_bir
+# Yeniden denetim (2026-08-29) bulgu 4: matcher ortaklasmis ama CSV yolu ve
+# okuma hala kopyaydi. Ayni hata sinifi: whitelist iki kopya, ExecConfig kendi
+# risk politikasi, defterin bes ayri okuyucusu. Cozum hep tek kaynak.
+from .ledger import CLOUD_CSV, EPS_ZAMAN, LEDGER_CSV, eslestir_bir_bir, oku_defter
+
+MT5_LEDGER = LEDGER_CSV
+CLOUD_LEDGER = CLOUD_CSV
 
 TOLERANCE = EPS_ZAMAN
 
@@ -89,7 +90,13 @@ def summarize(matched: pd.DataFrame) -> pd.DataFrame:
 
 
 def _load(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path, parse_dates=["entry_time"])
+    """Kanit okuyucusunun TEK kapisi.
+
+    Yeniden denetim (2026-08-29) bulgu 4: burada kendi `read_csv`'i vardi ve
+    `backfill` kolonu yoksa TUM satirlar forward sayiliyordu -- ayni dosya
+    birlesik sayimda reddedilip parite raporunda kanit olabiliyordu.
+    """
+    return oku_defter(path)
 
 
 def _block(baslik: str, cloud: pd.DataFrame, mt5: pd.DataFrame,
@@ -122,10 +129,8 @@ def main() -> None:
         print("Bulut defteri henuz yok.")
         return
     cloud, mt5 = _load(CLOUD_LEDGER), _load(MT5_LEDGER)
-    if "backfill" in cloud.columns:
-        backfill = cloud["backfill"] == 1
-    else:
-        backfill = pd.Series(False, index=cloud.index)
+    # `backfill` kolonunun varligi artik sema kapisinda garanti (oku_defter).
+    backfill = cloud["backfill"] == 1
     print("\n" + "=" * 78)
     print("  FEED PARITESI -- bulut defteri vs MT5 defteri")
     print("=" * 78)
