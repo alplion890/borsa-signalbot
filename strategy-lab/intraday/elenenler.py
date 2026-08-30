@@ -1,7 +1,15 @@
-"""ELENENLER KATALOGU -- olculmus ve elenmis fikirlerin donmus listesi.
+"""OLCULMUS FIKIRLER KATALOGU -- donmus liste, statulu.
 
 NE ISE YARAR: diskresyoner seansta, islem acmadan once "benim tezim zaten
-elenmis bir sey mi?" sorusunu cevaplar. Sinyal degil VETO araci.
+olculmus mu, ne cikmis?" sorusunu cevaplar. Sinyal uretmez.
+
+STATU SART (Hermes denetimi 2026-08-29): katalogun hepsi "kullanma" degil.
+  rejected            -> olculdu, sonuc fikri eliyor            (VETO)
+  standalone_rejected -> tek basina edge degil; baglam olabilir  (veto DEGIL)
+  not_adopted         -> pozitif ama kitabin altinda, secilmedi  (veto DEGIL)
+  retired             -> uretimden cikarildi                     (VETO)
+Ayrica `kapsam` alani, calisan bir modulle isim cakismasini keser: "sweep"
+sorgusu calisan SWEEP_CORE'u, "orb" sorgusu canli NQ_ORB'u vetolamaz.
 
 NEDEN VETO, NEDEN SINYAL DEGIL (2026-08-28 karari):
 "Calismiyor" ile "tersi calisir" ayni sey degildir.
@@ -31,17 +39,51 @@ import sys
 from dataclasses import dataclass, field
 
 
+# ---------------------------------------------------------------------------
+# STATU -- hepsi "kullanma" DEGIL (Hermes denetimi 2026-08-29)
+#
+# Ilk surumde her madde tek basliga giriyordu: "ELENMIS -- BU TEZI KULLANMA".
+# Uc kategori hatasi uretiyordu:
+#   - Donchian maddesi metninde "elenmis degil" yaziyor ama veto gibi cikiyordu
+#   - "tek basina edge degil" (FVG/EMA/VWAP) ile "olcum negatif" ayni sayiliyordu;
+#     confluence olarak bakmak ile giris kurali yapmak farkli sorulardir
+#   - emekli GOLD ORB, calisan NQ ORB'u da kapsiyormus gibi gorunuyordu
+# ---------------------------------------------------------------------------
+
+STATULER: dict[str, tuple[str, str]] = {
+    "rejected": ("ELENMIS -- BU TEZI KULLANMA",
+                 "Olculdu, sonuc fikri eliyor."),
+    "standalone_rejected": ("TEK BASINA EDGE DEGIL -- giris kurali yapma",
+                            "Olculdu: yalniz basina PnL uretmiyor. Baska bir "
+                            "gerekcenin yaninda BAGLAM olarak bakilabilir; "
+                            "tek basina giris sebebi degildir."),
+    "not_adopted": ("ADOPTE EDILMEDI -- veto DEGIL",
+                    "Olcum pozitif ama mevcut kitabin altinda kaldi. "
+                    "Yasak degil; secilmedi."),
+    "retired": ("EMEKLI EDILDI -- yeniden acmak icin yeni gerekce gerekir",
+                "Uretimden cikarildi; gecmis kayitlar defterde duruyor."),
+}
+
+
 @dataclass(frozen=True)
 class Elenen:
-    """Olculmus ve elenmis bir fikir. Her alan bir olcume dayanir."""
+    """Olculmus bir fikir ve STATUSU. Her alan bir olcume dayanir."""
     id: str
+    statu: str        # STATULER anahtari -- "elenmis" tek bir sey degil
     baslik: str
     iddia: str        # cazip gorunen sey -- neden birinin aklina gelir
     olcum: str        # ne olculdu, hangi sayiyla
-    neden: str        # neden bu sayi fikri eler
+    neden: str        # neden bu sayi bu statuyu veriyor
     tarih: str
     kaynak: str
     anahtarlar: tuple[str, ...] = field(default_factory=tuple)
+    # Calisan bir modulle isim cakismasi varsa kapsam BURADA daraltilir;
+    # yoksa `--kontrol sweep` calisan SWEEP_CORE'u da veto etmis gibi olur.
+    kapsam: str = ""
+
+    def __post_init__(self) -> None:
+        if self.statu not in STATULER:
+            raise ValueError(f"{self.id}: bilinmeyen statu {self.statu!r}")
 
 
 @dataclass(frozen=True)
@@ -62,6 +104,7 @@ class Yapi:
 KATALOG: tuple[Elenen, ...] = (
     Elenen(
         id="fvg_doldurma",
+        statu="standalone_rejected",
         baslik="FVG (fair value gap) doldurulur",
         iddia="Ucgen bosluk aciliyorsa fiyat geri donup doldurur, girisi buna gore kur.",
         olcum="10 paritede doldurma orani ~%84 -- AMA yayilim 2-6, yani "
@@ -72,9 +115,12 @@ KATALOG: tuple[Elenen, ...] = (
         tarih="2026-07-11",
         kaynak="liquidity_profiler.py + [[Borsa - Likidite Karakter Haritasi]]",
         anahtarlar=("fvg", "fair value gap", "bosluk", "imbalance", "ict", "smc"),
+        kapsam=("Giris kurali olarak. Diskresyoner seansta baska bir gerekcenin "
+                "yaninda baglam diye bakmak yasak degil; tek basina tez olamaz."),
     ),
     Elenen(
         id="ema_vwap_sicrama",
+        statu="standalone_rejected",
         baslik="EMA20 / EMA50 / VWAP'tan sicrama",
         iddia="Trend yonunde fiyat EMA20'ye veya VWAP'a dusunce sicrar, oradan al.",
         olcum="10 paritenin HEPSI: EMA20 ~%57, EMA50 ~%42, VWAP ~%54 sicrama. "
@@ -84,9 +130,12 @@ KATALOG: tuple[Elenen, ...] = (
         tarih="2026-07-11",
         kaynak="liquidity_profiler.py + [[Borsa - Likidite Karakter Haritasi]]",
         anahtarlar=("ema", "ema20", "ema50", "vwap", "sicrama", "bounce", "ortalama"),
+        kapsam=("Giris kurali olarak. Confluence/baglam kullanimi ayri soru -- "
+                "olculen sey 'tek basina sicrama al' idi."),
     ),
     Elenen(
         id="equal_high_low_raid",
+        statu="rejected",
         baslik="Equal high/low avlandiktan sonra donus",
         iddia="Cift tepe/dip alinirsa likidite suprulmustur, fiyat doner.",
         olcum="Raid sonrasi donus orani ~%50, yayilim dusuk.",
@@ -95,9 +144,13 @@ KATALOG: tuple[Elenen, ...] = (
         kaynak="liquidity_profiler.py + [[Borsa - Likidite Karakter Haritasi]]",
         anahtarlar=("equal high", "equal low", "cift tepe", "cift dip", "raid",
                     "likidite", "sweep", "supurme"),
+        kapsam=("'raid/sweep DONUSU' tezine dair. Calisan SWEEP_CORE ayri bir sey "
+                "olcuyor (NASDAQ 15m, ADX rejimi + VWAP konumu) ve forward "
+                "defterinde duruyor -- bu madde onu veto ETMEZ."),
     ),
     Elenen(
         id="ny_londra_surdurme",
+        statu="rejected",
         baslik="NY seansi Londra yonunu surdurur",
         iddia="Londra yonu belirler, NY devam ettirir; NY acilisinda o yone gir.",
         olcum="Surdurme orani ~%50.",
@@ -108,6 +161,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="prevday_continuation",
+        statu="rejected",
         baslik="Dun yukari kapadiysa once PDH vurulur",
         iddia="Onceki gunun yonu bugune bias verir; %75 oranla dogruluyordu.",
         olcum="%75 cikti AMA GEOMETRIK KONTAMINE: dun yukari kapayinca fiyat "
@@ -120,6 +174,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="inside_day_kirilim",
+        statu="rejected",
         baslik="Inside day sonrasi kirilim (Kathy Lien)",
         iddia="Inside day olusursa %84.92 ihtimalle high veya low kirilir.",
         olcum="PRIOR_DAY_HL kurulumu: 176 islem, exp_R -0.009. "
@@ -133,6 +188,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="btc_absorption",
+        statu="rejected",
         baslik="BTC absorption modulu",
         iddia="Backtest'te pozitifti (+0.073), kripto 7/24 oldugu icin frekans yuksek.",
         olcum="Forward: exp_R -0.326, n=24, WR %29. Backtest'in TERSI.",
@@ -144,6 +200,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="fomc_oncesi_drift",
+        statu="rejected",
         baslik="FOMC duyurusu oncesi long (15-30 dk pencere)",
         iddia="Lucca-Moench (JF 2015) pre-FOMC drift: duyuru oncesi getiri anormal yuksek.",
         olcum="116 FOMC olayi, 2 enstruman x 2 giris varyanti. Havuz PSR 0.9198 "
@@ -156,9 +213,12 @@ KATALOG: tuple[Elenen, ...] = (
         tarih="2026-08-24",
         kaynak="macro_day_lab.py + [[Borsa - Makro Gun Kitabi Hipotezi]]",
         anahtarlar=("fomc", "fed", "faiz", "duyuru", "drift", "makro", "pre-fomc"),
+        kapsam=("15-30 dakikalik pencere. Lucca-Moench 24 SAATLIK pencereyi olcer; "
+                "o soru burada CURUTULMEDI, sorulmadi bile."),
     ),
     Elenen(
         id="sweep_cok_endeks",
+        statu="rejected",
         baslik="SWEEP'i 7 endekse yayarak kari katlamak",
         iddia="Havuz exp_R +0.194 (n=118) -- ayni kurali cok enstrumanda kos, kar katlanir.",
         olcum="Ayni-anda-tek-islem (slot) kisiti uygulaninca exp_R -0.062'ye dusuyor.",
@@ -168,9 +228,13 @@ KATALOG: tuple[Elenen, ...] = (
         kaynak="portfolio_ab + [[Borsa - Portfoy Kompozisyonu ve Slot Kisiti]]",
         anahtarlar=("sweep", "cok enstruman", "breadth", "genisleme", "portfoy",
                     "slot", "endeks"),
+        kapsam=("Veto YALNIZCA 'ayni kurali 7 endekse yay' genislemesine. Tek- "
+                "enstruman SWEEP_CORE_AVOID_MID_VWAP calisiyor (n=9, +0.804) ve "
+                "portfoyde kaldi."),
     ),
     Elenen(
         id="donchian_xau",
+        statu="not_adopted",
         baslik="Donchian kanal kirilimi, XAUUSD 1H (turtle)",
         iddia="Klasik turtle N=20/55 kanal kirilimi, altinda NASDAQ'tan bagimsiz kitap.",
         olcum="2012-2026: N=20 exp_R +0.085 (848 islem, PSR 0.976), "
@@ -183,9 +247,12 @@ KATALOG: tuple[Elenen, ...] = (
         kaynak="donchian_xau_lab.py + [[Borsa - Donchian XAUUSD 1H Hipotezi]]",
         anahtarlar=("donchian", "turtle", "kanal", "channel", "kirilim", "altin",
                     "xauusd"),
+        kapsam=("XAUUSD 1H turtle kanali. Yasak degil: olculdu, pozitif cikti, "
+                "mevcut kitabin altinda kaldigi icin secilmedi."),
     ),
     Elenen(
         id="gold_ny_orb",
+        statu="retired",
         baslik="GOLD NY ORB modulu",
         iddia="Altinda NY acilis range kirilimi; portfoyde aylardir duruyordu.",
         olcum="Forward exp_R -0.411, n=9, t=-2.05 -- defterdeki TEK |t|>2 sonuc "
@@ -196,9 +263,12 @@ KATALOG: tuple[Elenen, ...] = (
         tarih="2026-08-28",
         kaynak="modules.py + [[Borsa - Uc Rayli Son Duzen]]",
         anahtarlar=("gold", "altin", "orb", "ny orb", "acilis range"),
+        kapsam=("XAUUSD 5m ORB modulune. NQ_ORB_STRONG_TREND AYRI modul, canli ve "
+                "olculmeye devam ediyor -- 'ORB' kelimesi ikisini birden vetolamaz."),
     ),
     Elenen(
         id="ic_bar_bazli",
+        statu="rejected",
         baslik="Bar-bazli IC (Information Coefficient) ile bekleme suresini kisaltmak",
         iddia="Islem yerine BAR sayarsak 350.000 gozlem olur, kanit aylar icinde gelir.",
         olcum="Sinyal yogunlugu olculdu: NQ_ORB 956.183 barin 2.104'unde sinyal "
@@ -215,6 +285,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="sunucu_kiralama",
+        statu="rejected",
         baslik="Sunucu kiralayip daha cok strateji taramak",
         iddia="Daha fazla islem gucu = daha fazla hipotez = edge bulma sansi artar.",
         olcum="3 yillik veri istatistiksel olarak ~37 hipotez finanse ediyor; "
@@ -272,10 +343,28 @@ def ara(sorgu: str) -> tuple[list[Elenen], list[Yapi]]:
 
 def _yaz_elenen(x: Elenen) -> None:
     print(f"\n  [{x.id}]  {x.baslik}")
+    print(f"    statu  : {x.statu}")
     print(f"    iddia  : {x.iddia}")
     print(f"    olcum  : {x.olcum}")
     print(f"    neden  : {x.neden}")
+    if x.kapsam:
+        print(f"    KAPSAM : {x.kapsam}")
     print(f"    kaynak : {x.kaynak}  ({x.tarih})")
+
+
+def _gruplu_yaz(maddeler: list[Elenen]) -> None:
+    """Statuye gore ayri baslik.
+
+    Hepsini tek "KULLANMA" basligi altina koymak kategori hatasiydi: olcumu
+    negatif cikan fikirle, olculup secilmeyen fikri ayni sey yapiyordu.
+    """
+    for statu, (baslik, aciklama) in STATULER.items():
+        grup = [x for x in maddeler if x.statu == statu]
+        if not grup:
+            continue
+        print(f"\n{'='*70}\n  {baslik}\n  {aciklama}\n{'='*70}")
+        for x in grup:
+            _yaz_elenen(x)
 
 
 def _yaz_yapi(x: Yapi) -> None:
@@ -290,7 +379,7 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
-    p = argparse.ArgumentParser(description="Elenenler katalogu (VETO araci)")
+    p = argparse.ArgumentParser(description="Olculmus fikirler katalogu (statulu)")
     p.add_argument("--kontrol", metavar="TEZ", help="tezini kontrol et")
     p.add_argument("--yapi", action="store_true", help="yapisal bulgular")
     a = p.parse_args()
@@ -303,10 +392,12 @@ def main() -> None:
             print("  Tezini diskresyoner deftere yaz, curuten alanini doldur.")
             return
         if e:
-            print(f"\n{'='*70}\n  ELENMIS -- BU TEZI KULLANMA\n{'='*70}")
-            for x in e:
-                _yaz_elenen(x)
-            print(f"\n  NOT: 'elenmis' TERSI CALISIR demek degil. Bkz modul docstring.")
+            _gruplu_yaz(e)
+            print("\n  NOT: statuye BAK -- hepsi veto degil. Veto yalniz "
+                  "rejected/retired.")
+            print("  NOT: hicbir madde TERSINI AL demez (bkz modul docstring).")
+            print("  NOT: KAPSAM satiri varsa oku -- isim benzerligi calisan "
+                  "modulu vetolamaz.")
         if y:
             print(f"\n{'='*70}\n  YAPISAL BULGU (baglam, giris kurali degil)\n{'='*70}")
             for x in y:
@@ -320,13 +411,15 @@ def main() -> None:
         return
 
     print(f"\n{'='*70}")
-    print(f"  ELENENLER KATALOGU -- {len(KATALOG)} madde (donmus liste)")
+    print(f"  OLCULMUS FIKIRLER KATALOGU -- {len(KATALOG)} madde (donmus liste)")
+    sayim = {k: sum(1 for x in KATALOG if x.statu == k) for k in STATULER}
+    print("  " + "   ".join(f"{k}:{v}" for k, v in sayim.items() if v))
     print(f"{'='*70}")
-    for x in KATALOG:
-        _yaz_elenen(x)
+    _gruplu_yaz(list(KATALOG))
     print(f"\n{'='*70}")
     print("  Yapisal bulgular icin: --yapi   |   Tez kontrolu: --kontrol <kelime>")
-    print("  'Elenmis' = bunu alma. TERSINI AL demek DEGIL (bkz docstring).")
+    print("  Veto YALNIZ rejected/retired. Digerleri 'secilmedi' der, 'yasak' degil.")
+    print("  Hicbir madde TERSINI AL demez (bkz docstring).")
     print(f"{'='*70}")
 
 

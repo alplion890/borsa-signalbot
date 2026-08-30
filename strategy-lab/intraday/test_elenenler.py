@@ -22,42 +22,27 @@ def test_id_tekrari_yok():
     assert len(idler) == len(set(idler)), f"tekrarli id: {idler}"
 
 
-@pytest.mark.parametrize("x", KATALOG, ids=lambda x: x.id)
-def test_her_madde_SAYI_iceriyor(x):
-    """Olcum alani rakam icermeli -- 'bence calismaz' katalog maddesi degildir."""
-    assert re.search(r"\d", x.olcum), f"{x.id}: olcum alaninda sayi yok"
+def test_her_madde_ALAN_SOZLESMESINI_saglar():
+    """Tek test, tum katalog.
 
-
-@pytest.mark.parametrize("x", KATALOG, ids=lambda x: x.id)
-def test_her_madde_KAYNAK_gosteriyor(x):
-    """Nerede olculdugu yazmayan madde denetlenemez."""
-    assert x.kaynak.strip(), f"{x.id}: kaynak bos"
-    assert (".py" in x.kaynak) or ("[[" in x.kaynak), (
-        f"{x.id}: kaynak ne dosya ne vault notu -- izlenemez")
-
-
-@pytest.mark.parametrize("x", KATALOG, ids=lambda x: x.id)
-def test_her_madde_TARIHLI(x):
-    assert re.match(r"\d{4}-\d{2}-\d{2}", x.tarih), f"{x.id}: tarih formati"
-
-
-@pytest.mark.parametrize("x", KATALOG, ids=lambda x: x.id)
-def test_her_madde_ANAHTAR_tasiyor(x):
-    """Anahtari olmayan madde aramada bulunamaz, yani hic yok gibidir."""
-    assert x.anahtarlar, f"{x.id}: anahtar listesi bos"
-
-
-@pytest.mark.parametrize("x", KATALOG, ids=lambda x: x.id)
-def test_hicbir_madde_TERSINI_AL_demiyor(x):
-    """Katalog VETO araci. 'Tersini al' onerisi buraya giremez.
-
-    Gerekce modul docstring'inde: R'nin isaretini cevirerek ters stratejiyi
-    hesaplayamazsin (stop/hedef asimetrik). Ters strateji yeni backtest,
-    yani yeni hipotez, yani butce.
+    Once alan basina ayri parametrik test vardi: 13 madde x 6 alan = 78 test.
+    Hermes denetimi (2026-08-29) hakli olarak bunu sisme saydi -- hepsi ayni
+    seyi soruyordu: "madde olcume dayaniyor mu?". Hangi maddenin bozuk oldugu
+    assert mesajinda zaten yaziyor.
     """
-    metin = f"{x.iddia} {x.olcum} {x.neden}".lower()
-    for yasak in ("tersini al", "ters isleme gir", "tam tersi calisir"):
-        assert yasak not in metin, f"{x.id}: katalog sinyal onermemeli ({yasak})"
+    for x in KATALOG:
+        assert re.search(r"\d", x.olcum), f"{x.id}: olcum alaninda sayi yok"
+        assert x.kaynak.strip(), f"{x.id}: kaynak bos"
+        assert (".py" in x.kaynak) or ("[[" in x.kaynak), (
+            f"{x.id}: kaynak ne dosya ne vault notu -- izlenemez")
+        assert re.match(r"\d{4}-\d{2}-\d{2}", x.tarih), f"{x.id}: tarih formati"
+        assert x.anahtarlar, f"{x.id}: anahtar listesi bos"
+        # Katalog VETO/kayit araci; "tersini al" onerisi buraya giremez.
+        # Gerekce docstring'de: R'nin isaretini cevirerek ters stratejiyi
+        # hesaplayamazsin (stop/hedef asimetrik) -- o yeni backtest demek.
+        metin = f"{x.iddia} {x.olcum} {x.neden}".lower()
+        for yasak in ("tersini al", "ters isleme gir", "tam tersi calisir"):
+            assert yasak not in metin, f"{x.id}: katalog sinyal onermemeli ({yasak})"
 
 
 def test_arama_fvg_bulur():
@@ -96,3 +81,100 @@ def test_fomc_maddesi_literaturu_CURUTMUS_gibi_yazmiyor():
     e, _ = ara("fomc")
     f = next(x for x in e if x.id == "fomc_oncesi_drift")
     assert "CURUTMEZ" in f.neden or "curutmez" in f.neden.lower()
+
+
+# --- Hermes denetimi 2026-08-29: statu ayrimi ----------------------------
+#
+# Ilk surumde her madde "ELENMIS -- BU TEZI KULLANMA" basligina giriyordu.
+# Uc kategori hatasi: (a) Donchian metninde "elenmis degil" diyor ama veto gibi
+# gorunuyordu, (b) "tek basina edge degil" ile "olcum negatif" ayni sayiliyordu,
+# (c) isim benzerligi calisan modulleri vetoluyordu (sweep -> SWEEP_CORE,
+# orb -> canli NQ_ORB).
+
+
+def test_her_maddenin_GECERLI_statusu_var():
+    from .elenenler import STATULER
+    for x in KATALOG:
+        assert x.statu in STATULER, f"{x.id}: bilinmeyen statu {x.statu}"
+
+
+def test_bilinmeyen_statu_KABUL_EDILMEZ():
+    from .elenenler import Elenen
+    with pytest.raises(ValueError, match="statu"):
+        Elenen(id="x", statu="uydurma", baslik="b", iddia="i", olcum="1",
+               neden="n", tarih="2026-01-01", kaynak="x.py")
+
+
+def test_DONCHIAN_veto_statusunde_DEGIL():
+    """Metninde 'elenmis degil' yazan madde veto basligi altina giremez."""
+    x = next(x for x in KATALOG if x.id == "donchian_xau")
+    assert x.statu == "not_adopted", (
+        "olculup secilmeyen fikir ile olcumu negatif cikan fikir ayni sey degil")
+
+
+def test_TEK_BASINA_elenenler_veto_statusunde_DEGIL():
+    """FVG/EMA/VWAP sonucu 'standalone reddedildi', 'hicbir baglamda kullanma' degil."""
+    for mid in ("fvg_doldurma", "ema_vwap_sicrama"):
+        x = next(x for x in KATALOG if x.id == mid)
+        assert x.statu == "standalone_rejected", f"{mid}: kategori hatasi"
+
+
+def test_CALISAN_modulle_cakisan_maddeler_KAPSAM_tasir():
+    """Isim benzarligi canli modulu vetolamamali.
+
+    `--kontrol sweep` calisan SWEEP_CORE_AVOID_MID_VWAP'i, `--kontrol orb`
+    canli NQ_ORB_STRONG_TREND'i kapsiyormus gibi gorunuyordu.
+    """
+    for mid in ("sweep_cok_endeks", "gold_ny_orb", "equal_high_low_raid"):
+        x = next(x for x in KATALOG if x.id == mid)
+        assert x.kapsam.strip(), f"{mid}: kapsam bos -- blanket veto riski"
+
+
+def test_kapsam_CALISAN_modulun_adini_veriyor():
+    sweep = next(x for x in KATALOG if x.id == "sweep_cok_endeks")
+    assert "SWEEP_CORE" in sweep.kapsam
+    gold = next(x for x in KATALOG if x.id == "gold_ny_orb")
+    assert "NQ_ORB" in gold.kapsam
+
+
+def test_veto_statusu_calisan_modul_kumesiyle_CELISMIYOR():
+    """rejected/retired bir madde, canli bir modulun ADINI tasiyamaz.
+
+    Tasiyorsa katalog kendi portfoyunu vetoluyor demektir.
+    """
+    from .forward_ea.modules import default_modules
+    canli = {m.name for m in default_modules()}
+    for x in KATALOG:
+        if x.statu not in ("rejected", "retired"):
+            continue
+        for ad in canli:
+            assert ad not in x.baslik, f"{x.id}: canli modul {ad} vetolanmis"
+
+
+# Hermes: "FOMC/Donchian sonuclari hypotheses.json'un ikinci elle yazilmis
+# kopyasi; Donchian statusu simdiden ayrismis." Katalogu registry'den TURETMEK
+# bugun mumkun degil (registry 2 hipotez tutuyor, katalog 13 madde -- geri
+# kalani lab kosumlari ve forward defteri). Yapilabilecek dogru sey: kesisim
+# kumesinde ayrismayi TESTE baglamak.
+
+KATALOG_REGISTRY_ESLEMESI = {
+    "fomc_oncesi_drift": "macro_day_drift_nq",
+    "donchian_xau": "donchian_xau_1h",
+}
+
+
+def test_katalog_ve_hipotez_registry_CELISMIYOR():
+    from .hypothesis_registry import load
+
+    kayitlar = {h["id"]: h for h in load()}
+    for katalog_id, registry_id in KATALOG_REGISTRY_ESLEMESI.items():
+        x = next(x for x in KATALOG if x.id == katalog_id)
+        h = kayitlar.get(registry_id)
+        assert h is not None, f"{registry_id} registry'den kaybolmus"
+        if h["durum"] == "elendi":
+            assert x.statu == "rejected", (
+                f"{katalog_id}: registry 'elendi' diyor, katalog '{x.statu}'")
+        else:
+            assert x.statu != "rejected", (
+                f"{katalog_id}: registry '{h['durum']}' diyor ama katalog "
+                "elenmis gibi gosteriyor")
