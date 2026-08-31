@@ -7,7 +7,15 @@ from __future__ import annotations
 import pandas as pd
 from .symbols import resolve, Source
 
-_TF_YF = {"5m": "5m", "15m": "15m", "1H": "60m"}
+# "1d" GUNLUK barlar icin (2026-09-01): telefon brifingi 200 gunluk EMA ve
+# 100 gunluk ATR yuzdeligi istiyor. Intraday cagriyi resample etmek YETMEZ --
+# yfinance 15m'i en fazla 60 gun veriyor, yani EMA200 aslinda 60 barla
+# hesaplaniyordu ve sessizce yanlis sayi basiyordu.
+_TF_YF = {"5m": "5m", "15m": "15m", "1H": "60m", "1d": "1d"}
+
+# yfinance intraday barlari en fazla ~60 gun geriye verir; gunlukte boyle bir
+# sinir yok. Ayni kisiti gunluge uygulamak tam yukaridaki hatayi uretir.
+_INTRADAY_MAX_GUN = 59
 
 
 def _yf_download(ticker: str, interval: str, period: str) -> pd.DataFrame:
@@ -29,8 +37,10 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     return df[~df.index.duplicated(keep="last")].sort_index()
 
 
-def _period_for(days: int) -> str:
-    return f"{max(1, min(days, 59))}d"
+def _period_for(days: int, tf: str = "5m") -> str:
+    if tf == "1d":
+        return f"{max(2, days)}d"
+    return f"{max(1, min(days, _INTRADAY_MAX_GUN))}d"
 
 
 def ohlcv(symbol_key: str, tf: str, days: int = 60) -> pd.DataFrame:
@@ -46,7 +56,7 @@ def ohlcv_spec(spec, tf: str, days: int = 60) -> pd.DataFrame:
     fonksiyondan aliyor. Kopyalansaydi iki taraf zamanla ayrisirdi.
     """
     if spec.source is Source.YFINANCE:
-        raw = _yf_download(spec.ticker, _TF_YF[tf], _period_for(days))
+        raw = _yf_download(spec.ticker, _TF_YF[tf], _period_for(days, tf))
         frame = _normalize(raw)
         frame.attrs.update(
             {

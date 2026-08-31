@@ -65,3 +65,44 @@ def test_agir_bagimliliklar_olmadan_tum_dongu_koser(tmp_path):
     assert sonuc.returncode == 0, f"scipy'siz kosum coktu:\n{sonuc.stderr[-3000:]}"
     assert "MODUL_SAYISI" in sonuc.stdout
     assert "ATLANAN []" in sonuc.stdout, f"modul atlandi: {sonuc.stdout}"
+
+
+# Telefon brifingi de bulutta uretiliyor (telefon_brief.yml) ve ledger'i
+# import ediyor. 2026-09-01: defter eslestiricisi bir ara scipy kullaniyordu;
+# bu test o yolu kapatir. Ayni ders, ikinci kapi.
+
+BRIEF_BETIK = textwrap.dedent('''
+    import sys, importlib.abc
+
+    YASAK = {yasak!r}
+
+    class Engel(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path=None, target=None):
+            kok = fullname.split(".")[0]
+            if kok in YASAK:
+                raise ImportError(f"bulut brifingi {{kok}} kullanamaz")
+            return None
+
+    sys.meta_path.insert(0, Engel())
+
+    from datetime import datetime, timezone
+    from intraday.forward_ea import telefon_brief
+
+    metin = telefon_brief.brief_metni(
+        semboller=[], simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=timezone.utc))
+    print("BRIEF_UZUNLUK", len(metin))
+''').format(yasak=YASAK)
+
+
+def test_telefon_brifingi_agir_bagimliliklar_olmadan_uretilir(tmp_path):
+    betik = tmp_path / "brief.py"
+    betik.write_text(BRIEF_BETIK, encoding="utf-8")
+    kok = pathlib.Path(__file__).resolve().parents[2]
+    ortam = dict(os.environ, PYTHONPATH=str(kok))
+    sonuc = subprocess.run(
+        [sys.executable, str(betik)],
+        capture_output=True, text=True, cwd=str(kok), env=ortam,
+    )
+    assert sonuc.returncode == 0, (
+        f"scipy'siz brifing coktu:\n{sonuc.stderr[-3000:]}")
+    assert "BRIEF_UZUNLUK" in sonuc.stdout

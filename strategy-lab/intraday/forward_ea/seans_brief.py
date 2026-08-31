@@ -11,8 +11,8 @@ NE GOSTERIR (sabit alan seti, her sembol icin ayni):
   - takvim: bugun + bu hafta FOMC/CPI/NFP (dis kaynakli, on-kayitli takvim)
   - fiyat: son kapanis, dun/bugun araligi
   - 200EMA'ya uzaklik (puan ve %) -- ham sayi, "ustunde/pahali" demiyor
-  - ATR(14) gunluk yuzdelik dilimi (son 100 gun icinde nerede)
-  - hacim yuzdelik dilimi (son 20 gun icinde nerede)
+  - ATR(14) yuzdelik dilimi (son 100 gun icinde nerede) -- SON KAPALI gunden
+  - hacim yuzdelik dilimi (son 20 gun icinde nerede) -- SON KAPALI gunden
   - son 60 gunde donus yapmis seviyeler (swing high/low, tarihli)
   - seans: hangi seans acik, kapanisa kac saat
 
@@ -27,6 +27,7 @@ import argparse
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
+from typing import Callable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -68,6 +69,7 @@ class SembolOlgusu:
     ema200: float
     ema200_uzaklik_puan: float
     ema200_uzaklik_yuzde: float
+    # ATR/hacim SON KAPALI GUNDEN gelir; bugunun yarim bari disarida.
     atr_bugun: float
     atr_yuzdelik: float
     hacim_bugun: float
@@ -106,20 +108,47 @@ def _donus_seviyeleri(gunluk_df: pd.DataFrame, gun: int) -> list[tuple[str, floa
     return [(k.split("_")[0], v[0], v[1]) for k, v in sirali]
 
 
-def sembol_olgusu(sembol: str, tf: str, tazele: bool) -> SembolOlgusu:
+def _yerel_veri(sembol: str, tf: str, tazele: bool) -> pd.DataFrame:
+    """PC yolu: dukascopy cache."""
     if tazele:
         fetch_history(sembol, tf, date.today().year, date.today().year)
-    df = load_history(sembol, tf, start_year=date.today().year - 1)
-    if df.empty:
-        raise RuntimeError(f"{sembol} {tf}: cache bos, --tazele ile indir")
+    return load_history(sembol, tf, start_year=date.today().year - 1)
 
-    gunluk = _gunluk(df)
+
+def sembol_olgusu(sembol: str, tf: str, tazele: bool = False,
+                  veri: Callable[[str, str], pd.DataFrame] | None = None,
+                  gunluk_veri: Callable[[str], pd.DataFrame] | None = None,
+                  ) -> SembolOlgusu:
+    """Sabit alan seti. Feed DISARIDAN verilebilir.
+
+    NEDEN ENJEKSIYON (2026-09-01): telefon brifingi GitHub Actions'ta uretiliyor
+    ve orada dukascopy yok. Ikinci bir olgu ureticisi yazmak bu projenin tekrar
+    eden hata sinifi olurdu (whitelist iki kopya, defterin bes okuyucusu, iki
+    eslestirici). Alan seti tek yerde kaliyor; degisen yalnizca veri kaynagi.
+
+    NEDEN AYRI GUNLUK FEED: EMA200 ve ATR'nin 100 gunluk yuzdeligi 200+ gunluk
+    bar ister. Intraday seriyi resample etmek PC'de yetiyor (dukascopy 2 yil
+    veriyor) ama yfinance 15m'i en fazla 60 gun donduruyor -- yani bulutta
+    "EMA200" aslinda 60 barla hesaplanip sessizce yanlis basiliyordu.
+    """
+    df = veri(sembol, tf) if veri is not None else _yerel_veri(sembol, tf, tazele)
+    if df.empty:
+        raise RuntimeError(f"{sembol} {tf}: veri bos")
+
+    gunluk = _gunluk(gunluk_veri(sembol)) if gunluk_veri is not None else _gunluk(df)
     bugun_utc = pd.Timestamp.now(UTC).tz_localize(None).normalize()
     dun = gunluk[gunluk.index < bugun_utc]
     bugun_bar = gunluk[gunluk.index >= bugun_utc]
 
-    ema200 = ema(gunluk["close"], 200)
-    a = atr(gunluk, 14)
+    # KISMI GUN DISARIDA (2026-09-01'de bulundu): bugunun gunluk bari daha
+    # kapanmadi. ATR/hacim/EMA'yi onun uzerinden hesaplamak sistematik olarak
+    # DUSUK gosteriyordu -- NASDAQ "ATR 100 gunun %0. yuzdeligi" basiyordu,
+    # cunku yarim gunun araligi elbette en dar. Yorum degil OLGU basmak
+    # iddiasindaki bir dosyada bu sessiz bir yalan.
+    # Bugunun ham araligi (bugun_yuksek/dusuk) ayri alan olarak duruyor.
+    tam = dun if len(dun) >= 2 else gunluk
+    ema200 = ema(tam["close"], 200)
+    a = atr(tam, 14)
     son_kapanis = float(df["close"].iloc[-1])
 
     return SembolOlgusu(
@@ -135,9 +164,9 @@ def sembol_olgusu(sembol: str, tf: str, tazele: bool) -> SembolOlgusu:
         ema200_uzaklik_yuzde=100 * (son_kapanis - float(ema200.iloc[-1])) / float(ema200.iloc[-1]),
         atr_bugun=float(a.iloc[-1]),
         atr_yuzdelik=_yuzdelik(a, ATR_PENCERE),
-        hacim_bugun=float(gunluk["volume"].iloc[-1]),
-        hacim_yuzdelik=_yuzdelik(gunluk["volume"], HACIM_PENCERE),
-        donus_seviyeleri=_donus_seviyeleri(gunluk, SWING_GUN),
+        hacim_bugun=float(tam["volume"].iloc[-1]),
+        hacim_yuzdelik=_yuzdelik(tam["volume"], HACIM_PENCERE),
+        donus_seviyeleri=_donus_seviyeleri(tam, SWING_GUN),
     )
 
 
@@ -205,9 +234,9 @@ def yazdir(semboller: list[tuple[str, str]], tazele: bool) -> None:
             print("  bugun araligi      : henuz bar yok (cache guncel degil, --tazele dene)")
         print(f"  200EMA (gunluk)    : {o.ema200:.5g}  (uzaklik {o.ema200_uzaklik_puan:+.5g} "
               f"/ %{o.ema200_uzaklik_yuzde:+.2f})")
-        print(f"  ATR(14) gunluk     : {o.atr_bugun:.5g}  ({ATR_PENCERE} gunun "
+        print(f"  ATR(14) son kapali : {o.atr_bugun:.5g}  ({ATR_PENCERE} gunun "
               f"%{o.atr_yuzdelik:.0f}. yuzdeligi)")
-        print(f"  hacim (bugun)      : {o.hacim_bugun:,.0f}  ({HACIM_PENCERE} gunun "
+        print(f"  hacim (son kapali) : {o.hacim_bugun:,.0f}  ({HACIM_PENCERE} gunun "
               f"%{o.hacim_yuzdelik:.0f}. yuzdeligi)")
         print(f"  donus seviyeleri (son {SWING_GUN} gun):")
         if o.donus_seviyeleri:

@@ -1,0 +1,81 @@
+name: telefon brifingi
+
+# NEDEN: diskresyoner ray birincil ray, ama kullanici surekli PC basinda
+# olamiyor. Brifing repoya yazilir, telefondaki asistan raw URL'den okur.
+# Sunucu kiralamak GEREKMIYOR -- Actions bedava ve bulut defteri zaten burada.
+
+on:
+  schedule:
+    # Seans penceresi: Londra oncesi ve NY seansi boyunca, saat basi.
+    # UTC. 15:00 UTC = 18:00 TR (diskresyoner protokol 18:15'te basliyor).
+    - cron: "0 6,13,14,15,16,17,18,19 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: telefon-brief
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Bulut kosucusuyla AYNI bagimlilik dosyasi: iki liste tutmak bu
+      # projedeki tekrar eden hata sinifi.
+      - name: Bagimliliklar
+        run: pip install -r strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Brifingi uret
+        working-directory: strategy-lab
+        run: python -m intraday.forward_ea.telefon_brief
+
+      - name: Repoya isle
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f TELEFON/BRIEF.md
+          if git diff --cached --quiet; then
+            echo "Degisiklik yok."
+            exit 0
+          fi
+          git commit -m "chore(telefon): refresh the phone brief [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+               && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Push tamam (deneme $attempt)."
+              exit 0
+            fi
+            echo "Push carpisti, tekrar deneniyor ($attempt)."
+            sleep 5
+          done
+          echo "Brifing push edilemedi."
+          exit 1
+
+      # Sessiz basarisizlik = bayat brifing = telefonda eski fiyat. Haberi olsun.
+      - name: Hata bildirimi (Telegram)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          # Secret bu adla kayitli (harf sirasi ters); diger workflow'lar da ayni.
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; hata bildirimi atlandi."
+            exit 0
+          fi
+          text="TELEFON BRIFINGI HATASI
+          Calisma: ${{ github.run_id }}
+          Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -sS --max-time 20 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${text}" >/dev/null
