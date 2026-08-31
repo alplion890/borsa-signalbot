@@ -11,7 +11,6 @@ ta
 pandas-ta-classic
 ray
 numba; python_version < "3.14"
-# ledger.eslestir_bir_bir: kimlik grubu icinde maksimum-kardinalite
-# bir-bir eslesme (linear_sum_assignment). Bulut runner bu modulu import
-# ETMIYOR, o yuzden signalbot/requirements.txt degismedi.
+# scipy: yalniz laboratuvar/test tarafi. Defter okuyucusu (ledger.py) ONU
+# KULLANMAZ -- bulut kosucusu scipy'siz calismak zorunda (test_cloud_deps).
 scipy

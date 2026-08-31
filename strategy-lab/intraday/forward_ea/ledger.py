@@ -24,7 +24,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import linear_sum_assignment
 
 _OUT = (Path(__file__).resolve().parent.parent.parent
         / "outputs" / "intraday" / "forward_ea")
@@ -155,6 +154,81 @@ def tekillestir(df: pd.DataFrame, ad: str) -> pd.DataFrame:
     return df.drop_duplicates(subset=anahtar, keep="first")
 
 
+def _min_maliyetli_eslesme(maliyet: np.ndarray, izin: np.ndarray,
+                           ) -> list[tuple[int, int]]:
+    """Once MAKSIMUM kardinalite, esitlikte MINIMUM toplam maliyet.
+
+    Min-cost max-flow, artan yol (SPFA) ile: her tur bir birim akis ekler ve
+    o turun yolu en ucuz yoldur; akis doydugunda eslesme sayisi maksimum,
+    toplam maliyet o sayidaki eslesmeler icinde minimumdur.
+
+    NEDEN SAF PYTHON, NEDEN scipy DEGIL: `scipy.optimize.linear_sum_assignment`
+    bunu tek satirda yapardi ama BULUT KOSUCUSU SCIPY KULLANAMAZ. 2026-08-21'de
+    `modules.py` dolayli olarak scipy cekmisti; CI'da kurulu olmadigi icin bulut
+    defteri her saat coktu ve olcum 14 saat durdu. `test_cloud_deps` o dersi
+    kilitliyor. Defter okuyucusu bulutta da calismak zorunda (telefon brifingi
+    onu import ediyor), o yuzden agir bagimlilik giremez.
+
+    Gruplar kimlik bazinda ayrildigi icin buradaki matrisler kucuktur.
+    """
+    n, m = izin.shape
+    if n == 0 or m == 0:
+        return []
+    # Dugumler: 0=kaynak, 1..n=sol, n+1..n+m=sag, n+m+1=hedef
+    S, T = 0, n + m + 1
+    dugum = T + 1
+    # (hedef, kapasite, maliyet, ters_kenar_indeksi)
+    graf: list[list[list]] = [[] for _ in range(dugum)]
+
+    def kenar(u: int, v: int, kap: float, mal: float) -> None:
+        graf[u].append([v, kap, mal, len(graf[v])])
+        graf[v].append([u, 0.0, -mal, len(graf[u]) - 1])
+
+    for i in range(n):
+        kenar(S, 1 + i, 1.0, 0.0)
+    for j in range(m):
+        kenar(n + 1 + j, T, 1.0, 0.0)
+    for i in range(n):
+        for j in range(m):
+            if izin[i, j]:
+                kenar(1 + i, n + 1 + j, 1.0, float(maliyet[i, j]))
+
+    INF = float("inf")
+    while True:
+        mesafe = [INF] * dugum
+        mesafe[S] = 0.0
+        onceki: list[tuple[int, int] | None] = [None] * dugum
+        kuyrukta = [False] * dugum
+        kuyruk = [S]
+        kuyrukta[S] = True
+        while kuyruk:                      # SPFA
+            u = kuyruk.pop(0)
+            kuyrukta[u] = False
+            for k, (v, kap, mal, _) in enumerate(graf[u]):
+                if kap > 0 and mesafe[u] + mal < mesafe[v] - 1e-9:
+                    mesafe[v] = mesafe[u] + mal
+                    onceki[v] = (u, k)
+                    if not kuyrukta[v]:
+                        kuyruk.append(v)
+                        kuyrukta[v] = True
+        if mesafe[T] == INF:               # artik artan yol yok
+            break
+        v = T                              # bir birim akis gonder
+        while v != S:
+            u, k = onceki[v]
+            graf[u][k][1] -= 1.0
+            graf[v][graf[u][k][3]][1] += 1.0
+            v = u
+
+    ciftler = []
+    for i in range(n):
+        for v, kap, _, _ in graf[1 + i]:
+            if n + 1 <= v <= n + m and kap == 0.0:
+                ciftler.append((i, v - n - 1))
+                break
+    return ciftler
+
+
 def eslestir_bir_bir(sol: pd.DataFrame, sag: pd.DataFrame,
                      tolerance: pd.Timedelta = EPS_ZAMAN,
                      ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
@@ -186,9 +260,6 @@ def eslestir_bir_bir(sol: pd.DataFrame, sag: pd.DataFrame,
         return ciftler, list(sol.index), list(sag.index)
 
     tol = tolerance.total_seconds()
-    # Gecersiz cift maliyeti gecerli olanlarin toplamindan cok buyuk olmali ki
-    # cozucu asla bir gecerli cifti feda etmesin -> once kardinalite.
-    YASAK = (tol + 1.0) * (len(sol) + len(sag) + 1) * 1e6
     anahtar = list(KIMLIK_KOLONLARI)
     sag_gruplar = dict(list(sag.groupby(anahtar, dropna=False)))
 
@@ -202,11 +273,8 @@ def eslestir_bir_bir(sol: pd.DataFrame, sag: pd.DataFrame,
         izin = fark <= tol
         if not izin.any():
             continue
-        maliyet = np.where(izin, fark, YASAK)
-        satir, sutun = linear_sum_assignment(maliyet)
-        for a, b in zip(satir, sutun):
-            if izin[a, b]:
-                ciftler.append((sol_g.index[a], sag_g.index[b]))
+        for a, b in _min_maliyetli_eslesme(fark, izin):
+            ciftler.append((sol_g.index[a], sag_g.index[b]))
 
     eslesen_sol = {a for a, _ in ciftler}
     eslesen_sag = {b for _, b in ciftler}

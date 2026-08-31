@@ -456,3 +456,51 @@ def test_PARITE_ledger_ile_AYNI_yolu_kullanir():
     assert cloud_parity.MT5_LEDGER == ledger.LEDGER_CSV
     assert cloud_parity.CLOUD_LEDGER == ledger.CLOUD_CSV
     assert cloud_parity.TOLERANCE == ledger.EPS_ZAMAN
+
+
+# --- eslestirici: saf python cozucu DOGRU mu -----------------------------
+#
+# scipy.linear_sum_assignment bunu tek satirda yapardi ama bulut kosucusu
+# scipy kullanamaz (test_cloud_deps: 2026-08-21'de scipy sizintisi olcumu
+# 14 saat durdurdu). Uretim kodu saf python; DOGRULUK burada scipy'ye karsi
+# olculuyor -- scipy yalniz gelistirme ortaminda, referans olarak.
+
+
+def test_saf_python_cozucu_SCIPY_ile_AYNI_sonucu_verir():
+    import numpy as np
+    opt = pytest.importorskip("scipy.optimize")
+
+    from .ledger import _min_maliyetli_eslesme
+
+    rng = np.random.default_rng(7)
+    for deneme in range(60):
+        n, m = int(rng.integers(1, 7)), int(rng.integers(1, 7))
+        maliyet = rng.integers(0, 50, size=(n, m)).astype(float)
+        izin = rng.random((n, m)) < 0.55
+
+        bizim = _min_maliyetli_eslesme(maliyet, izin)
+
+        BUYUK = 1e7
+        ref_maliyet = np.where(izin, maliyet, BUYUK)
+        ri, ci = opt.linear_sum_assignment(ref_maliyet)
+        ref = [(a, b) for a, b in zip(ri, ci) if izin[a, b]]
+
+        assert len(bizim) == len(ref), (
+            f"deneme {deneme}: kardinalite farkli {len(bizim)} != {len(ref)}")
+        bizim_toplam = sum(maliyet[a, b] for a, b in bizim)
+        ref_toplam = sum(maliyet[a, b] for a, b in ref)
+        assert bizim_toplam == pytest.approx(ref_toplam), (
+            f"deneme {deneme}: toplam maliyet farkli {bizim_toplam} != {ref_toplam}")
+
+
+def test_cozucu_bir_satiri_ve_bir_sutunu_BIR_KEZ_kullanir():
+    import numpy as np
+
+    from .ledger import _min_maliyetli_eslesme
+
+    maliyet = np.zeros((3, 3))
+    izin = np.ones((3, 3), dtype=bool)
+    ciftler = _min_maliyetli_eslesme(maliyet, izin)
+    assert len(ciftler) == 3
+    assert len({a for a, _ in ciftler}) == 3
+    assert len({b for _, b in ciftler}) == 3
