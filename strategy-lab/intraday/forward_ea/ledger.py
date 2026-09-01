@@ -72,11 +72,102 @@ def _dogrula_sema(df: pd.DataFrame, ad: str) -> None:
         )
 
 
-def oku_defter(path: Path | str, ad: str | None = None) -> pd.DataFrame:
-    """MT5 ve bulut defterlerinin ORTAK okuyucusu.
+def tekillestir(df: pd.DataFrame, ad: str) -> pd.DataFrame:
+    """Defterin KENDI icindeki tekrarlari at; celisenlerde HATA ver.
 
-    Yok / sifir bayt / sifir satir -> semali bos defter (kanit yok).
-    Kolon eksik -> ValueError (fail-closed).
+    `cloud_runner._existing_keys()` normal uretimde tam-anahtarli tekrari
+    engelliyor. Ama elle geri yukleme, state kaybi veya bozuk CSV halinde
+    ayni islem iki kez yazilabilir -- ve kanit okuyucusu bunu sessizce iki
+    kanit saymamali (Hermes denetimi, BULGU 4).
+
+    CELISKI YALNIZ `r` DEGIL (yeniden denetim, bulgu 2): ayni kimlikte ayni
+    `r` ama farkli `backfill` yazilmis iki satirda `keep="first"` dosya
+    sirasina gore GERCEK forward satirini silebiliyordu ve hata cikmiyordu.
+    Bu yuzden butun kanit alanlari karsilastirilir: yalniz birebir kopya
+    sessizce dusurulur, farkli olan her sey fail-closed.
+    """
+    if df.empty:
+        return df
+    anahtar = list(TRADE_ID_KOLONLARI)
+    kanit = [k for k in KANIT_KOLONLARI if k in df.columns]
+    celiski = []
+    for anah, grup in df.groupby(anahtar, dropna=False):
+        if len(grup) > 1 and len(grup[kanit].astype(str).drop_duplicates()) > 1:
+            celiski.append(anah)
+    if celiski:
+        raise ValueError(
+            f"{ad}: ayni kimlikte CELISEN kayitlar var: {celiski}. "
+            f"Karsilastirilan alanlar: {kanit}. "
+            "Sessizce birini secmek kanit uydurmaktir; defteri elle duzelt."
+        )
+    return df.drop_duplicates(subset=anahtar, keep="first")
+
+
+IZINLI_YON = (1, -1)
+IZINLI_BACKFILL = (0, 1)
+
+
+def _dogrula_degerler(df: pd.DataFrame, ad: str) -> None:
+    """Kolonun VAR olmasi, degerinin gecerli olmasi demek degil.
+
+    Hermes denetimi 2026-08-31 (bulgu 3): sema kapisi yalnizca kolon varligina
+    bakiyordu. `module=None`, `symbol=None`, `dir=None`, `entry_time=NaT`,
+    `r=NaN` ve `backfill=2` okuyucudan geciyordu. Ikisi zararsiz degil:
+      - null kimlik iki defterde AYNI islem olsa bile groupby anahtari olarak
+        eslesmiyor -> ayni islem iki kanit sayiliyor,
+      - `backfill=2` birlesik sayimda diser ama `cloud_parity`nin
+        `~(backfill == 1)` maskesinden FORWARD olarak geciyordu (iki okuyucu,
+        iki gercek -- bu projenin tekrar eden hatasi),
+      - NaN r kanit satiri olup exp_R/n esiklerini bozuyordu.
+
+    Sessiz filtre YOK: bozuk satir kanit sayilmadigi gibi gizlenmemeli de.
+    Hangi satir, hangi alan -- kaynagiyla soylenir.
+    """
+    if df.empty:
+        return
+    sorunlar: list[str] = []
+
+    def _bildir(maske: pd.Series, aciklama: str) -> None:
+        if maske.any():
+            satirlar = [int(i) + 2 for i in df.index[maske][:5]]  # +2: baslik+1
+            sorunlar.append(f"{aciklama} (CSV satir {satirlar})")
+
+    for kolon in ("module", "symbol"):
+        deger = df[kolon]
+        _bildir(deger.isna() | (deger.astype(str).str.strip() == ""),
+                f"'{kolon}' bos")
+    if not pd.api.types.is_datetime64_any_dtype(df["entry_time"]):
+        # pandas tek bir satiri cozemezse KOLONUN TAMAMINI metin birakiyor;
+        # o zaman `isna()` bos doner ve bozukluk gorunmez olur. Sonra butun
+        # siralama/eslestirme sessizce metin karsilastirmasina duser.
+        sorunlar.append("'entry_time' tarihe cevrilemedi (kolon metin kaldi)")
+    else:
+        _bildir(df["entry_time"].isna(), "'entry_time' parse edilemedi/NaT")
+    _bildir(~df["dir"].isin(IZINLI_YON), f"'dir' {IZINLI_YON} disinda")
+    r = pd.to_numeric(df["r"], errors="coerce")
+    _bildir(~np.isfinite(r), "'r' sayisal ve sonlu degil")
+    _bildir(~df["backfill"].isin(IZINLI_BACKFILL),
+            f"'backfill' {IZINLI_BACKFILL} disinda")
+
+    if sorunlar:
+        raise ValueError(
+            f"{ad}: kanit satirlari gecersiz -> " + "; ".join(sorunlar) +
+            ". Kanit sayilmadi; defteri elle duzelt."
+        )
+
+
+def oku_defter(path: Path | str, ad: str | None = None) -> pd.DataFrame:
+    """MT5 ve bulut defterlerinin ORTAK okuyucusu -- TEK kanit sozlesmesi.
+
+    Yok / sifir bayt -> semali bos defter (kanit yok).
+    Kolon eksik, deger gecersiz, ayni kimlikte celisen kayit -> ValueError.
+
+    DOGRULAMA VE TEKILLESTIRME BURADA (Hermes denetimi 2026-08-31, bulgu 1):
+    once yalniz `birlesik_forward()` tekillestiriyordu; `load_forward()` ve
+    `load_cloud()` ham cikti donduruyordu. `funded_sim`, `overfit_audit`,
+    `portfolio_ab` ve `search_budget` o yoldan okuyor -- yani celisen tekrar
+    onlarda hem `n`i sisirebiliyor hem celiskili sonucu kanit sayabiliyordu.
+    Kapinin bir cagri yolunda acik kalmasi, kapi olmamasiyla ayni sey.
     """
     p = Path(path)
     ad = ad or str(p)
@@ -86,10 +177,13 @@ def oku_defter(path: Path | str, ad: str | None = None) -> pd.DataFrame:
         df = pd.read_csv(p, parse_dates=["entry_time"])
     except pd.errors.EmptyDataError:
         return _bos_defter()
+    # Sifir satirli ama BASLIKLI dosyada da sema dogrulanir: eksik basligi
+    # "bos defter" diye gecistirmek, eksik kolonu sessizce gizlemek olurdu.
+    _dogrula_sema(df, ad)
     if df.empty:
         return _bos_defter()
-    _dogrula_sema(df, ad)
-    return df.reset_index(drop=True)
+    _dogrula_degerler(df, ad)
+    return tekillestir(df.reset_index(drop=True), ad)
 
 
 def _filtrele(df: pd.DataFrame, include_backfill: bool,
@@ -121,37 +215,6 @@ def load_cloud(path: Path | None = None, include_backfill: bool = False,
     p = Path(path) if path is not None else CLOUD_CSV
     return _filtrele(oku_defter(p, "bulut defteri"),
                      include_backfill, include_candidates)
-
-
-def tekillestir(df: pd.DataFrame, ad: str) -> pd.DataFrame:
-    """Defterin KENDI icindeki tekrarlari at; celisenlerde HATA ver.
-
-    `cloud_runner._existing_keys()` normal uretimde tam-anahtarli tekrari
-    engelliyor. Ama elle geri yukleme, state kaybi veya bozuk CSV halinde
-    ayni islem iki kez yazilabilir -- ve kanit okuyucusu bunu sessizce iki
-    kanit saymamali (Hermes denetimi, BULGU 4).
-
-    CELISKI YALNIZ `r` DEGIL (yeniden denetim, bulgu 2): ayni kimlikte ayni
-    `r` ama farkli `backfill` yazilmis iki satirda `keep="first"` dosya
-    sirasina gore GERCEK forward satirini silebiliyordu ve hata cikmiyordu.
-    Bu yuzden butun kanit alanlari karsilastirilir: yalniz birebir kopya
-    sessizce dusurulur, farkli olan her sey fail-closed.
-    """
-    if df.empty:
-        return df
-    anahtar = list(TRADE_ID_KOLONLARI)
-    kanit = [k for k in KANIT_KOLONLARI if k in df.columns]
-    celiski = []
-    for anah, grup in df.groupby(anahtar, dropna=False):
-        if len(grup) > 1 and len(grup[kanit].astype(str).drop_duplicates()) > 1:
-            celiski.append(anah)
-    if celiski:
-        raise ValueError(
-            f"{ad}: ayni kimlikte CELISEN kayitlar var: {celiski}. "
-            f"Karsilastirilan alanlar: {kanit}. "
-            "Sessizce birini secmek kanit uydurmaktir; defteri elle duzelt."
-        )
-    return df.drop_duplicates(subset=anahtar, keep="first")
 
 
 def _min_maliyetli_eslesme(maliyet: np.ndarray, izin: np.ndarray,
@@ -261,6 +324,16 @@ def eslestir_bir_bir(sol: pd.DataFrame, sag: pd.DataFrame,
 
     tol = tolerance.total_seconds()
     anahtar = list(KIMLIK_KOLONLARI)
+    # DOSYA SIRASINDAN BAGIMSIZ (Hermes denetimi 2026-08-31, bulgu 4): esit
+    # maliyetli iki optimum arasinda secim cozucunun giris sirasina kaliyordu.
+    # Hermes'in ornegi: MT5 00:01 (r=+1); bulut 00:00 (r=+10) ve 00:02 (r=-10).
+    # Ikisi de 1 dakika uzakta, kardinalite ve toplam mesafe ayni -- ama hangi
+    # bulut satirinin ESLESMEDEN kaldigi birlesik R'yi -9 ile +11 arasinda
+    # oynatiyordu. Append-only bir kanit kapisi CSV satir sirasina bagli olamaz.
+    # Kalici cozum writer'dan gelecek deterministik trade_id; bugunku cozum
+    # zamana gore stabil siralama.
+    sol = sol.sort_values("entry_time", kind="mergesort")
+    sag = sag.sort_values("entry_time", kind="mergesort")
     sag_gruplar = dict(list(sag.groupby(anahtar, dropna=False)))
 
     for anah, sol_g in sol.groupby(anahtar, dropna=False):
@@ -305,11 +378,11 @@ def birlesik_forward(mt5_path: Path | None = None, cloud_path: Path | None = Non
     if ham_mt5.empty and ham_bulut.empty:
         return _bos_defter()
 
-    # Tekillestirme backfill FILTRESINDEN ONCE: filtre once calissaydi ayni
-    # kimlikteki backfill=1 / backfill=0 celiskisi hic gorunmezdi.
-    mt5 = _filtrele(tekillestir(ham_mt5, "MT5 defteri"), False, include_candidates)
-    bulut = _filtrele(tekillestir(ham_bulut, "bulut defteri"), False,
-                      include_candidates)
+    # Tekillestirme ve deger dogrulamasi `oku_defter()` icinde, yani backfill
+    # FILTRESINDEN ONCE calisti: filtre once calissaydi ayni kimlikteki
+    # backfill=1 / backfill=0 celiskisi hic gorunmezdi.
+    mt5 = _filtrele(ham_mt5, False, include_candidates)
+    bulut = _filtrele(ham_bulut, False, include_candidates)
 
     if not mt5.empty:
         mt5 = mt5.assign(kaynak="mt5")

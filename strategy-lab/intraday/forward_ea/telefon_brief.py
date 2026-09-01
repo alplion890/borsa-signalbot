@@ -28,7 +28,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..elenenler import KATALOG, STATULER
+from ..elenenler import KATALOG, STATULER, veto_mu
 from ..signalbot.risk import live_module_names
 from . import diskresyoner
 from .ledger import birlesik_forward
@@ -113,7 +113,7 @@ def _katalog_satirlari() -> list[str]:
         grup = [x for x in KATALOG if x.statu == statu]
         if not grup:
             continue
-        veto = "VETO" if statu in ("rejected", "retired") else "veto DEGIL"
+        veto = "VETO" if veto_mu(statu) else "veto DEGIL"
         satirlar.append(f"\n**{baslik}** ({veto})\n")
         for x in grup:
             satir = f"- `{x.id}` — {x.baslik}"

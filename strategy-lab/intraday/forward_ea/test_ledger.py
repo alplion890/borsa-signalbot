@@ -504,3 +504,80 @@ def test_cozucu_bir_satiri_ve_bir_sutunu_BIR_KEZ_kullanir():
     assert len(ciftler) == 3
     assert len({a for a, _ in ciftler}) == 3
     assert len({b for _, b in ciftler}) == 3
+
+
+# --- Hermes denetimi 2026-08-31 (commit 9a06c24) --------------------------
+#
+# Dort acik: (1) celiski kapisi yalniz union yolunda calisiyordu, (2) tripwire
+# butunluk hatasini skip'e ceviriyordu, (3) sema yalniz KOLON varligina
+# bakiyordu -- null kimlik ve NaN r geciyordu, (4) esit maliyetli optimumda
+# hangi bulut satirinin kanit sayildigi CSV sirasina bagliydi.
+
+
+def _satir(**k):
+    temel = {"entry_time": "2026-08-21 14:00:00", "module": "NQ_ORB",
+             "symbol": "NASDAQ100", "dir": 1, "r": 1.0, "status": "tp",
+             "backfill": 0}
+    return {**temel, **k}
+
+
+@pytest.mark.parametrize("okuyucu", ["load_forward", "load_cloud"])
+def test_CELISKI_kapisi_HER_public_loaderda_calisir(tmp_path, okuyucu):
+    """Bulgu 1: kapinin bir cagri yolunda acik olmasi, kapi olmamasi demek.
+
+    funded_sim / overfit_audit / portfolio_ab / search_budget bu yoldan
+    okuyor; celisen tekrar hem n'i sisirir hem celiskili sonucu kanit sayar.
+    """
+    from . import ledger
+    p = _mt5_yaz(tmp_path, [_satir(status="tp", r=1.0),
+                            _satir(status="sl", r=1.0)])
+    with pytest.raises(ValueError, match="CELISEN"):
+        getattr(ledger, okuyucu)(p)
+
+
+@pytest.mark.parametrize("bozuk", [
+    {"module": None}, {"module": "  "}, {"symbol": None},
+    {"dir": None}, {"dir": 0}, {"entry_time": "gecersiz-tarih"},
+    {"r": None}, {"r": float("inf")}, {"backfill": 2},
+])
+def test_GECERSIZ_deger_kanit_sayilmaz(tmp_path, bozuk):
+    """Bulgu 3: kolonun VAR olmasi, degerinin gecerli olmasi degildir.
+
+    Null kimlik iki defterde ayni islem olsa bile groupby anahtari olarak
+    eslesmiyordu -> ayni islem iki kanit. backfill=2 birlesik sayimda diser
+    ama parite maskesinden forward gecerdi. NaN r exp_R'yi bozardi.
+    """
+    from .ledger import load_forward
+    ikinci = {"entry_time": "2026-08-21 15:00:00", **bozuk}
+    p = _mt5_yaz(tmp_path, [_satir(), _satir(**ikinci)])
+    with pytest.raises(ValueError, match="gecersiz"):
+        load_forward(p)
+
+
+def test_SIFIR_SATIRLI_ama_EKSIK_baslikli_dosya_gizlenmez(tmp_path):
+    """Bos dosya "kanit yok" demek; eksik basligi gizlemek baska sey."""
+    from .ledger import load_forward
+    p = tmp_path / "forward_ledger.csv"
+    p.write_text("entry_time,module\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="eksik"):
+        load_forward(p)
+
+
+def test_birlesim_BULUT_SATIR_SIRASINDAN_bagimsiz(tmp_path):
+    """Bulgu 4: esit maliyetli optimumda kanit CSV sirasina bagliydi.
+
+    Hermes'in ornegi: MT5 00:01 (r=+1); bulut 00:00 (r=+10) ve 00:02 (r=-10).
+    Ikisi de 1 dakika uzakta; kardinalite ve toplam mesafe ayni. Hangi bulut
+    satirinin ESLESMEDEN kaldigi birlesik R'yi -9 ile +11 arasinda oynatiyordu.
+    """
+    from .ledger import birlesik_forward
+    mt5 = _mt5_yaz(tmp_path, [_satir(entry_time="2026-08-21 00:01:00", r=1.0)])
+    bulut_satirlari = [
+        _satir(entry_time="2026-08-21 00:00:00", r=10.0),
+        _satir(entry_time="2026-08-21 00:02:00", r=-10.0),
+    ]
+    duz = birlesik_forward(mt5, _bulut_yaz(tmp_path, bulut_satirlari))
+    ters = birlesik_forward(mt5, _bulut_yaz(tmp_path, bulut_satirlari[::-1]))
+    assert duz["r"].sum() == pytest.approx(ters["r"].sum()), (
+        f"birlesik R dosya sirasina bagli: {duz['r'].sum()} vs {ters['r'].sum()}")
+    assert list(duz["r"]) == list(ters["r"])

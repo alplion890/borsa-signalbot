@@ -38,6 +38,26 @@ CLOUD_LEDGER = CLOUD_CSV
 TOLERANCE = EPS_ZAMAN
 
 
+PARITE_KOLONLARI = ("status",)
+
+
+def _dogrula_parite_semasi(df: pd.DataFrame, ad: str) -> None:
+    """Parite raporunun `ledger` sozlesmesine EK ihtiyaci.
+
+    `LEDGER_KOLONLARI` status icermiyor (kanit sayimi icin gerekmiyor) ama
+    `match()` sonuc karsilastirmasini status uzerinden yapiyor. Status'suz ama
+    digeri tam bir CSV ortak okuyucudan geciyor, sonra burasi `KeyError` ile
+    kiriliyordu -- ortak sozlesme tuketicinin ihtiyacini tam ifade etmiyordu
+    (Hermes denetimi 2026-08-31, orta bulgu 2).
+    """
+    eksik = [k for k in PARITE_KOLONLARI if k not in df.columns]
+    if eksik:
+        raise ValueError(
+            f"{ad}: parite raporu icin gereken kolon(lar) eksik {eksik}. "
+            "Kanit sayimi bu kolonu istemez; sonuc karsilastirmasi ister."
+        )
+
+
 def match(cloud: pd.DataFrame, mt5: pd.DataFrame,
           tolerance: pd.Timedelta = TOLERANCE) -> dict:
     """Modul+sembol+yon bazinda islemleri eslestir.
@@ -51,6 +71,9 @@ def match(cloud: pd.DataFrame, mt5: pd.DataFrame,
     if cloud.empty:
         bos = pd.DataFrame()
         return {"matched": bos, "only_cloud": bos, "only_mt5": bos}
+
+    _dogrula_parite_semasi(cloud, "bulut defteri")
+    _dogrula_parite_semasi(mt5, "MT5 defteri")
 
     cutoff = cloud["entry_time"].min()
     mt5 = mt5[mt5["entry_time"] >= cutoff]
@@ -134,7 +157,16 @@ def main() -> None:
     print("\n" + "=" * 78)
     print("  FEED PARITESI -- bulut defteri vs MT5 defteri")
     print("=" * 78)
-    _block("FORWARD (asil kanit; backfill=0)", cloud[~backfill], mt5, True)
+    # FORWARD blogu MT5'in de yalniz forward satirlarini gorur (Hermes denetimi
+    # 2026-08-31, orta bulgu 1): tum MT5 satirlariyla eslestirmek, bir bulut
+    # forward islemini MT5 BACKFILL kaydiyla "kapsanmis" gosterebiliyordu --
+    # yani kapsama sayisi sahte biçimde iyilesirdi.
+    mt5_forward = mt5[mt5["backfill"] == 0]
+    _block("FORWARD (asil kanit; backfill=0)", cloud[~backfill], mt5_forward, True)
+    # BACKFILL blogu bilerek CROSS-MODE: bulut backfill satiri, MT5'te forward
+    # olarak da kaydedilmis ayni islemle eslesebilir. Amac kapsama olcmek degil,
+    # iki feed'in AYNI islemde ayni sonucu verip vermedigini gormek; o yuzden
+    # kapsama sayilari bu blokta zaten basilmiyor.
     _block("BACKFILL (gecmis veriden; yalnizca eslesen ciftler anlamli)",
            cloud[backfill], mt5, False)
     print("=" * 78 + "\n")

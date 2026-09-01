@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from .elenenler import KATALOG, YAPILAR, ara
+from .elenenler import KATALOG, STATULER, VETO_STATULERI, YAPILAR, ara
 
 
 def test_katalog_bos_degil():
@@ -175,6 +175,66 @@ def test_katalog_ve_hipotez_registry_CELISMIYOR():
             assert x.statu == "rejected", (
                 f"{katalog_id}: registry 'elendi' diyor, katalog '{x.statu}'")
         else:
-            assert x.statu != "rejected", (
+            # TUM veto statuleri yasak, yalniz 'rejected' degil (Hermes
+            # denetimi 2026-08-31, orta bulgu 3): Donchian'i 'retired'
+            # yapan mutasyon eski testten geciyordu.
+            assert x.statu not in VETO_STATULERI, (
                 f"{katalog_id}: registry '{h['durum']}' diyor ama katalog "
-                "elenmis gibi gosteriyor")
+                f"veto statusu '{x.statu}' veriyor")
+
+
+# Canli modul adlarindan turetilen anahtar kelimeler. Bir veto maddesi bu
+# kelimelerden birini tasiyorsa, kapsam satiri ZORUNLU -- yoksa arama calisan
+# modulu de vetolar. Onceki testler yalniz onceden secilmis ID'lere bakiyordu,
+# bu yuzden "genel ORB elendi" gibi YENI bir madde hepsinden geciyordu
+# (Hermes denetimi 2026-08-31, orta bulgu 3).
+CANLI_ANAHTARLAR = ("orb", "sweep", "london", "nq", "vwap", "ema")
+
+
+def test_HERHANGI_bir_veto_maddesi_canli_kelimeyi_KAPSAMSIZ_tasiyamaz():
+    for x in KATALOG:
+        if x.statu not in VETO_STATULERI:
+            continue
+        metin = f"{x.baslik} {' '.join(x.anahtarlar)}".lower()
+        carpisan = [k for k in CANLI_ANAHTARLAR if k in metin]
+        if not carpisan:
+            continue
+        assert x.kapsam.strip(), (
+            f"{x.id}: veto statusunde ve {carpisan} kelimelerini tasiyor ama "
+            "kapsam satiri bos -- calisan modulu blanket vetolar")
+
+
+def test_veto_kapsami_HANGI_modulun_disarida_kaldigini_SOYLER():
+    """Kapsam metni serbest yazi degil: canli bir modul adi gecmeli."""
+    from .forward_ea.modules import default_modules
+
+    canli = {m.name for m in default_modules()}
+    for x in KATALOG:
+        if x.statu not in VETO_STATULERI or not x.kapsam:
+            continue
+        metin = f"{x.baslik} {' '.join(x.anahtarlar)}".lower()
+        if not any(k in metin for k in CANLI_ANAHTARLAR):
+            continue
+        assert any(ad.split("_")[0] in x.kapsam for ad in canli), (
+            f"{x.id}: kapsam hangi canli modulun HARIC oldugunu yazmiyor: "
+            f"{x.kapsam[:60]}")
+
+
+@pytest.mark.parametrize("sorgu", ["sweep", "orb", "donchian", "fvg"])
+def test_CLI_ciktisi_veto_ile_secilmedigi_KARISTIRMAZ(sorgu, capsys):
+    """Cikti seviyesinde sinama: dataclass dogru ama sunum yanlis olabilirdi."""
+    from .elenenler import _gruplu_yaz, ara
+
+    e, _ = ara(sorgu)
+    assert e, f"'{sorgu}' katalogda bulunmuyor -- test anlamsizlasti"
+    _gruplu_yaz(e)
+    cikti = capsys.readouterr().out
+
+    for x in e:
+        baslik = STATULER[x.statu][0]
+        assert baslik in cikti, f"{x.id}: '{baslik}' basligi altinda gosterilmedi"
+        if x.kapsam:
+            assert "KAPSAM" in cikti, f"{x.id}: kapsam satiri basilmadi"
+    if any(x.statu not in VETO_STATULERI for x in e):
+        assert "veto DEGIL" in cikti, (
+            f"'{sorgu}': veto olmayan madde var ama cikti bunu soylemiyor")

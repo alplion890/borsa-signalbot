@@ -65,6 +65,16 @@ STATULER: dict[str, tuple[str, str]] = {
 }
 
 
+# Hangi statuler VETO -- TEK KAYNAK. Once bu ayrim uc yerde ayri ayri
+# hesaplaniyordu (CLI baslik metni, telefon brifingi, testler); ucu ayrisinca
+# katalog bir yerde "yasak" oteki yerde "secilmedi" diyebilirdi.
+VETO_STATULERI = ("rejected", "retired")
+
+
+def veto_mu(statu: str) -> bool:
+    return statu in VETO_STATULERI
+
+
 @dataclass(frozen=True)
 class Elenen:
     """Olculmus bir fikir ve STATUSU. Her alan bir olcume dayanir."""
@@ -362,7 +372,8 @@ def _gruplu_yaz(maddeler: list[Elenen]) -> None:
         grup = [x for x in maddeler if x.statu == statu]
         if not grup:
             continue
-        print(f"\n{'='*70}\n  {baslik}\n  {aciklama}\n{'='*70}")
+        etiket = "VETO" if veto_mu(statu) else "veto DEGIL"
+        print(f"\n{'='*70}\n  {baslik}  ({etiket})\n  {aciklama}\n{'='*70}")
         for x in grup:
             _yaz_elenen(x)
 

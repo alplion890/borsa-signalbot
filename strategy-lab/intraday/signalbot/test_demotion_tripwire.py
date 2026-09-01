@@ -34,10 +34,13 @@ def _forward_ozet() -> dict[str, tuple[int, float]]:
     kalmayacagi PC uptime'ina baglaniyordu. Modulun urettigi islem sayisi ile
     PC'nin acik kaldigi saat ayri seylerdir; taahhut birincisini olcer.
     """
-    try:
-        d = birlesik_forward(include_candidates=False)
-    except (FileNotFoundError, ValueError):
-        return {}
+    # KANIT BUTUNLUGU HATASI YUTULMAZ (Hermes denetimi 2026-08-31, bulgu 2):
+    # burasi `ValueError` ve `FileNotFoundError` yakalayip `{}` donduruyordu.
+    # Sonuc: eksik sema veya celisen duplicate -- yani fail-closed kapinin tam
+    # tetiklendigi durum -- bu testi KIRMAK yerine SKIP'e ceviriyordu. Dusurme
+    # taahhudu, kanit bozuldugu anda sessizce devreden cikiyordu; LIVE bir modul
+    # suresiz ertelenebiliyordu. Defter okunamiyorsa alarm zaten budur.
+    d = birlesik_forward(include_candidates=False)
     if d.empty:
         return {}
     return {m: (len(g), float(g["r"].mean())) for m, g in d.groupby("module")}
@@ -72,3 +75,37 @@ def test_esige_yaklasan_moduller_gorunur_olsun(capsys):
             kalan = max(0, MIN_N - n)
             durum = "ESIKTE" if kalan == 0 else f"{kalan} islem kaldi"
             print(f"\n  [tier] {modul}: n={n} exp_R={exp_r:+.3f} -> {durum}")
+
+
+def test_kanit_butunlugu_hatasi_SKIP_EDILMEZ(tmp_path, monkeypatch):
+    """Hermes denetimi 2026-08-31, bulgu 2: fail-closed kapi susturulmamali.
+
+    Onceki halde `_forward_ozet()` ValueError'i yakalayip `{}` donduruyordu;
+    ustteki parametrik test de "forward kaydi yok" deyip SKIP ediyordu. Yani
+    defter bozuldugunda dusurme taahhudu kirilmak yerine devreden cikiyordu --
+    LIVE bir modul suresiz ertelenebilirdi.
+    """
+    import pandas as pd
+
+    from ..forward_ea import ledger
+
+    ayni = {"entry_time": "2026-08-21 14:00:00", "module": "NQ_ORB_STRONG_TREND",
+            "symbol": "NASDAQ100", "dir": 1, "r": 1.0, "backfill": 0}
+    bozuk = tmp_path / "forward_ledger.csv"
+    pd.DataFrame([{**ayni, "status": "tp"},
+                  {**ayni, "status": "sl"}]).to_csv(bozuk, index=False)
+
+    monkeypatch.setattr(ledger, "LEDGER_CSV", bozuk)
+    monkeypatch.setattr(ledger, "CLOUD_CSV", tmp_path / "yok.csv")
+
+    with pytest.raises(ValueError, match="CELISEN"):
+        _forward_ozet()
+
+
+def test_GERCEKTEN_bos_defter_hala_bos_ozet_dondurur(tmp_path, monkeypatch):
+    """Bozuk defter ile 'daha islem yok' ayri seyler; ikincisi skip edilebilir."""
+    from ..forward_ea import ledger
+
+    monkeypatch.setattr(ledger, "LEDGER_CSV", tmp_path / "yok1.csv")
+    monkeypatch.setattr(ledger, "CLOUD_CSV", tmp_path / "yok2.csv")
+    assert _forward_ozet() == {}
