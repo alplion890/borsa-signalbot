@@ -30,7 +30,7 @@ import pandas as pd
 
 from ..elenenler import KATALOG, STATULER, veto_mu
 from ..signalbot.risk import live_module_names
-from . import diskresyoner
+from . import diskresyoner, trend_katmani
 from .ledger import birlesik_forward
 from .seans_brief import (
     ATR_PENCERE,
@@ -213,6 +213,17 @@ def brief_metni(semboller: list[tuple[str, str]] | None = None,
 
     p += ["", "## Semboller", ""]
     p += _sembol_satirlari(semboller)
+
+    if semboller:
+        # Trend katmani: SABIT tanim, evrenin tamami, siralama var ama eleme
+        # yok. Modele "trend olan pariteleri bul" diye sormak, olculmemis bir
+        # secim katmani eklemek olurdu (bkz trend_katmani docstring).
+        try:
+            p += trend_katmani.markdown(
+                trend_katmani.tara(trend_katmani._bulut_gunluk))
+        except Exception as e:
+            p += ["", "## Trend katmani", "",
+                  f"- URETILEMEDI: {type(e).__name__}: {e}"]
 
     p += ["", "## Olculmus fikirler katalogu", "",
           "Tez kontrolu icin. Statuye bak: veto YALNIZ rejected/retired."]

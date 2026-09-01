@@ -33,6 +33,7 @@ except Exception:
 
 from . import data
 from .config import INSTRUMENTS, ATR_LEN, SL_ATR_BUFFER
+from .indicators import adx as _adx
 from .indicators import atr, swing_high, swing_low, rolling_high, rolling_low
 from .honest_engine import simulate_trades, metrics
 try:
@@ -63,19 +64,6 @@ def _vwap_trend(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
     t[c > vwap_prev] = 1
     t[c < vwap_prev] = -1
     return t, vwap_prev
-
-
-def _adx(df: pd.DataFrame, n: int = 14) -> pd.Series:
-    h, lo, c = df["high"], df["low"], df["close"]
-    pc = c.shift(1)
-    tr = pd.concat([h - lo, (h - pc).abs(), (lo - pc).abs()], axis=1).max(axis=1)
-    dm_p = (h - h.shift(1)).clip(lower=0).where((h - h.shift(1)) > (lo.shift(1) - lo), 0)
-    dm_m = (lo.shift(1) - lo).clip(lower=0).where((lo.shift(1) - lo) > (h - h.shift(1)), 0)
-    atr_n = tr.ewm(alpha=1 / n, adjust=False).mean()
-    di_p = 100 * dm_p.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
-    di_m = 100 * dm_m.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
-    dx = 100 * (di_p - di_m).abs() / (di_p + di_m).replace(0, np.nan)
-    return dx.ewm(alpha=1 / n, adjust=False).mean().shift(1)
 
 
 def build_ledger(symbol: str = "NASDAQ100", min_rr: float = 2.5) -> pd.DataFrame:

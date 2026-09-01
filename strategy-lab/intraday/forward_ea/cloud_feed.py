@@ -32,6 +32,22 @@ _EXTRA: dict[str, SymbolSpec] = {
     # Ikisi de ayni Binance serisine gitmeli, yoksa maliyet KeyError verir
     # ve sinyal sessizce duser (2026-08-06'da tam olarak bu oldu).
     "BTCUSDT": SymbolSpec(Source.BINANCE, "BTCUSDT"),
+
+    # Asagidakiler YALNIZCA trend katmani icin (telefon brifingi, 2026-09-01).
+    # Uzerlerinde CALISAN MODUL YOK ve olculmus bir edge iddiasi da yok --
+    # brifingte olgu gostermek icin gunluk bar cekiliyor. Buraya eklenmis
+    # olmalari bir sembolu islem evrenine SOKMAZ; portfoy ve slot kisiti
+    # `risk.py` + `modules.py` tarafinda ve degismedi.
+    "GER40":   SymbolSpec(Source.YFINANCE, "^GDAXI", 15, False),
+    "XAGUSD":  SymbolSpec(Source.YFINANCE, "SI=F", 10, False),
+    "WTI":     SymbolSpec(Source.YFINANCE, "CL=F", 10, False),
+    "USDJPY":  SymbolSpec(Source.YFINANCE, "JPY=X"),
+    "AUDUSD":  SymbolSpec(Source.YFINANCE, "AUDUSD=X"),
+    "USDCAD":  SymbolSpec(Source.YFINANCE, "CAD=X"),
+    "USDCHF":  SymbolSpec(Source.YFINANCE, "CHF=X"),
+    "NZDUSD":  SymbolSpec(Source.YFINANCE, "NZDUSD=X"),
+    "EURJPY":  SymbolSpec(Source.YFINANCE, "EURJPY=X"),
+    "GBPJPY":  SymbolSpec(Source.YFINANCE, "GBPJPY=X"),
 }
 
 

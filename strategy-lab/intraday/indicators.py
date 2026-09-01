@@ -205,3 +205,24 @@ def daily_volume_profile(df: pd.DataFrame, bins: int = 100) -> tuple[pd.Series, 
         pd.Series(poc_list, index=df.index, name="poc")
     )
 
+
+
+def adx(df: pd.DataFrame, n: int = 14) -> pd.Series:
+    """Wilder ADX. Son bar SHIFT'li -- kapanmamis barla karar verilmez.
+
+    `edge_lab._adx`'ten buraya tasindi (2026-09-01): telefon brifingi bunu
+    bulutta hesapliyor ve `edge_lab` modul seviyesinde `data` + `honest_engine`
+    cekiyor. Ikinci bir kopya yazmak bu projedeki tekrar eden hata olurdu
+    (whitelist iki kopya, defterin bes okuyucusu, iki eslestirici), o yuzden
+    govdesi tek yerde: edge_lab da artik buradan import ediyor.
+    """
+    h, lo, c = df["high"], df["low"], df["close"]
+    pc = c.shift(1)
+    tr = pd.concat([h - lo, (h - pc).abs(), (lo - pc).abs()], axis=1).max(axis=1)
+    dm_p = (h - h.shift(1)).clip(lower=0).where((h - h.shift(1)) > (lo.shift(1) - lo), 0)
+    dm_m = (lo.shift(1) - lo).clip(lower=0).where((lo.shift(1) - lo) > (h - h.shift(1)), 0)
+    atr_n = tr.ewm(alpha=1 / n, adjust=False).mean()
+    di_p = 100 * dm_p.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
+    di_m = 100 * dm_m.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
+    dx = 100 * (di_p - di_m).abs() / (di_p + di_m).replace(0, np.nan)
+    return dx.ewm(alpha=1 / n, adjust=False).mean().shift(1)
