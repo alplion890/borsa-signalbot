@@ -23,6 +23,10 @@ set "RC=%ERRORLEVEL%"
 
 echo.
 if "%RC%"=="0" (
+  rem Defteri repoya yayinla: 21 Agustos'tan beri 30 forward isleminin 6'si
+  rem YALNIZ MT5'te vardi (bulut UK100/FRA40/US2000'i kaciriyor), yani tek
+  rem diskte duruyordu. Forward defteri yeniden URETILEMEZ.
+  "%PY%" -m intraday.forward_ea.defter_yayinla
   echo  [TAMAM] Defter guncellendi. MT5'i simdi kapatabilirsin.
 ) else (
   echo  [HATA] Cikis kodu %RC%. Yukaridaki mesaja bak.
