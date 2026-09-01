@@ -31,6 +31,16 @@ _VALUE_PER_POINT = {
 # config degisti, onceki 6 islem gecersiz -> su an kanitsiz (kullanici karari).
 _LIVE_MODULES = {"NQ_ORB_STRONG_TREND", "SWEEP_CORE_AVOID_MID_VWAP"}
 
+# Dusurme esigi: bir LIVE modul bu kadar forward islemden sonra hala negatif
+# beklentideyse PAPER'a duser. Taahhut `test_demotion_tripwire.py`'de.
+#
+# TEK KAYNAK (2026-09-01): sayi hem tripwire'da hem telefon brifinginde
+# yaziliydi. Ikisi ayrisirsa brifing "esige 3 islem" derken tripwire baska bir
+# esikten karar verir -- ve bu projede iki yerde tutulan her sayi eninde
+# sonunda ayristi (whitelist, ExecConfig risk politikasi, defterin bes
+# okuyucusu, iki eslestirici).
+DEMOTION_MIN_N = 25
+
 
 class Tier(str, Enum):
     LIVE = "LIVE"

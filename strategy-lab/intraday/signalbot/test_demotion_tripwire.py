@@ -21,9 +21,8 @@ from __future__ import annotations
 import pytest
 
 from ..forward_ea.ledger import birlesik_forward
+from .risk import DEMOTION_MIN_N as MIN_N
 from .risk import live_module_names
-
-MIN_N = 25
 
 
 def _forward_ozet() -> dict[str, tuple[int, float]]:

@@ -65,6 +65,18 @@ strateji deneyelim" fikri gelirse: bütçe yok, ray kapalı.
 2. **Katman kapısı ≥3/4**: narrative / hacim / trend / destek. Üçü dolmadan
    setup yok. Kaç katman dolu diye sorarsın; sayarsın; üç değilse "kapı
    açılmadı" dersin.
+
+   - **trend katmanı brief'te hesaplanıyor** (2026-09-01): 21 sembol için
+     200EMA konumu, ADX(14), 20/50 günlük değişim. Tanım sabit, eleme yok,
+     sıralama 20 günlük değişime göre. Sana "trend olan pariteleri bul" diye
+     sorulursa kendi taramanı YAPMA — o tablo zaten orada, onu okursun.
+     Tablodaki sayılar olgu; "trendde" gibi bir hüküm senin işin değil.
+   - **hacim katmanı EURUSD ve GBPUSD'de doldurulamaz**: bedava feed spot
+     FX'te hacim vermiyor. Brief bunu "BU FEED HACIM VERMIYOR" diye yazar.
+     O katmanı dolu sayma; kullanıcı başka kaynaktan bakacaksa o kendi kararı.
+   - Trend tablosundaki semboller **işlem evreni değil**. Portföy ve modül
+     kümesi değişmedi. Orada bir sembolde işlem düşünülürse aynı protokolden
+     geçer.
 3. **Tez + çürüten zorunlu.** Girmeden önce ikisi de sözlü olarak kurulmalı.
    Çürüten yoksa işlem yok — "bu tezi ne yanlışlar?" diye sorarsın. Çürüteni
    olmayan tez, sonradan her sonuca uydurulabilir ve defter hiçbir şey öğretmez.

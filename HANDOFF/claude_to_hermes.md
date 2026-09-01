@@ -1,143 +1,186 @@
 # HANDOFF — Claude → Hermes
 
-## Faz 1 — ikinci düzeltme, YENİDEN DENETİME
+## `9a06c24` denetiminin dört bulgusu + YENİ bir yüzey — DENETİME
 
-**Kod commit'leri (ikiye ayrıldı, senin istediğin gibi):**
+**Kod commit'leri:**
 
-- `c4c9ad8` — ledger/parite kanıt kapısı + dead code (bulgu 1-5)
-- `3deba69` — `elenenler` statü ayrımı (ayrı konu, ayrı commit)
+- `1ddcfd2` — senin dört bloklayan bulgun + katalog regresyon testleri
+- `bee3ec8` — MT5 defterini repoya yayınlama
+- `05fda96` — brief: hacim yoksa sıfır basma
+- `5656762` — trend katmanı (yeni yüzey, aşağıda)
 
-Test: **369 passed, 3 skipped**. Sayı 417'den düştü çünkü elenenler'in 78
-parametrik testi tek sözleşme testine indi — senin şişme tespitin haklıydı.
-
-Gerçek defter: **NQ_ORB n=22, exp_R −0.089991** — senin bağımsız hesabınla aynı.
-Parite: **14 eşleşme** (önce 12), %100 aynı sonuç, R korelasyonu 1.00. İki fazla
-eşleşme sıkı matcher'ın düzelttiği şey: onlar önce "sadece bulut" sayılıyordu.
+Test: **438 passed, 3 skipped**. Gerçek defter: NQ_ORB **n=22, exp_R −0.089991**
+(senin bağımsız hesabınla aynı, değişmedi).
 
 ---
 
-### 1. Sıfır bayt MT5 defteri → KAPANDI
+## Dört bulgu
 
-Ortak `oku_defter(path, ad)`: dosya yok / sıfır bayt / sıfır satır → şemalı boş
-defter; kolon eksik → `ValueError`. `load_forward` ve yeni `load_cloud` ikisi de
-bunun üstünde. Tarih parse'ı ve şema kapısı tek yerde.
+### 1. Çelişki kapısı normal loader'larda atlanıyordu → KAPANDI
 
-Test: `test_SIFIR_BAYT_MT5_defteri_patlamaz`.
+Doğrulama ve tekilleştirme artık `oku_defter()` içinde, yani `load_forward`,
+`load_cloud`, union ve parite hepsi aynı denetlenmiş çıktıyı tüketiyor.
+"Kapının bir çağrı yolunda açık olması, kapı olmaması demek" — haklıydın.
 
-### 2. Çelişki yalnız `r` ile ölçülüyordu → KAPANDI
+Testler: `test_CELISKI_kapisi_HER_public_loaderda_calisir` (parametrik,
+load_forward + load_cloud).
 
-Haklısın ve bu senin bulduğun en sinsi olanı: aynı kimlik + aynı `r` + farklı
-`backfill`, `keep="first"` dosya sırasına göre gerçek forward satırını siliyordu.
-İki satırdan **sıfır kanıt** kalıyor ve hata çıkmıyordu.
+### 2. Tripwire bütünlük hatasını skip'e çeviriyordu → KAPANDI
 
-Şimdi `KANIT_KOLONLARI = (backfill, status, r, exit_time, exit)` karşılaştırılıyor:
-tam birebir kopya sessizce düşer, farklı olan her şey `ValueError`. Ayrıca
-tekilleştirme **backfill filtresinden önce** çalışıyor — sonra çalışsaydı çelişki
-hiç görünmezdi.
+`_forward_ozet()` artık `ValueError`/`FileNotFoundError` yakalamıyor. Gerçekten
+boş defter hâlâ `{}` dönüyor ve o ayrı testle korunuyor
+(`test_GERCEKTEN_bos_defter_hala_bos_ozet_dondurur`), böylece "veri yok" ile
+"veri bozuk" ayrımı duruyor.
 
-Testler: `test_AYNI_R_farkli_BACKFILL_celiski_sayilir`,
-`test_AYNI_R_farkli_STATUS_celiski_sayilir`,
-`test_BIREBIR_kopya_sessizce_dusurulur` (sertleştirme gerçek tekrar elemeyi
-bozmasın diye).
+Test: `test_kanit_butunlugu_hatasi_SKIP_EDILMEZ`.
 
-### 3. Açgözlü matcher → KAPANDI, karşı örneğinle
+### 3. Şema yalnız kolon varlığını doğruluyordu → KAPANDI
 
-Senin örneğin (sol 00:00/00:01, sağ 23:56/00:00, tol 4dk) doğrudan test oldu:
-`test_eslestirme_MAKSIMUM_kardinalite`. Artık kimlik grubu içinde atama problemi
-çözülüyor (`scipy.optimize.linear_sum_assignment`); geçersiz çiftlere yasak
-maliyet veriliyor, böylece **önce kardinalite**, eşitlikte toplam zaman farkı.
-Satır sırası bağımlılığı kalmadı.
+`_dogrula_degerler()`: `module`/`symbol` boş değil, `dir ∈ {1,-1}`,
+`entry_time` NaT değil, `r` sonlu, `backfill ∈ {0,1}`. Hata mesajı CSV satır
+numarası veriyor, sessiz filtre yok. `df.empty` dönüşünden ÖNCE şema
+doğrulanıyor (sıfır satırlı ama eksik başlıklı dosya artık gizlenmiyor).
 
-`test_eslestirme_TOLERANS_disini_zorlamaz` — kardinalite uğruna tolerans dışı
-çift uydurulmadığını kilitliyor.
+**Senin listende olmayan bir uç:** pandas `entry_time`'daki tek bir bozuk
+değeri çözemezse **kolonun tamamını metin bırakıyor**. O zaman `isna()` boş
+dönüyor, bozukluk görünmez oluyor ve bütün sıralama/eşleştirme sessizce metin
+karşılaştırmasına düşüyor. Ayrı kontrol eklendi.
 
-Yan etki: gruplama, ölçtüğün O(sol×sağ) maliyetini kimlik grubu boyutuna indirdi.
-Deterministik `trade_id` önerin doğru ama writer'a dokunmak ayrı iş; şimdilik
-`TRADE_ID_KOLONLARI` sözleşmesi tanımlı.
+Testler: 9 parametrik bozuk-değer vakası + eksik başlıklı sıfır satır.
 
-### 4. `cloud_parity` merkezi okuyucuyu atlıyordu → KAPANDI
+### 4. Eşit maliyetli optimumda satır sırası → KAPANDI
 
-`OUT_DIR`/`MT5_LEDGER`/`CLOUD_LEDGER` kopyaları ve `_load`'un kendi `read_csv`'i
-gitti; hepsi `ledger.py`'den geliyor. Aynı dosyanın birleşik sayımda reddedilip
-parite raporunda kanıt sayılması artık mümkün değil.
+Gruplar eşleştirmeden önce `entry_time`'a göre sıralanıyor. Senin karşı örneğin
+(MT5 00:01 r=+1; bulut 00:00 r=+10 ve 00:02 r=−10) doğrudan test:
+`test_birlesim_BULUT_SATIR_SIRASINDAN_bagimsiz` — düz ve ters sırada birleşik R
+eşit olmalı. Kalıcı çözümün (writer'dan `trade_id`) hâlâ doğru; yapılmadı.
 
-Testler: `test_PARITE_raporu_ayni_kanit_kapisindan_gecer` (etiketsiz dosya parite
-tarafında da `ValueError`), `test_PARITE_ledger_ile_AYNI_yolu_kullanir`.
+### scipy — GERİ ALINDI
 
-### 5. Üç test iddiasını sınamıyordu → KAPANDI
+Sen orta bulgu 4'te "SciPy requirements'a doğru eklenmiş" demiştin, ama
+`test_cloud_deps` scipy'yi bulutta açıkça yasaklıyor ve telefon brifingi
+ledger'ı import ediyor. Yani 2026-08-21'de ölçümü 14 saat durduran hatayı geri
+getiriyordum. Matcher saf Python min-cost max-flow'a (SPFA) çevrildi; doğruluk
+scipy'ye karşı ölçülüyor (60 rastgele allow-maskeli matris, kardinalite +
+toplam maliyet). scipy yalnız dev/test bağımlılığı, `importorskip` ile.
 
-Bu tespitin canımı yaktı çünkü doğru: testler geçiyor diye kilit var sanıyordum.
-- zıt yön: 30dk → **5dk** (artık `dir` kontrolü silinirse düşüyor)
-- bir-bir: ikinci bulut satırı 20dk → **10dk** (ikisi de tolerans içinde)
-- en yakın: union uzunluğu yerine **doğrudan `eslestir_bir_bir()` çiftine** bakıyor,
-  iki tolerans-içi aday var (14:50 ve 14:58 vs bulut 15:00), eşleşen indeks
-  assert ediliyor
+`test_cloud_deps`'e ikinci kapı eklendi: telefon brifingi de ağır bağımlılık
+olmadan üretilebiliyor mu.
 
----
+## Katalog regresyon testleri — senin mutasyonların artık düşüyor
 
-## Dead code listesi
+İkisini de kendim tekrarladım, haklıydın:
 
-- `live_only()` — **silindi**. Tek çağıranı kendi testiydi; test
-  `load_forward(..., include_candidates=False)`'a geçti.
-- `_gold_orb_detector`, `_es_div_detector`, `_ESDIV_CACHE` — **silindi** (~100
-  satır, çağrısız). Geçmiş git'te ve katalogda duruyor. Bayat atıf
-  (`modules.py` yorumunda "bkz _gold_orb_detector") katalog id'sine çevrildi.
-- `test_challenge_sim` `inspect.getsource()` testi — **davranış testine çevrildi**:
-  `live_module_names` monkeypatch'lenip `compare_bot_portfolios`'un gerçekten
-  hangi işlemleri canlı portföye koyduğuna bakılıyor. Mutasyonla doğruladım:
-  sabit listeye çevirince test düşüyor.
+- Donchian'ı `retired` yapmak eski testten geçiyordu (yalnız `rejected`
+  yasaklıydı). Artık `VETO_STATULERI` tek kaynak ve tüm veto statüleri
+  registry'ye karşı kontrol ediliyor.
+- Kapsamsız yeni bir genel `rejected ORB` maddesi üç testten de geçiyordu
+  (kontroller önceden seçilmiş ID'lere bakıyordu). Artık: bir veto maddesi
+  canlı modül anahtar kelimesi taşıyorsa kapsam ZORUNLU ve kapsam metni canlı
+  modülün adını yazmak zorunda. CLI çıktısı `capsys` ile sweep/orb/donchian/fvg
+  sorgularında sınanıyor.
 
-`modules.py:323-379` emeklilik tarihçesini kısaltma önerini **yapmadım**:
-mekanik ray dondurulmuş durumda ve o metin kararın gerekçesini taşıyor. Kısaltmak
-kod davranışını değil kurumsal hafızayı etkiler; senin de bloklayıcı demediğin
-tek madde bu. Karşı görüşün varsa yaz.
+Veto/veto-değil ayrımı üç yerde ayrı hesaplanıyordu (CLI, brifing, testler);
+tek kaynağa indirildi (`veto_mu`).
 
 ---
 
-## `elenenler` — statü ayrımı (commit `3deba69`)
+## YENİ YÜZEY — burası asıl denetim isteğim
 
-Kategori hatası tespitini kabul ediyorum. Statüler ayrıldı:
+Aşağıdakiler senin denetlediğin commit'ten sonra eklendi ve **kanıt kapısına
+değil, karar öncesi bilgiye** dokunuyor. Yeni bir sahte-edge yüzeyi açtım mı,
+onu sormak istiyorum.
 
-| statü | başlık | veto mu |
-|---|---|---|
-| `rejected` | ELENMIS — BU TEZI KULLANMA | evet |
-| `standalone_rejected` | TEK BASINA EDGE DEGIL | **hayır** |
-| `not_adopted` | ADOPTE EDILMEDI — veto DEGIL | **hayır** |
-| `retired` | EMEKLI EDILDI | evet |
+### 1. Telefon brifingi (`telefon_brief.py`, `TELEFON/`)
 
-Donchian → `not_adopted`, FVG/EMA-VWAP → `standalone_rejected`, GOLD ORB →
-`retired`. Bilinmeyen statü `__post_init__`'te reddediliyor.
+Kullanıcı sürekli PC'de olamıyor; diskresyoner ray birincil ray olduğu için
+rayın fiilen çalışmaması demekti. GitHub Actions saat başı `TELEFON/BRIEF.md`
+üretiyor, telefondaki sohbet asistanı onu okuyor.
 
-Kapsam çakışması: çalışan bir modülle isim benzerliği olan maddelerde `kapsam`
-alanı zorunlu ve **canlı modülün adını yazıyor**:
-- `sweep_cok_endeks` → "Veto YALNIZCA 7-endeks genişlemesine; SWEEP_CORE çalışıyor"
-- `gold_ny_orb` → "XAUUSD 5m ORB'a; NQ_ORB_STRONG_TREND AYRI modül"
-- `equal_high_low_raid` → "raid dönüşü tezine; SWEEP_CORE başka şey ölçüyor"
+Alan seti `seans_brief.sembol_olgusu()`'ndan geliyor — ikinci bir olgu üreticisi
+YAZILMADI, feed enjekte ediliyor. Testler yorum sıfatı ve emir kalıbı taramasıyla
+kilitli (mutasyonla doğrulandı).
 
-Kilit testi: hiçbir `rejected`/`retired` madde `default_modules()` içindeki bir
-modülün adını taşıyamaz — taşıyorsa katalog kendi portföyünü vetoluyor demektir.
+**Bu sırada iki sessiz yalan buldum ve düzelttim:**
 
-Test şişmesi: 6 parametrik test (13×6=78 vaka, hepsi aynı soruyu soruyor) tek
-sözleşme testine indi. Bozuk maddenin id'si zaten assert mesajında.
+- **Kısmi gün**: bugünün kapanmamış günlük barı ATR/hacim/EMA'ya giriyordu.
+  NASDAQ "ATR 100 günün %0. yüzdeliği" basıyordu — yarım günün aralığı elbette
+  en dar. Göstergeler artık kapalı günlerden; bugünün ham aralığı ayrı alan.
+- **Bulutta EMA200 60 barla hesaplanıyordu**: yfinance 15m'i ~60 gün veriyor ve
+  günlük seri ondan resample ediliyordu. Gerçek günlük seri eklendi (`1d`
+  desteği), 412 bar.
 
-### Yapmadığım iki şey, gerekçesiyle
+Ayrıca ilk canlı seansta çıktı: FX'te hacim yok, brief "hacim 0, %0. yüzdelik"
+basıyordu. "Ölçülmemiş" ile "düşük" farklı iddialar; katman kapısında hacim
+katmanını yanlışlıkla dolu saydırabilirdi. Artık "BU FEED HACIM VERMIYOR".
 
-1. **Tek evidence registry'den türetme.** `hypotheses.json` 2 hipotez tutuyor,
-   katalog 13 madde — kalan 11'i lab koşumları ve forward defteri. Ortak kaynak
-   yokken "tek kaynaktan türüyor" demek sahte olurdu. Bunun yerine kesişim
-   kümesine **çelişki testi** koydum: registry "elendi" diyorsa katalog
-   `rejected` olmak zorunda, demiyorsa `rejected` olamaz. Donchian ayrışması
-   şimdi teste takılır.
-2. **`seans_brief`'e bağlama.** Kasıtlı: seans sırasında canlı katalog sorgusu
-   ön-kayıtsız hipotez testidir. Manuel CLI kalması özellik değil ama hata da
-   değil — otomatik koruma istiyorsan bunu ayrı bir tasarım sorusu olarak yaz,
-   ölçmeden bağlamam.
+### 2. Trend katmanı (`trend_katmani.py`) — EN ÇOK BUNU DENETLE
 
----
+Kullanıcı telefondan "trend haline gelmiş pariteleri bul" diye sormak istedi.
+Bunu modele sordurmayı reddettim: model kendi tanımını uydurur, kendi listesini
+seçer, filtrelenmiş bir evren gösterir — 2026-08-01'de kapatılan AI scout'un
+aynısı. Onun yerine kodlanmış sabit tanım:
 
-## Sana soru
+- 200EMA konumu + % uzaklık, ADX(14) günlük, 20/50 günlük % değişim
+- sıralama 20 günlük değişime göre, **eleme yok** — 21 sembolün tamamı listede
+- tanım sonuca bakılmadan sabitlendi, sabitler testle kilitli
 
-`eslestir_bir_bir()` artık scipy'ye bağlı (`linear_sum_assignment`). scipy zaten
-kurulu ve bulut runner'ında da var, ama kanıt kapısına yeni bir bağımlılık girdi.
-Alternatif saf-python Hopcroft-Karp + min-cost yazmaktı; onu tercih ediyorsan
-söyle, değiştiririm. Bugünkü sayı iki yolda da aynı.
+**Sana sorularım:**
+
+1. **Sıralama bir seçim mi?** Ben "evrenin tamamı listeleniyor, yalnız sırası
+   belirleniyor, eleme yok" diye savundum. Eşik koysaydım (ADX>25) o bir
+   hipotez olurdu. Sıralamanın kendisi de dikkati yönlendiriyor mu — yani
+   listenin başındakine bakma eğilimi ölçülmemiş bir seçim üretir mi?
+
+2. **Evren genişlemesi.** Kullanıcı 21 sembol istedi (portföyün ötesinde:
+   GER40, XAGUSD, WTI, JPY çaprazları, kripto). Uyardım — `sweep_cok_endeks`
+   katalogda `rejected` ve slot kısıtı ölçülmüştü; kullanıcı yine geniş evreni
+   seçti, uyguladım ve brifingin kendi metnine **"bu liste işlem evreni
+   değil"** satırını koydum. Bu yeterli bir sınır mı, yoksa geniş evren
+   diskresyoner rayı ölçülemez hale getirir mi? (Aday sayısı artarsa
+   seçicilik metriği ne anlama gelir?)
+
+3. **ADX taşındı.** `edge_lab._adx` → `indicators.adx`; edge_lab geri import
+   ediyor. Gerekçe: brifing bunu bulutta hesaplıyor, edge_lab modül seviyesinde
+   `data` + `honest_engine` çekiyor. Davranış değişmedi (adx_lab/sweep aynası
+   testleri geçiyor) ama gerçekten birebir mi, doğrulamanı isterim.
+
+4. **Yeni semboller `cloud_feed._EXTRA`'ya eklendi.** O tablo "forward EA
+   adaylarının kullandığı semboller" diye yazılmıştı. Yorumla ayırdım ("yalnız
+   trend katmanı için, üzerlerinde çalışan modül yok") ama tablo artık iki işi
+   birden taşıyor. Ayrı tablo mu olmalı, yoksa iki tablo tutmak zaten bu
+   projenin tekrar eden hatası mı?
+
+### 3. Defter yayınlama (`defter_yayinla.py`)
+
+Bulut defteri saat başı kendini işliyordu, MT5 defteri elle commit ediliyordu ve
+29 Ağustos'tan beri push edilmemişti. Ölçtüm: bulut başladığından beri 30
+forward işleminin **6'sı yalnız MT5'te** (bedava feed ^FTSE/^FCHI/RTY'yi kötü
+kapsıyor) — yani tek diskte duruyordu. Canlı modüllerde fark yoktu, aday
+katmanında ~%20 eksikti.
+
+`Forward-EA-Guncelle.cmd` sonunda çalışıyor. State dosyası bilerek dışarıda
+(makineye özel). Başarısız push commit'i geri almıyor.
+
+## Ölçüm notu — senin toleans ölçümünü tekrarladım
+
+İlk canlı seansta iki şüpheli çift gördüm ve iki kez sayma olabilir diye
+korktum. Ölçtüm, değilmiş: eşleşen 18 gerçek çiftin farkı **medyan 0, maks 5
+dakika** (senin ölçümünle aynı). Şüpheli çiftin risk mesafeleri 3.4 kat farklı
+(SL 1.67 vs 5.74 puan) — ayrı sinyal olduğunun kanıtı. 15 dakikalık tolerans
+geniş marjla doğru.
+
+Yan gözlem: `CAND_SWEEP_US2000` iki feed'de **farklı barlarda** tetikleniyor.
+Aday katmanında, kararı etkilemiyor, ama kayda geçiyor.
+
+## Emin olmadıklarım (senin bakmanı istediğim yerler)
+
+- Trend katmanı **bulutta henüz koşmadı**; lokalde 15.5 sn. Bir sonraki cron'da
+  görülecek, hata olursa Telegram uyarısı var.
+- Brifing %30 büyüdü (5.5K → 7.2K karakter). Telefon tarafı bir kez test edildi
+  ama trend katmanlı hali test edilmedi.
+- `MIN_N` iki yerdeydi (`test_demotion_tripwire.py` ve `telefon_brief.py`).
+  Bunu handoff'a "emin değilim" diye yazacaktım, yazmak yerine düzelttim:
+  `risk.DEMOTION_MIN_N` tek kaynak, ikisi de oradan import ediyor, testi de var
+  (`test_dusurme_esigi_TRIPWIRE_ile_AYNI_kaynaktan`). Ayrışsalardı brifing
+  "eşiğe 3 işlem" derken tripwire başka eşikten karar verirdi.

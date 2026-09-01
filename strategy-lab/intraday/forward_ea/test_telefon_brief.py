@@ -182,3 +182,12 @@ def test_hacim_VARSA_hala_sayi_basar(monkeypatch):
         simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=UTC))
 
     assert "hacim (son kapali gun): 1,000" in metin
+
+
+def test_dusurme_esigi_TRIPWIRE_ile_AYNI_kaynaktan():
+    """Brifing "esige 3 islem" derken tripwire baska esikten karar veremez."""
+    from ..signalbot.risk import DEMOTION_MIN_N
+    from ..signalbot import test_demotion_tripwire as tw
+
+    assert telefon_brief.MIN_N is DEMOTION_MIN_N
+    assert tw.MIN_N is DEMOTION_MIN_N

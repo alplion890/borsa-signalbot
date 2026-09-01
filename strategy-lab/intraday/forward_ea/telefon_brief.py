@@ -29,6 +29,10 @@ from pathlib import Path
 import pandas as pd
 
 from ..elenenler import KATALOG, STATULER, veto_mu
+# Dusurme esigi TEK KAYNAKTAN: once burada 25 yaziliydi ve tripwire kendi
+# kopyasini tutuyordu. Ayrissalar brifing "esige 3 islem" derken tripwire
+# baska bir esikten karar verirdi.
+from ..signalbot.risk import DEMOTION_MIN_N as MIN_N
 from ..signalbot.risk import live_module_names
 from . import diskresyoner, trend_katmani
 from .ledger import birlesik_forward
@@ -45,10 +49,6 @@ from .seans_brief import (
 )
 
 CIKTI = Path(__file__).resolve().parent.parent.parent.parent / "TELEFON" / "BRIEF.md"
-
-# `signalbot/test_demotion_tripwire.py` ile AYNI esik. Iki yerde sayi tutmak
-# bu projedeki tekrar eden hata; buraya tasindiginda oradan import edilecek.
-MIN_N = 25
 
 
 def _bulut_veri(sembol: str, tf: str) -> pd.DataFrame:
