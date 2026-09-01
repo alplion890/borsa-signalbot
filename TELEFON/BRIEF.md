@@ -1,6 +1,6 @@
 # Seans brifingi (olgu)
 
-Uretim: **2026-09-01 02:31 TR** / 2026-08-31 23:31 UTC  
+Uretim: **2026-09-01 13:44 TR** / 2026-09-01 10:44 UTC  
 Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 > **Fiyatlar endeks kotasyonu, broker fiyati DEGIL.** ^NDX ile MavenTrade US100 arasinda olculmus basis ~-170 puan (2026-08-24). Buradaki seviyeleri dogrudan emir fiyati olarak kullanma; terminaldeki fiyatla farki kendin hesapla.
@@ -24,21 +24,21 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ## Seans
 
-- Tokyo: kapali, acilisa 0.5 saat
-- Londra: kapali, acilisa 7.5 saat
-- New York: kapali, acilisa 13.5 saat
+- Tokyo: kapali, acilisa 13.3 saat
+- Londra: ACIK, kapanisa 5.3 saat
+- New York: kapali, acilisa 2.3 saat
 
 ## Semboller
 
 
 ### NASDAQ100 (15m)
 
-- son kapanis: 29490  (bar 2026-08-31 23:15:00 UTC)
-- dun araligi: 29436 → 29812
-- bugun araligi: 29488 → 29522
-- 200EMA (gunluk): 27351  (uzaklik +2138.7 / %+7.82)
-- ATR(14) son kapali gun: 495.84  (100 gunun %27. yuzdeligi)
-- hacim (son kapali gun): 570,995  (20 gunun %79. yuzdeligi)
+- son kapanis: 29251  (bar 2026-09-01 10:30:00 UTC)
+- dun araligi: 29274 → 29546
+- bugun araligi: 29184 → 29571
+- 200EMA (gunluk): 27371  (uzaklik +1880.1 / %+6.87)
+- ATR(14) son kapali gun: 479.9  (100 gunun %12. yuzdeligi)
+- hacim (son kapali gun): 583,609  (20 gunun %89. yuzdeligi)
 - donus seviyeleri (son 60 gun):
   - 2026-07-14  30078  (direnc)
   - 2026-07-17  30062  (direnc)
@@ -51,12 +51,12 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ### XAUUSD (5m)
 
-- son kapanis: 4491.1  (bar 2026-08-31 23:20:00 UTC)
-- dun araligi: 4451.8 → 4625.5
-- bugun araligi: 4491.1 → 4504.8
-- 200EMA (gunluk): 4310.8  (uzaklik +180.35 / %+4.18)
-- ATR(14) son kapali gun: 76.34  (100 gunun %24. yuzdeligi)
-- hacim (son kapali gun): 5,558  (20 gunun %95. yuzdeligi)
+- son kapanis: 4432.1  (bar 2026-09-01 10:30:00 UTC)
+- dun araligi: 4410.9 → 4466.9
+- bugun araligi: 4413 → 4510.5
+- 200EMA (gunluk): 4311.4  (uzaklik +120.73 / %+2.80)
+- ATR(14) son kapali gun: 75.687  (100 gunun %23. yuzdeligi)
+- hacim (son kapali gun): 1,758  (20 gunun %84. yuzdeligi)
 - donus seviyeleri (son 60 gun):
   - 2026-07-21  3964.2  (destek)
   - 2026-07-24  4152.1  (direnc)
@@ -69,11 +69,11 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ### EURUSD (5m)
 
-- son kapanis: 1.162  (bar 2026-08-31 23:30:00 UTC)
-- dun araligi: 1.1596 → 1.1656
-- bugun araligi: 1.1616 → 1.1623
-- 200EMA (gunluk): 1.1567  (uzaklik +0.0052463 / %+0.45)
-- ATR(14) son kapali gun: 0.0052997  (100 gunun %7. yuzdeligi)
+- son kapanis: 1.1594  (bar 2026-09-01 10:40:00 UTC)
+- dun araligi: 1.1585 → 1.1623
+- bugun araligi: 1.1592 → 1.1628
+- 200EMA (gunluk): 1.1568  (uzaklik +0.002665 / %+0.23)
+- ATR(14) son kapali gun: 0.0054286  (100 gunun %13. yuzdeligi)
 - hacim (son kapali gun): 0  (20 gunun %0. yuzdeligi)
 - donus seviyeleri (son 60 gun):
   - 2026-07-20  1.1478  (direnc)
@@ -87,11 +87,11 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ### GBPUSD (5m)
 
-- son kapanis: 1.3547  (bar 2026-08-31 23:30:00 UTC)
-- dun araligi: 1.3531 → 1.36
-- bugun araligi: 1.3544 → 1.3554
-- 200EMA (gunluk): 1.3417  (uzaklik +0.012981 / %+0.97)
-- ATR(14) son kapali gun: 0.0069139  (100 gunun %4. yuzdeligi)
+- son kapanis: 1.3536  (bar 2026-09-01 10:40:00 UTC)
+- dun araligi: 1.3535 → 1.3565
+- bugun araligi: 1.353 → 1.356
+- 200EMA (gunluk): 1.3418  (uzaklik +0.011813 / %+0.88)
+- ATR(14) son kapali gun: 0.0068644  (100 gunun %2. yuzdeligi)
 - hacim (son kapali gun): 0  (20 gunun %0. yuzdeligi)
 - donus seviyeleri (son 60 gun):
   - 2026-07-14  1.3452  (direnc)
