@@ -147,8 +147,11 @@ def _sembol_satirlari(semboller: list[tuple[str, str]]) -> list[str]:
             f"(uzaklik {o.ema200_uzaklik_puan:+.5g} / %{o.ema200_uzaklik_yuzde:+.2f})",
             f"- ATR(14) son kapali gun: {o.atr_bugun:.5g}  "
             f"({ATR_PENCERE} gunun %{o.atr_yuzdelik:.0f}. yuzdeligi)",
-            f"- hacim (son kapali gun): {o.hacim_bugun:,.0f}  "
-            f"({HACIM_PENCERE} gunun %{o.hacim_yuzdelik:.0f}. yuzdeligi)",
+            (f"- hacim (son kapali gun): {o.hacim_bugun:,.0f}  "
+             f"({HACIM_PENCERE} gunun %{o.hacim_yuzdelik:.0f}. yuzdeligi)")
+            if o.hacim_bugun == o.hacim_bugun else
+            "- hacim: BU FEED HACIM VERMIYOR (spot FX) -- hacim katmani "
+            "brifingten doldurulamaz",
             f"- donus seviyeleri (son {SWING_GUN} gun):",
         ]
         if o.donus_seviyeleri:

@@ -133,3 +133,52 @@ def test_gunluk_feed_AYRI_verilebilir():
         "son kapanis intraday seriden gelmeli")
     assert o.ema200 < 300, (
         f"EMA200 gunluk seriden gelmeli, intraday'den degil: {o.ema200}")
+
+
+# --- feed hacim vermiyorsa ------------------------------------------------
+#
+# 2026-09-01, ilk canli telefon seansinda goruldu: EURUSD ve GBPUSD icin brief
+# "hacim 0 (20 gunun %0. yuzdeligi)" basiyordu. yfinance spot FX'te hacim
+# vermiyor -- son 20 gunun 20'si de sifir. "Hacim cok dusuk" ile "hacim
+# olculmemis" ayri seyler; ikincisini birincisi gibi gostermek, katman
+# kapisinda hacim katmanini yanlislikla DOLU saydirabilir.
+
+
+def test_feed_hacim_vermiyorsa_SIFIR_basmaz():
+    sifir_hacim = _bar_serisi()
+    sifir_hacim["volume"] = 0.0
+
+    o = sembol_olgusu("EURUSD", "1d", veri=lambda s, t: sifir_hacim)
+
+    assert o.hacim_bugun != o.hacim_bugun, "hacim yoksa sayi basilmamali (NaN bekleniyor)"
+    assert o.hacim_yuzdelik != o.hacim_yuzdelik
+
+
+def test_brief_hacim_yoksa_ACIKCA_soyler(monkeypatch):
+    sifir_hacim = _bar_serisi()
+    sifir_hacim["volume"] = 0.0
+    monkeypatch.setattr(telefon_brief, "_bulut_veri", lambda s, t: sifir_hacim)
+    monkeypatch.setattr(telefon_brief, "_bulut_gunluk", lambda s: sifir_hacim)
+
+    metin = telefon_brief.brief_metni(
+        semboller=[("EURUSD", "5m")],
+        simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=UTC))
+
+    hacim_satiri = next(l for l in metin.splitlines()
+                        if l.startswith("- hacim"))
+    assert "HACIM VERMIYOR" in hacim_satiri
+    assert "yuzdelig" not in hacim_satiri, (
+        f"hacimsiz feed yuzdelik gibi basilmis: {hacim_satiri}")
+
+
+def test_hacim_VARSA_hala_sayi_basar(monkeypatch):
+    """Duzeltme, gercek hacmi olan sembolu bozmamali."""
+    hacimli = _bar_serisi()
+    monkeypatch.setattr(telefon_brief, "_bulut_veri", lambda s, t: hacimli)
+    monkeypatch.setattr(telefon_brief, "_bulut_gunluk", lambda s: hacimli)
+
+    metin = telefon_brief.brief_metni(
+        semboller=[("NASDAQ100", "15m")],
+        simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=UTC))
+
+    assert "hacim (son kapali gun): 1,000" in metin

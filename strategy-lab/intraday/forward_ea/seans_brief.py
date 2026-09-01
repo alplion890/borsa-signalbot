@@ -92,6 +92,18 @@ def _yuzdelik(seri: pd.Series, pencere: int) -> float:
     return 100.0 * (son_n < son_n.iloc[-1]).sum() / (len(son_n) - 1)
 
 
+def _hacim_yoksa_nan(hacim: pd.Series, pencere: int) -> tuple[float, float]:
+    """Feed hacim vermiyorsa (hepsi 0) sayi degil NaN don.
+
+    Beslemede hacim olmamasi ile hacmin dusuk olmasi ayri seylerdir; ikisini
+    ayni gostermek okuyani yaniltir.
+    """
+    son = hacim.dropna().iloc[-pencere:]
+    if son.empty or (son == 0).all():
+        return float("nan"), float("nan")
+    return float(hacim.iloc[-1]), _yuzdelik(hacim, pencere)
+
+
 def _donus_seviyeleri(gunluk_df: pd.DataFrame, gun: int) -> list[tuple[str, float, str]]:
     pencere = gunluk_df.iloc[-gun:]
     if len(pencere) < 10:
@@ -164,8 +176,14 @@ def sembol_olgusu(sembol: str, tf: str, tazele: bool = False,
         ema200_uzaklik_yuzde=100 * (son_kapanis - float(ema200.iloc[-1])) / float(ema200.iloc[-1]),
         atr_bugun=float(a.iloc[-1]),
         atr_yuzdelik=_yuzdelik(a, ATR_PENCERE),
-        hacim_bugun=float(tam["volume"].iloc[-1]),
-        hacim_yuzdelik=_yuzdelik(tam["volume"], HACIM_PENCERE),
+        # HACIM YOKSA SIFIR BASMA (2026-09-01): yfinance spot FX'te hacim
+        # vermiyor -- EURUSD ve GBPUSD'de son 20 gunun 20'si de 0. Brief bunu
+        # "hacim 0, %0. yuzdelik" diye basinca "hacim cok dusuk" gibi okunuyor,
+        # oysa dogrusu "olcum yok". Katman kapisinda hacim katmani bu iki
+        # sembolde brief'ten DOLDURULAMAZ; bunu soylemek, sifir basmaktan
+        # farkli bir sey.
+        hacim_bugun=_hacim_yoksa_nan(tam["volume"], HACIM_PENCERE)[0],
+        hacim_yuzdelik=_hacim_yoksa_nan(tam["volume"], HACIM_PENCERE)[1],
         donus_seviyeleri=_donus_seviyeleri(tam, SWING_GUN),
     )
 
@@ -236,8 +254,11 @@ def yazdir(semboller: list[tuple[str, str]], tazele: bool) -> None:
               f"/ %{o.ema200_uzaklik_yuzde:+.2f})")
         print(f"  ATR(14) son kapali : {o.atr_bugun:.5g}  ({ATR_PENCERE} gunun "
               f"%{o.atr_yuzdelik:.0f}. yuzdeligi)")
-        print(f"  hacim (son kapali) : {o.hacim_bugun:,.0f}  ({HACIM_PENCERE} gunun "
-              f"%{o.hacim_yuzdelik:.0f}. yuzdeligi)")
+        if o.hacim_bugun == o.hacim_bugun:  # NaN degil
+            print(f"  hacim (son kapali) : {o.hacim_bugun:,.0f}  ({HACIM_PENCERE} gunun "
+                  f"%{o.hacim_yuzdelik:.0f}. yuzdeligi)")
+        else:
+            print("  hacim              : BU FEED HACIM VERMIYOR (spot FX)")
         print(f"  donus seviyeleri (son {SWING_GUN} gun):")
         if o.donus_seviyeleri:
             for tarih, fiyat, tip in o.donus_seviyeleri:

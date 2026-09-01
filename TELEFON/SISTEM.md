@@ -98,6 +98,12 @@ Tetiklendiyse `--tetikle <id> --giris <fiyat>`, gelmediyse
 `--pas <id> --sebep "..."`. **Pas kaydı da şart**: bakıp geçtikleri
 yazılmazsa seçiciliği ölçülemez.
 
+**Pas, önce aday ister.** `--pas` mevcut bir adayın id'sini alır; defter
+boşken tek başına çalışmaz. Yani "baktım, girmedim" demek için önce o setup
+aday olarak yazılmış olmalı. Sırası: gördüğü setup → `--aday` → tetiklenmezse
+`--pas`. Aday yazılmadan geçilen bir setup ölçüme hiç girmez; kullanıcı
+"bugün baktım ama girmedim" derse ona bunu hatırlat.
+
 ## Bilinen tuzaklar (bu projede dört kez oldu)
 
 - **Post-hoc filtre**: sonuca bakıp kural eklemek. Yasak; ön-kayıt şart.

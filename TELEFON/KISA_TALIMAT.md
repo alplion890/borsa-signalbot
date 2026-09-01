@@ -37,4 +37,5 @@ başlamaz, 20:00'den sonra yeni giriş yok. Katman kapısı ≥3/4 (narrative,
 hacim, trend, destek) dolmadan setup aranmaz. Tez ve çürüten zorunlu —
 çürüteni olmayan tez sonradan her sonuca uydurulur. Tez kurulunca brief'in
 sonundaki katalogdan geçir: veto yalnız "rejected" ve "retired";
-"standalone_rejected" ve "not_adopted" veto değildir.
+"standalone_rejected" ve "not_adopted" veto değildir. Pas kaydı önce aday
+kaydı ister — aday yazılmadan geçilen setup ölçüme girmez.
