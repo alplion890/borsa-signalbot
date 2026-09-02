@@ -62,10 +62,10 @@ def swing_high(df: pd.DataFrame, left: int = 3, right: int = 3) -> pd.Series:
 
 
 def swing_low(df: pd.DataFrame, left: int = 3, right: int = 3) -> pd.Series:
-    l = df["low"]
+    low = df["low"]
     win = left + right + 1
-    is_bot = l == l.rolling(win, center=True).min()
-    levels = l.where(is_bot).shift(right)
+    is_bot = low == low.rolling(win, center=True).min()
+    levels = low.where(is_bot).shift(right)
     return levels.ffill()
 
 
@@ -207,7 +207,7 @@ def daily_volume_profile(df: pd.DataFrame, bins: int = 100) -> tuple[pd.Series, 
 
 
 
-def adx(df: pd.DataFrame, n: int = 14) -> pd.Series:
+def adx(df: pd.DataFrame, n: int = 14, shift: int = 1) -> pd.Series:
     """Wilder ADX. Son bar SHIFT'li -- kapanmamis barla karar verilmez.
 
     `edge_lab._adx`'ten buraya tasindi (2026-09-01): telefon brifingi bunu
@@ -225,4 +225,5 @@ def adx(df: pd.DataFrame, n: int = 14) -> pd.Series:
     di_p = 100 * dm_p.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
     di_m = 100 * dm_m.ewm(alpha=1 / n, adjust=False).mean() / atr_n.replace(0, np.nan)
     dx = 100 * (di_p - di_m).abs() / (di_p + di_m).replace(0, np.nan)
-    return dx.ewm(alpha=1 / n, adjust=False).mean().shift(1)
+    sonuc = dx.ewm(alpha=1 / n, adjust=False).mean()
+    return sonuc.shift(shift) if shift else sonuc

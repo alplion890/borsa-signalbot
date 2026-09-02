@@ -7,8 +7,6 @@ kaymasini engelliyor.
 """
 from __future__ import annotations
 
-import re
-
 import pandas as pd
 import pytest
 
@@ -30,14 +28,14 @@ def test_evrenin_TAMAMI_listelenir_ELEME_yok():
     assert {s["sembol"] for s in satirlar} == {s for s, _ in trend_katmani.EVREN}
 
 
-def test_siralama_20_GUNLUK_degisime_gore():
+def test_siralama_PERFORMANSA_gore_degismez():
     hizli, yavas = _seri(egim=2.0), _seri(egim=0.1)
     satirlar = trend_katmani.tara(
         lambda s: hizli if s == "NASDAQ100" else yavas)
-    assert satirlar[0]["sembol"] == "NASDAQ100"
+    assert [s["sembol"] for s in satirlar] == [s for s, _ in trend_katmani.EVREN]
 
 
-def test_VERI_YOK_satiri_ELENMEZ_sona_gider():
+def test_VERI_YOK_satiri_ELENMEZ_yeri_degismez():
     """Veri gelmeyen sembol gizlenmemeli; gizlenirse evren sessizce daralir."""
     def veri(s):
         if s == "WTI":
@@ -45,13 +43,38 @@ def test_VERI_YOK_satiri_ELENMEZ_sona_gider():
         return _seri()
     satirlar = trend_katmani.tara(veri)
     assert len(satirlar) == len(trend_katmani.EVREN)
-    assert satirlar[-1]["sembol"] == "WTI" and not satirlar[-1]["veri"]
+    wti = next(s for s in satirlar if s["sembol"] == "WTI")
+    assert not wti["veri"]
+    assert [s["sembol"] for s in satirlar] == [s for s, _ in trend_katmani.EVREN]
     assert "VERI YOK" in "\n".join(trend_katmani.markdown(satirlar))
+
+
+def test_KAPANMAMIS_gun_EMA_ve_getiriyi_degistirmez():
+    kapali = _seri(gun=260)
+    bugun = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+    kismi = kapali.iloc[[-1]].copy()
+    kismi.index = [bugun]
+    kismi[["open", "high", "low", "close"]] = [1000.0, 1001.0, 999.0, 1000.0]
+
+    yalniz_kapali = trend_katmani.sembol_satiri("X", "fx", kapali)
+    kismi_dahil = trend_katmani.sembol_satiri("X", "fx", pd.concat([kapali, kismi]))
+
+    for alan in ("kapanis", "ema200", "ema200_uzaklik_yuzde",
+                 "adx", "getiri_20g", "getiri_50g"):
+        assert kismi_dahil[alan] == pytest.approx(yalniz_kapali[alan]), alan
 
 
 def test_YETERSIZ_gecmis_uydurma_EMA200_uretmez():
     satir = trend_katmani.sembol_satiri("X", "fx", _seri(gun=50))
     assert not satir["veri"], "200 bar yokken EMA200 hesaplanmis"
+
+
+def test_ortak_ADX_varsayilani_GERIYE_UYUMLU_kalir():
+    """Trend kapalı veri için shift=0 kullanırken diğer tüketiciler değişmemeli."""
+    from ..indicators import adx
+
+    veri = _seri(gun=260)
+    pd.testing.assert_series_equal(adx(veri), adx(veri, shift=0).shift(1))
 
 
 def test_ciktida_YORUM_SIFATI_yok():

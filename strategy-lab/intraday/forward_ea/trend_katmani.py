@@ -14,13 +14,13 @@ kotu olsa bile. Ikincisi on-kayitlidir, birincisi degildir.
 TANIM (2026-09-01'de, sonuca BAKILMADAN sabitlendi -- degistirmek yeni karar
 gerektirir ve gerekcesi yazilir):
   - gunluk kapanisin 200EMA'ya gore konumu (ustunde/altinda) ve % uzakligi
-  - ADX(14), gunluk, Wilder -- kapanmamis bar shift'li
+  - ADX(14), gunluk, Wilder -- yalniz kapanmis gunlerden
   - 20 ve 50 gunluk yuzde degisim
-  - siralama: 20 gunluk degisime gore, buyukten kucuge
+  - siralama: on-kayitli sabit evren sirasi (performans dikkati yonlendirmez)
 
-Siralama bir SECIM DEGIL: evrenin tamami listeleniyor, yalnizca sirasi
-belirleniyor. Eleme yapilsaydi (ornegin "ADX>25 olanlari goster") o zaman esik
-bir hipotez olurdu ve olculmesi gerekirdi.
+20 gunluk degisime gore siralama KALDIRILDI: satir elememek tek basina yeterli
+degildi; performans sirasi insan dikkatini ekranin basina yonlendiriyordu. Deger
+hala ayri kolon olarak basilir, fakat satir sirasi sonuca gore degismez.
 
 ISLEM EVRENI DEGISMEDI. Bu liste yalnizca OLGU gosterir. Portfoy, slot kisiti
 ve modul kumesi aynen duruyor; `sweep_cok_endeks` maddesi (cok enstrumana
@@ -38,6 +38,7 @@ import sys
 import pandas as pd
 
 from ..indicators import adx, ema
+from .seans_brief import gunluk_bol
 
 # Evren: kullanici karari (2026-09-01), portfoyun otesinde genis bakis.
 # Gruplar yalnizca okunurluk icin; hesap hepsinde ayni.
@@ -82,12 +83,15 @@ def _getiri(kapanis: pd.Series, gun: int) -> float:
 
 def sembol_satiri(sembol: str, grup: str, gunluk: pd.DataFrame) -> dict:
     """Tek sembolun sabit alanlari. Sifat yok, esik yok, eleme yok."""
-    kapanis = gunluk["close"].dropna()
+    kapali, _ = gunluk_bol(gunluk)
+    kapanis = kapali["close"].dropna()
     if len(kapanis) < EMA_UZUN:
         return {"sembol": sembol, "grup": grup, "veri": False}
     e = float(ema(kapanis, EMA_UZUN).iloc[-1])
     son = float(kapanis.iloc[-1])
-    a = adx(gunluk, ADX_PENCERE).iloc[-1]
+    # Veri önce kapalı günlere indirildi; ortak ADX'in varsayılan shift'i
+    # edge_lab için korunur, burada ikinci kez gün düşürmemek için shift=0.
+    a = adx(kapali, ADX_PENCERE, shift=0).iloc[-1]
     return {
         "sembol": sembol,
         "grup": grup,
@@ -104,7 +108,7 @@ def sembol_satiri(sembol: str, grup: str, gunluk: pd.DataFrame) -> dict:
 
 
 def tara(gunluk_veri) -> list[dict]:
-    """Evrenin tamami; siralama 20 gunluk degisime gore, buyukten kucuge."""
+    """Evrenin tamamı, ön-kayıtlı sabit sırada; performans sıralaması yok."""
     satirlar = []
     for sembol, grup in EVREN:
         try:
@@ -115,11 +119,7 @@ def tara(gunluk_veri) -> list[dict]:
             continue
         satirlar.append(sembol_satiri(sembol, grup, gunluk))
 
-    def _anahtar(s: dict) -> float:
-        d = s.get("getiri_20g", float("nan"))
-        return d if d == d else float("-inf")  # veri yoksa sona
-
-    return sorted(satirlar, key=_anahtar, reverse=True)
+    return satirlar
 
 
 def markdown(satirlar: list[dict]) -> list[str]:
@@ -129,7 +129,7 @@ def markdown(satirlar: list[dict]) -> list[str]:
         "",
         f"200EMA konumu + ADX({ADX_PENCERE}) + {GETIRI_PENCERELERI[0]}/"
         f"{GETIRI_PENCERELERI[1]} gunluk degisim, gunluk barlardan. Evrenin "
-        "TAMAMI listeleniyor; siralama 20 gunluk degisime gore. Eleme yok, "
+        "TAMAMI on-kayitli sabit sirada listeleniyor. Eleme yok, "
         "esik yok, yorum yok.",
         "",
         "**Bu liste islem evreni DEGIL.** Portfoy ve modul kumesi degismedi; "

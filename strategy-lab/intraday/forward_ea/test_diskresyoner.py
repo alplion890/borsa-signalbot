@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from .diskresyoner import (
+    ISLEM_EVRENI,
     MIN_KATMAN,
     MIN_N,
     ac,
@@ -85,6 +86,25 @@ def test_stop_yonle_TUTARLI_olmali(defter):
         _ac(defter, yon="short", giris=25000.0, stop=24900.0)
     with pytest.raises(ValueError, match="long"):
         _ac(defter, yon="long", giris=25000.0, stop=25100.0)
+
+
+@pytest.mark.parametrize("sembol", ("USDJPY", "XAGUSD", "SP500"))
+def test_gozlem_evrenindeki_YENI_sembol_islem_evrenine_giremez(defter, sembol):
+    with pytest.raises(ValueError, match="islem evreni"):
+        _aday(defter, sembol=sembol)
+
+
+def test_islem_evreni_ON_KAYITLI_kumeye_esittir():
+    assert ISLEM_EVRENI == ("NASDAQ100", "US100", "XAUUSD", "EURUSD", "GBPUSD")
+
+
+def test_dogrudan_AC_yolu_da_evren_disini_reddeder(defter):
+    with pytest.raises(ValueError, match="islem evreni"):
+        _ac(defter, sembol="XAGUSD")
+
+
+def test_US100_broker_aliasi_islem_evreninde_kalir(defter):
+    assert _aday(defter, sembol=" us100 ").sembol == "US100"
 
 
 def test_ayni_anda_TEK_islem(defter):

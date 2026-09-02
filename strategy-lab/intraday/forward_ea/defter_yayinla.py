@@ -44,6 +44,13 @@ def degisiklik_var_mi() -> bool:
     return bool(cikti)
 
 
+def ilgisiz_stage() -> list[str]:
+    """Kullanıcının index'teki başka işine dokunma; yayın fail-closed kalsın."""
+    izinli = {Path(d).as_posix() for d in DOSYALAR}
+    adlar = _git("diff", "--cached", "--name-only").stdout.splitlines()
+    return [ad for ad in adlar if Path(ad).as_posix() not in izinli]
+
+
 def yayinla(kuru: bool = False) -> int:
     """0: yayinlandi ya da degisiklik yoktu. 1: yayinlanamadi."""
     if not degisiklik_var_mi():
@@ -55,16 +62,33 @@ def yayinla(kuru: bool = False) -> int:
         print(_git("diff", "--stat", "--", *DOSYALAR).stdout)
         return 0
 
+    ilgisiz = ilgisiz_stage()
+    if ilgisiz:
+        print("Defter yayinlanmadi: index'te ilgisiz staged dosya var: "
+              + ", ".join(ilgisiz), file=sys.stderr)
+        return 1
+
     _git("add", "--", *DOSYALAR)
     if not _git("diff", "--cached", "--quiet", "--", *DOSYALAR,
                 kontrol=False).returncode:
         print("Sahnelenen fark yok.")
         return 0
-    _git("commit", "-m", "chore(ledger): advance the local forward ledger")
+    # Kullanıcının daha önce stage ettiği ilgisiz dosyaları otomatik commit'e
+    # çekme. `git add` hedefli olsa bile pathsiz `git commit` bütün index'i alır.
+    _git("commit", "--only", "-m",
+         "chore(ledger): advance the local forward ledger", "--", *DOSYALAR)
 
     # Bulut defteri de ayni dala yaziyor; carpisma normal, tekrar dene.
     for deneme in range(1, DENEME + 1):
-        _git("pull", "--rebase", "--autostash", "origin", "main", kontrol=False)
+        pull = _git("pull", "--rebase", "--autostash", "origin", "main",
+                    kontrol=False)
+        if pull.returncode:
+            # Çatışma başladıysa repoyu yarım rebase durumunda bırakma. Ağ
+            # hatasında aktif rebase yoktur; abort'un non-zero sonucu zararsızdır.
+            _git("rebase", "--abort", kontrol=False)
+            print("Defter PUSH EDILEMEDI: pull/rebase basarisiz. Commit yerelde.",
+                  file=sys.stderr)
+            return 1
         if not _git("push", "origin", "HEAD:main", kontrol=False).returncode:
             print(f"Defter yayinlandi (deneme {deneme}).")
             return 0

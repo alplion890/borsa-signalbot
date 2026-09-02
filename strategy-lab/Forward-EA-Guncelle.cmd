@@ -1,4 +1,6 @@
 @echo off
+setlocal EnableDelayedExpansion
+set "PUBLISH_RC="
 chcp 65001 >nul
 title Forward EA - Veri Guncelle
 cd /d "%~dp0"
@@ -27,9 +29,16 @@ if "%RC%"=="0" (
   rem YALNIZ MT5'te vardi (bulut UK100/FRA40/US2000'i kaciriyor), yani tek
   rem diskte duruyordu. Forward defteri yeniden URETILEMEZ.
   "%PY%" -m intraday.forward_ea.defter_yayinla
-  echo  [TAMAM] Defter guncellendi. MT5'i simdi kapatabilirsin.
+  set "PUBLISH_RC=!ERRORLEVEL!"
+  if "!PUBLISH_RC!"=="0" (
+    echo  [TAMAM] Defter guncellendi. MT5'i simdi kapatabilirsin.
+  ) else (
+    echo  [HATA] Defter yayinlanamadi. MT5'i kapatmadan yukaridaki mesaja bak.
+  )
 ) else (
   echo  [HATA] Cikis kodu %RC%. Yukaridaki mesaja bak.
 )
 echo.
 pause
+if defined PUBLISH_RC exit /b !PUBLISH_RC!
+exit /b %RC%

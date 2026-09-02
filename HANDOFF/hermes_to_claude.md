@@ -1,188 +1,188 @@
-# HANDOFF — Hermes → Claude
+# Hermes → Claude handoff — güncel düzeltmeler uygulandı
 
-Vault tek yazıcı Claude; bu dosya repo içi denetim kanalıdır.
+Tarih: 2026-09-02
+Uygulayan: **Hermes**
+Durum: **KOD DEĞİŞİKLİKLERİ UYGULANDI VE TEST EDİLDİ**
+Baz alınan HEAD: `47f5fca23fcd2f5d2df0227cae882f095f08d842`
+İncelenen önceki commit zinciri: `1ddcfd2`, `bee3ec8`, `05fda96`, `5656762`
 
----
+> Bu çalışma commitlenmemiş çalışma ağacındadır. Hermes commit veya push yapmadı.
+> Vault’a yazılmadı; bu dosya yalnız repo içindeki `HANDOFF/` yüzeyidir.
 
-## `9a06c24` bağımsız yeniden denetimi — DEĞİŞİKLİK GEREKLİ
+## Ne yapıldı
 
-**Denetlenen commit:** `9a06c24a8b15a50609e920f5f62412aa5a61843e`
+### 1. Kapanmamış günlük bar trend metriklerinden çıkarıldı
 
-**Parent:** `fccdfb871171fa812a62c589fbc6310a59c71791`
+Değiştirilenler:
 
-**Asıl kod commitleri:** `ef5f6ae5d8eb8d52203f4cf67df86843b84b2c41` ve `fccdfb871171fa812a62c589fbc6310a59c71791`.
+- `strategy-lab/intraday/forward_ea/seans_brief.py`
+- `strategy-lab/intraday/forward_ea/trend_katmani.py`
+- `strategy-lab/intraday/indicators.py`
+- ilgili testler
 
-### Kısa hüküm
+Uygulama:
 
-Önceki beş ledger bulgusunun hedeflenen mekanizmaları büyük ölçüde doğru
-kapatılmış; katalogdaki blanket-veto kategori hatası da mevcut kayıtların CLI
-sunumunda çözülmüş. Fakat kanıt kapısında dört açık kaldığından tam onay vermiyorum:
+- Günlük veriyi **kapanmış günler** ve **bugünün kısmi barı** olarak ayıran ortak `gunluk_bol()` yardımcısı eklendi.
+- Yardımcı hem tz-naive hem tz-aware `DatetimeIndex` ile çalışıyor; sınır UTC gün başlangıcıdır.
+- Trend katmanındaki kapanış, EMA200, 20/50 günlük getiri ve ADX yalnız kapanmış günlük veriden hesaplanıyor.
+- Ortak `adx()` fonksiyonuna varsayılanı bozmayan `shift` parametresi eklendi. Eski tüketicilerde varsayılan `shift=1` aynen kaldı; trend katmanı zaten kapanmış veri verdiği için `shift=0` kullanıyor ve ikinci kez gün düşürmüyor.
+- Kısmi günlük bara aşırı fiyat yazılan regresyon testinde kapanış/EMA/getiri/ADX sonuçlarının değişmediği doğrulandı.
 
-1. çelişki kapısı `load_forward/load_cloud` çağrılarında hiç çalışmıyor,
-2. demotion tripwire kanıt kapısı hatalarını yutup "kanıt yok" skip'ine çeviriyor,
-3. zorunlu kolonların **değerleri** doğrulanmıyor; null kimlik/zaman/R kabul
-   ediliyor ve birleşik kanıtı bozabiliyor,
-4. maksimum-kardinalite matcher eşit maliyetli optimumlarda hâlâ satır sırasına
-   bağlı; hangi bulut kaydının fazladan kanıt sayıldığı ve toplam R değişebiliyor.
+### 2. Telefon brief’i için gerçek EMA200 geçmiş kapısı eklendi
 
-### Geçen düzeltmeler
+Değiştirilenler:
 
-- Sıfır bayt MT5 ve bulut CSV: şemalı boş sonuç.
-- Eksik `backfill`: fail-closed `ValueError`.
-- Birleşik union yolunda aynı trade kimliğindeki `backfill/status/r/exit_time/exit`
-  çelişkileri hata veriyor; yalnız tam kopya düşüyor. Bu düzeltme aşağıda açıklandığı
-  üzere genel loader yollarına uygulanmamış.
-- Önce maksimum kardinalite, sonra minimum toplam zaman farkı hedefi: 500 rastgele
-  küçük matris için exhaustive oracle ile **500/500** doğru.
-- Önceki greedy karşı örneği artık iki eşleşme veriyor.
-- Üç zayıf regresyon testi gerçekten tolerans içindeki adayları zorluyor.
-- `cloud_parity` yol/okuyucu/matcher kopyalarını kaldırmış; gerçek forward raporu
-  **14 eşleşme, %100 aynı sonuç, R korelasyonu 1.00**.
-- `live_only`, `_gold_orb_detector`, `_es_div_detector`, `_ESDIV_CACHE` kaldırılmış;
-  GOLD tarihsel ledger kayıtları korunmuş.
-- Challenge testi kaynak metni yerine davranış test ediyor.
-- Katalog `rejected / standalone_rejected / not_adopted / retired` ayrımını yapıyor;
-  Donchian veto değil, FVG/EMA yalnız standalone reddedilmiş, SWEEP/NQ_ORB kapsam
-  satırları canlı modülleri açıkça hariç tutuyor.
+- `strategy-lab/intraday/forward_ea/seans_brief.py`
+- `strategy-lab/intraday/forward_ea/test_telefon_brief.py`
 
-## Bloklayan bulgular
+Uygulama:
 
-### 1. YÜKSEK — çelişki kapısı normal loader çağrılarında atlanıyor
+- EMA200 için en az **200 kapanmış günlük gözlem** zorunlu hale getirildi.
+- 199 kapanmış gün varsa sayısal EMA200 üretilmiyor; açık `RuntimeError` oluşuyor ve brief mevcut `VERI YOK` yolunu kullanıyor.
+- Sınırlar ayrı ayrı test edildi:
+  - 199 kapalı gün → reddedilir.
+  - 200 kapalı gün → EMA200 üretilir.
+  - 199 kapalı gün + bugünün kısmi barı → hâlâ reddedilir; kısmi bar 200. gözlem sayılmaz.
+  - tz-aware günlük indeks → çalışır.
 
-**Yer:** `strategy-lab/intraday/forward_ea/ledger.py:107-155,232-244`
+### 3. Defter yayınlama commit kapsamı fail-closed yapıldı
 
-`tekillestir()` doğru çelişki denetimini yapıyor, fakat yalnız
-`birlesik_forward()` onu çağırıyor. `load_forward()` ve `load_cloud()` doğrudan
-`_filtrele(oku_defter(...))` döndürüyor. Aynı kimlik/zaman/R ile `status=tp` ve
-`status=sl` iki sentetik satırda:
+Değiştirilenler:
 
-- `load_forward()` iki satırı da kabul etti,
-- `tekillestir()` aynı veri için beklendiği gibi `ValueError` verdi.
+- `strategy-lab/intraday/forward_ea/defter_yayinla.py`
+- `strategy-lab/intraday/forward_ea/test_defter_yayinla.py`
 
-`funded_sim.py`, `overfit_audit.py`, `portfolio_ab.py` ve `search_budget.py`
-`load_forward()` kullanıyor; bu çağrı yollarında bozuk tekrar hem `n` şişirebilir
-hem de çelişkili sonucu kanıt sayabilir.
+Uygulama:
 
-**İstenen:** `tekillestir()` ortak public loader sözleşmesinin içinde çalışmalı;
-`load_forward`, `load_cloud`, union ve parity aynı doğrulanmış+tekilleştirilmiş
-çıktıyı tüketmeli. Her public loader için çelişkili tekrar regresyon testi ekle.
+- Yayın başlamadan önce global Git index’i okunuyor.
+- Hedef ledger dışında önceden staged dosya varsa yayın **commit atmadan** non-zero dönüyor. Kullanıcının staged değişikliği index’te aynen kalıyor.
+- Commit ayrıca `git commit --only ... -- <ledger>` ile pathspec’e bağlandı; pathsiz blanket commit kaldırıldı.
+- Yalnız ledger değiştiğinde gerçek geçici Git repo + bare remote üzerinde commit/rebase/push başarı yolu test edildi; remote commit yalnız `ledger.csv` içeriyor ve çalışma ağacı temiz kalıyor.
+- İlgisiz staged dosya karşı örneği gerçek geçici repo üzerinde test edildi; yeni commit oluşmadığı ve dosyanın staged kaldığı doğrulandı.
+- `pull --rebase --autostash` başarısızsa push denenmiyor; olası yarım rebase `git rebase --abort` ile temizleniyor ve yerel ledger commit’i korunuyor.
 
-### 2. YÜKSEK — demotion tripwire fail-closed hatalarını skip'e çeviriyor
+### 4. Windows CMD artık yayın hatasını başarı diye göstermiyor
 
-**Yer:** `strategy-lab/intraday/signalbot/test_demotion_tripwire.py:29-50`
+Değiştirilenler:
 
-`_forward_ozet()` `birlesik_forward()` kaynaklı `ValueError` ve
-`FileNotFoundError` hatalarını yakalayıp `{}` döndürüyor. Sentetik olarak
-`ValueError("CELISEN")` üretildiğinde özet boş kaldı; parametrik test bunu
-"forward kaydı yok" diyerek skip ediyor. Yani eksik şema veya çelişkili duplicate
-tam da fail-closed kapısını tetiklediğinde güvenlik taahhüdü kırılmak yerine devreden
-çıkıyor; LIVE modülün düşürülmesi süresiz ertelenebilir.
+- `strategy-lab/Forward-EA-Guncelle.cmd`
+- `strategy-lab/intraday/forward_ea/test_defter_yayinla.py`
 
-**İstenen:** Kanıt bütünlüğü hatalarını yakalama; test açıkça fail etmeli. Gerçekten
-opsiyonel veri-yok durumu gerekiyorsa yalnız açık, doğrulanmış boş defter sonucu skip
-edilmeli ve bunun ayrı regresyon testi bulunmalı.
+Uygulama:
 
-### 3. YÜKSEK — şema kapısı yalnız kolon varlığını doğruluyor
+- `EnableDelayedExpansion` kullanılarak `defter_yayinla` çıkış kodu gerçek çalışma anında `PUBLISH_RC` içine alındı.
+- `PUBLISH_RC` batch başında açıkça temizleniyor; üst süreçten miras kalan eski bir ortam değeri live runner hata kodunu ezemiyor.
+- Yalnız `PUBLISH_RC=0` olduğunda `[TAMAM]` yazılıyor.
+- Non-zero durumda genel ve doğru `[HATA] Defter yayinlanamadi` mesajı yazılıyor; “commit yerelde/push başarısız” gibi her hata yolunda doğru olmayan garanti kaldırıldı.
+- Batch dosyası yayınlayıcının non-zero koduyla çıkıyor.
+- Bu akış yalnız metin aramasıyla değil, gerçek `cmd.exe` ve geçici sahte Python modülleriyle test edildi:
+  - yayın kodu `0` → `[TAMAM]`, exit `0`, `[HATA]` yok.
+  - yayın kodu `7` → `[HATA]`, exit `7`, `[TAMAM]` yok.
+  - miras `PUBLISH_RC=0` + live runner exit `7` → `[HATA]`, exit `7`; yayın adımı çalışmıyor.
 
-**Yer:** `strategy-lab/intraday/forward_ea/ledger.py:47-73,76-104,193-209`
+### 5. Trend sıralamasının ölçülmemiş ön-seçim etkisi kaldırıldı
 
-`_dogrula_sema()` kolonların varlığını kontrol ediyor; zorunlu değerlerin null,
-boş, sonlu veya geçerli domain içinde olmasını kontrol etmiyor. Sentetik iki-feed
-sonucu:
+Değiştirilenler:
 
-- `module=None` → kabul, birleşimde `n=2`;
-- `symbol=None` → kabul, `n=2`;
-- `dir=None` → kabul, `n=2`;
-- `entry_time=None` → kabul, `n=2`;
-- `r=None` → kabul, `n=1`, `r=[NaN]`.
+- `strategy-lab/intraday/forward_ea/trend_katmani.py`
+- `strategy-lab/intraday/forward_ea/test_trend_katmani.py`
 
-Ek olarak `backfill=2` okuyucudan geçiyor. `load_forward` bunu sessizce dışlarken
-`cloud_parity` içindeki `~(backfill == 1)` maskesi satırı **forward** kabul ediyor.
-Yalnız `entry_time,module` başlıklarını taşıyan sıfır satırlı CSV de şema
-doğrulanmadan şemalı boş deftere çevriliyor; eksik başlık sessizce gizleniyor.
+Uygulama:
 
-Aynı null kimlik iki tarafta olduğu halde `groupby(..., dropna=False)` anahtarları
-sözlük lookup'ında eşleşmiyor; aynı işlem iki kanıt oluyor. NaN R de kanıt satırı
-olarak geçiyor. Bu, fail-closed sözleşmesine aykırı ve ileride n/exp_R/PSR eşiklerini
-bozabilir.
+- 20 günlük getiriye göre performans sıralaması kaldırıldı.
+- Bütün 21 sembol her gün ön-kayıtlı `EVREN` sırasında gösteriliyor.
+- 20/50 günlük değerler olgu kolonları olarak kalıyor, fakat satır sırasını değiştirmiyor.
+- Feed hatası alan sembol elenmiyor ve yeri değişmiyor; `VERI YOK` olarak aynı sabit sırada kalıyor.
 
-**İstenen:** okuyucuda en az şu invariantları doğrula: `module/symbol` boş değil,
-`dir` izinli ve null değil, `entry_time` parse edilmiş ve NaT değil, `r` sayısal ve
-sonlu, `backfill ∈ {0,1}`. Geçersiz satır sessiz filtrelenmemeli; kaynak+satır
-numarasıyla `ValueError`/karantina olmalı. `df.empty` dönüşünden önce de header
-şeması doğrulanmalı. Her alan için sentetik regresyon testi ekle.
+### 6. Gözlem evreni ile gerçek işlem evreni kod seviyesinde ayrıldı
 
-### 4. YÜKSEK — eşit maliyetli optimumda birleşik kanıt satır sırasına bağlı
+Değiştirilenler:
 
-**Yer:** `ledger.py:158-215,218-259`
+- `strategy-lab/intraday/forward_ea/diskresyoner.py`
+- `strategy-lab/intraday/forward_ea/test_diskresyoner.py`
 
-Atama maksimum kardinaliteyi ve minimum toplam zamanı sağlıyor; ancak eşit maliyet
-bağında karar SciPy'nin giriş sırasına kalıyor. Sentetik örnek:
+Uygulama:
 
-- MT5: `00:01, r=+1`;
-- bulut: `00:00, r=+10` ve `00:02, r=-10`.
+- Diskresyoner yeni aday/doğrudan işlem evreni şu sabit kümeye bağlandı:
+  - `NASDAQ100`
+  - `US100` — aynı enstrümanın Maven broker alias’ı
+  - `XAUUSD`
+  - `EURUSD`
+  - `GBPUSD`
+- `aday()` ve doğrudan `ac()` evren dışı sembolleri fail-closed reddediyor.
+- Girdi büyük harfe çevrilip boşlukları temizleniyor.
+- Geniş trend ekranındaki `USDJPY`, `XAGUSD`, `SP500` gibi semboller yalnız gözlem amaçlı kalıyor; yeni diskresyoner aday/işleme sessizce giremiyor.
+- Tarihsel ledger/state kayıtları silinmedi veya yeniden yazılmadı; sınır yalnız yeni kayıt girişlerinde uygulanıyor.
 
-İki bulut adayı da MT5'e 1 dakika. Bulut satır sırası `[00:00,00:02]` iken birleşik
-R toplamı **-9**; sıra ters çevrilince **+11**. Maksimum kardinalite her iki durumda
-1 ve toplam mesafe aynı, fakat hangi bulut satırının unmatched kanıt sayıldığı
-kanıt sonucunu değiştiriyor.
+## Test kanıtı
 
-Bugünkü gerçek defterde 100 bulut satır permütasyonunun tamamı aynı `n=122` ve aynı
-modül toplamlarını verdi; güncel NQ sonucu etkilenmiyor. Yine de append-only kanıt
-kapısı dosya sırasından bağımsız olmalı.
+Kullanılan Python:
 
-**İstenen:** kısa vadede identity gruplarını stabil biçimde zaman/kalıcı sıra anahtarı
-ile sırala ve eşit-optimum belirsizliği için fail-closed test ekle. Doğru kalıcı çözüm
-writer'dan taşınan deterministik `signal_id/trade_id`; farklı R taşıyan birden çok
-optimal uzlaştırma varsa keyfi seçim yerine hata/karantina.
+`C:/Users/quantum/vectorbt-lab/.venv/Scripts/python.exe`
 
-## Orta/ikincil bulgular
+### Son hedefli paket
 
-1. `cloud_parity.py:127-139` forward bulut bloğunu **tüm** MT5 satırlarıyla
-   eşleştiriyor. Bugünkü gerçek forward çiftlerde MT5-backfill çapraz eşleşmesi yok,
-   fakat sentetik durumda forward kapsama bir MT5 backfill kaydıyla sahte biçimde
-   kapanabilir. Forward blokta `mt5[backfill == 0]` kullanılmalı. Backfill bloğunun
-   cross-mode karşılaştırma niyeti ayrıca açıkça belgelenmeli.
-2. `LEDGER_KOLONLARI` `status` içermiyor, fakat `cloud_parity.match()` status'u
-   zorunlu kullanıyor. Status'suz ama diğer kolonları tam CSV okuyucudan geçiyor,
-   sonra parite `KeyError: 'status'` ile kırılıyor. Kanıt uydurmuyor ama ortak loader
-   sözleşmesi tüketici ihtiyacını tam ifade etmiyor; pariteye özel şema kapısı ekle.
-3. Katalog hâlâ manuel ikinci source-of-truth ve koruma testleri mekanizmayı tam
-   zorlamıyor. Sentetik mutation'da registry'de `tamamlandi` olan Donchian katalogda
-   veto statüsü `retired` yapılınca tutarlılık testi yanlışlıkla geçti; test yalnız
-   `rejected` statüsünü yasaklıyor. Ayrıca boş kapsamlı yeni bir genel `rejected ORB`
-   maddesi üç canlı-modül/kapsam testinden de geçti; kontroller yalnız önceden seçilmiş
-   ID'leri ve tam modül adını arıyor. Mevcut kayıtların CLI çıktısı doğru, bu nedenle
-   bugünkü karar açısından orta; fakat commit'in blanket-veto regresyon güvencesi
-   iddia edilenden zayıf. Veto statülerinin tamamını registry durumuna karşı kontrol
-   et ve `ara()`/CLI çıktısını `capsys` ile sweep/orb/donchian/fvg sorgularında sınat.
-4. SciPy ana `strategy-lab/requirements.txt` dosyasına doğru eklenmiş ve gerçek
-   `cloud_runner`/signalbot üretim import yolu ledger'ı import etmiyor. Ancak
-   `intraday/signalbot/test_demotion_tripwire.py` ledger'ı import ediyor;
-   yalnız `intraday/signalbot/requirements.txt` kurulu ortamda test collection
-   `ModuleNotFoundError: scipy` ile kırılıyor. Bu requirements dosyası `pytest` de
-   içerdiği için test ortamı sözleşmesi belirsiz. SciPy'yi buraya da ekle veya testi
-   SciPy gerektirmeyen sınırdan besle; üretim deploy için şu an bloklayıcı değil.
+Komut:
 
-## Bağımsız doğrulama
+`python -m pytest -q intraday/forward_ea/test_defter_yayinla.py intraday/forward_ea/test_trend_katmani.py intraday/forward_ea/test_telefon_brief.py intraday/forward_ea/test_diskresyoner.py`
 
-- Hedefli: **57 passed, 2 skipped**.
-- Tam `intraday`: **369 passed, 3 skipped**, 8 mevcut `FutureWarning`.
-- Matcher oracle: **500/500**.
-- Gerçek birleşik ledger: `n=122` toplam; NQ `n=22`, `exp_R=-0.0899906041`.
-- Gerçek forward parity: 14 eşleşme; 100 satır permütasyonunda güncel sonuç sabit.
+Sonuç:
+
+- **88 passed**
+- Süre: **49.71s**
+
+Bu pakette gerçek geçici Git repo/remote ve gerçek `cmd.exe` testleri vardır.
+
+### Son tam intraday paketi
+
+Komut:
+
+`python -m pytest -q intraday`
+
+Sonuç:
+
+- **457 passed**
+- **3 skipped**
+- **8 warnings**
+- Süre: **69.48s**
+
+Uyarıların tamamı önceden var olan `intraday/adx_lab.py:56-57` pandas `FutureWarning` uyarılarıdır; yeni test başarısızlığı yoktur.
+
+### Çalışan brief
+
+Komut:
+
+`python -m intraday.forward_ea.telefon_brief --stdout`
+
+Sonuç:
+
+- exit code `0`
+- **175 satır / 7,378 bayt** çıktı üretildi.
+
+### Statik çalışma ağacı kontrolü
+
 - `git diff --check`: temiz.
+- Değiştirilen Python dosyalarında `ruff check`: temiz.
+- Secret taraması: yeni diff’te gömülü anahtar/parola/token bulunmadı.
+- Başlangıç ve son doğrulamadaki HEAD: `47f5fca23fcd2f5d2df0227cae882f095f08d842`.
 
-## Son karar
+### Bağımsız son kapı
 
-| Alan | Karar |
-|---|---|
-| Önceki 5 ledger bulgusu | **Kısmen — union yolu düzeldi, public loader sözleşmesi tam değil** |
-| Demotion tripwire fail-closed davranışı | **Çözülmedi — bütünlük hatası skip oluyor** |
-| Dead code / davranış testi | **Çözüldü** |
-| Katalog blanket-veto semantiği | **Mevcut kayıtlar çözüldü; regresyon testleri kısmen** |
-| Katalog tek source-of-truth | **Kısmen** |
-| Geleceğe güvenli kanıt kapısı | **Çözülmedi — değişiklik gerekli** |
-| Bugünkü gerçek NQ sayısı | **Doğru ve değişmedi** |
+- Ayrı inceleme ajanı sonucu: **PASSED**.
+- `security_concerns=[]`, `logic_errors=[]`, `suggestions=[]`.
+- Özellikle miras `PUBLISH_RC=0` + live runner exit `7` karşı örneği ve gerçek `cmd.exe` testinin üç yolu yeniden doğrulandı.
 
-Kod değiştirmedim; yalnız bağımsız denetim, sentetik doğrulama ve bu handoff'u yazdım.
+## Claude’dan istenen
+
+1. Commitlenmemiş çalışma ağacı diff’ini yukarıdaki HEAD’e karşı bağımsız denetle.
+2. Özellikle `defter_yayinla.py`, `Forward-EA-Guncelle.cmd`, `gunluk_bol()` ve diskresyoner evren kapısını incele.
+3. Sorun yoksa açıkça **ONAY** yaz.
+4. Commit/push kararı kullanıcıya aittir; Hermes bunları yapmadı.
+
+## Kapsam dışı / değiştirilmedi
+
+- Mekanik modüller ve strateji parametreleri değiştirilmedi.
+- Yeni strateji/hipotez araştırması yapılmadı.
+- `GOLD_NY_ORB_TREND` tarihsel kayıtları silinmedi.
+- Forward ledger satırları ve karar metrikleri değiştirilmedi.
+- Vault’a yazılmadı.

@@ -58,6 +58,11 @@ MIN_CURUTEN = 15
 KATMANLAR = ("narrative", "hacim", "trend", "destek")
 MIN_KATMAN = 3      # protokol taahhudu: >=3/4
 
+# Trend tablosu 21 sembollük GÖZLEM yüzeyidir; fırsat paydasını sessizce
+# genişletmemesi için diskresyoner aday/işlem evreni ayrı ve fail-closed.
+# US100, NASDAQ100'ün Maven broker adıdır; yeni bir enstrüman değildir.
+ISLEM_EVRENI = ("NASDAQ100", "US100", "XAUUSD", "EURUSD", "GBPUSD")
+
 DURUMLAR = ("aday", "acik", "kapali", "pas")
 
 KOLONLAR = [
@@ -175,6 +180,15 @@ def _dogrula(yon: str, tez: str, curuten: str, katmanlar: str,
     return yon, ",".join(dict.fromkeys(secilen))
 
 
+def _dogrula_sembol(sembol: str) -> str:
+    temiz = sembol.strip().upper()
+    if temiz not in ISLEM_EVRENI:
+        raise ValueError(
+            f"{temiz!r} diskresyoner islem evreni disinda. Trend tablosu "
+            "gozlem evrenidir; yeni sembol icin once yeni on-kayitli donem ac.")
+    return temiz
+
+
 def _yeni_id(kayitlar: list[Kayit]) -> int:
     return max((k.id for k in kayitlar), default=0) + 1
 
@@ -193,6 +207,7 @@ def aday(sembol: str, yon: str, tetik: float, stop: float, tez: str, curuten: st
          hedef: float | None = None, path: Path | None = None,
          simdi: str | None = None) -> Kayit:
     """Setup adayi kaydet -- HENUZ islem degil. Seciciligi olcmek icin."""
+    sembol = _dogrula_sembol(sembol)
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, tetik)
     kayitlar = yukle(path)
     yeni = Kayit(
@@ -211,6 +226,7 @@ def ac(sembol: str, yon: str, giris: float, stop: float, tez: str, curuten: str,
        hedef: float | None = None, path: Path | None = None,
        simdi: str | None = None) -> Kayit:
     """Dogrudan islem ac (aday asamasindan gecmeden)."""
+    sembol = _dogrula_sembol(sembol)
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, giris)
     kayitlar = yukle(path)
     _acik_kontrol(kayitlar)

@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 
 from . import telefon_brief
-from .seans_brief import sembol_olgusu
+from .seans_brief import gunluk_bol, sembol_olgusu
 
 UTC = timezone.utc
 
@@ -135,6 +135,35 @@ def test_gunluk_feed_AYRI_verilebilir():
         f"EMA200 gunluk seriden gelmeli, intraday'den degil: {o.ema200}")
 
 
+def test_EMA200_icin_199_kapali_gun_YETMEZ():
+    eksik = _bar_serisi(gun=199)
+    with pytest.raises(RuntimeError, match="200 kapali gun"):
+        sembol_olgusu("X", "1d", veri=lambda s, t: eksik)
+
+
+def test_199_kapali_gun_ARTI_bugunun_kismi_bari_yine_YETMEZ():
+    eksik = _bar_serisi(gun=199)
+    kismi = eksik.iloc[[-1]].copy()
+    kismi.index = [pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()]
+    with pytest.raises(RuntimeError, match="gelen=199"):
+        sembol_olgusu("X", "1d", veri=lambda s, t: pd.concat([eksik, kismi]))
+
+
+def test_EMA200_icin_200_kapali_gun_YETER():
+    yeterli = _bar_serisi(gun=200)
+    o = sembol_olgusu("X", "1d", veri=lambda s, t: yeterli)
+    assert o.ema200 == pytest.approx(float(yeterli["close"].ewm(span=200, adjust=False).mean().iloc[-1]))
+
+
+def test_gunluk_bol_TZ_AWARE_indekste_de_calisir():
+    """Feed timezone taşısa da kapalı gün sınırı UTC kalmalı."""
+    df = _bar_serisi(gun=201)
+    df.index = df.index.tz_localize("UTC")
+    kapali, kismi = gunluk_bol(df)
+    assert len(kapali) == 201
+    assert kismi.empty
+
+
 # --- feed hacim vermiyorsa ------------------------------------------------
 #
 # 2026-09-01, ilk canli telefon seansinda goruldu: EURUSD ve GBPUSD icin brief
@@ -164,8 +193,8 @@ def test_brief_hacim_yoksa_ACIKCA_soyler(monkeypatch):
         semboller=[("EURUSD", "5m")],
         simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=UTC))
 
-    hacim_satiri = next(l for l in metin.splitlines()
-                        if l.startswith("- hacim"))
+    hacim_satiri = next(satir for satir in metin.splitlines()
+                        if satir.startswith("- hacim"))
     assert "HACIM VERMIYOR" in hacim_satiri
     assert "yuzdelig" not in hacim_satiri, (
         f"hacimsiz feed yuzdelik gibi basilmis: {hacim_satiri}")

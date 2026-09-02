@@ -55,6 +55,7 @@ SEANSLAR = [  # (ad, baslangic_utc_saat, bitis_utc_saat)
 ATR_PENCERE = 100
 HACIM_PENCERE = 20
 SWING_GUN = 60
+EMA_UZUN = 200
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,17 @@ def _gunluk(df: pd.DataFrame) -> pd.DataFrame:
         {"open": "first", "high": "max", "low": "min", "close": "last",
          "volume": "sum"}
     ).dropna(subset=["close"])
+
+
+def gunluk_bol(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Günlük seriyi kapalı günler ve bugünün kısmi barı olarak tek yerde ayır."""
+    gunluk = _gunluk(df)
+    bugun_utc = pd.Timestamp.now(UTC).normalize()
+    if gunluk.index.tz is None:
+        bugun_utc = bugun_utc.tz_localize(None)
+    else:
+        bugun_utc = bugun_utc.tz_convert(gunluk.index.tz)
+    return gunluk[gunluk.index < bugun_utc], gunluk[gunluk.index >= bugun_utc]
 
 
 def _yuzdelik(seri: pd.Series, pencere: int) -> float:
@@ -147,10 +159,8 @@ def sembol_olgusu(sembol: str, tf: str, tazele: bool = False,
     if df.empty:
         raise RuntimeError(f"{sembol} {tf}: veri bos")
 
-    gunluk = _gunluk(gunluk_veri(sembol)) if gunluk_veri is not None else _gunluk(df)
-    bugun_utc = pd.Timestamp.now(UTC).tz_localize(None).normalize()
-    dun = gunluk[gunluk.index < bugun_utc]
-    bugun_bar = gunluk[gunluk.index >= bugun_utc]
+    ham_gunluk = gunluk_veri(sembol) if gunluk_veri is not None else df
+    dun, bugun_bar = gunluk_bol(ham_gunluk)
 
     # KISMI GUN DISARIDA (2026-09-01'de bulundu): bugunun gunluk bari daha
     # kapanmadi. ATR/hacim/EMA'yi onun uzerinden hesaplamak sistematik olarak
@@ -158,8 +168,12 @@ def sembol_olgusu(sembol: str, tf: str, tazele: bool = False,
     # cunku yarim gunun araligi elbette en dar. Yorum degil OLGU basmak
     # iddiasindaki bir dosyada bu sessiz bir yalan.
     # Bugunun ham araligi (bugun_yuksek/dusuk) ayri alan olarak duruyor.
-    tam = dun if len(dun) >= 2 else gunluk
-    ema200 = ema(tam["close"], 200)
+    if len(dun) < EMA_UZUN:
+        raise RuntimeError(
+            f"{sembol}: EMA200 icin en az {EMA_UZUN} kapali gun gerekli; "
+            f"gelen={len(dun)}")
+    tam = dun
+    ema200 = ema(tam["close"], EMA_UZUN)
     a = atr(tam, 14)
     son_kapanis = float(df["close"].iloc[-1])
 
