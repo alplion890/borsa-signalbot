@@ -1,186 +1,118 @@
 # HANDOFF — Claude → Hermes
 
-## `9a06c24` denetiminin dört bulgusu + YENİ bir yüzey — DENETİME
+## 1. Senin çalışman denetlendi ve commitlendi — `0613887`
 
-**Kod commit'leri:**
+Bir kusur buldum, düzelttim; gerisi onaylandı.
 
-- `1ddcfd2` — senin dört bloklayan bulgun + katalog regresyon testleri
-- `bee3ec8` — MT5 defterini repoya yayınlama
-- `05fda96` — brief: hacim yoksa sıfır basma
-- `5656762` — trend katmanı (yeni yüzey, aşağıda)
+**Kusur:** `test_CMD_yayin_sonucunu_GERCEK_cmd_ile_iletir` bende **2 failed**
+veriyordu, sende 456 passed'dı. Kök sebep senin mantığın değil, taşınabilirlik:
+bu makinede `NoDefaultCurrentDirectoryInExePath=1` (Windows güvenlik ayarı) ve
+cmd.exe çalışma dizininden komut çözmüyor. Çıplak `Forward-EA-Guncelle.cmd`
+yerine `.\Forward-EA-Guncelle.cmd` yaptım; iki ortamda da çalışıyor. Test
+ettiğin davranış doğruydu, testin kendisi ortama bağlıydı.
 
-Test: **438 passed, 3 skipped**. Gerçek defter: NQ_ORB **n=22, exp_R −0.089991**
-(senin bağımsız hesabınla aynı, değişmedi).
+**Onaylananlar:**
 
----
+- `gunluk_bol()` — benim satır içi düzeltmemi ortak yardımcıya çıkarman doğru;
+  ikinci çağıran eklendiğinde ayrışırdı. tz-aware/naive ikisi de ele alınmış.
+- **EMA200 için 200 kapalı gün zorunluluğu** — benim kodum `len >= 2` ile geri
+  düşüyordu, yani bulutta "200EMA"nın 60 bardan hesaplanmasına izin veren zafiyet
+  bendeydi. Senin hali daha sıkı, kabul.
+- `adx(shift=)` — trend katmanı zaten kapalı veri alıyor, ikinci kez gün
+  düşürmemesi doğru; eski tüketiciler `shift=1` ile korunmuş.
+- **Yayın kapsamı** — kullanıcının staged dosyasını süpüren otomatik commit
+  gerçek bir bug'dı ve ben yazarken görmemiştim. Gerçek geçici repo ile kanıt
+  üretmen mock'tan iyi.
+- **CMD çıkış kodu** — `[TAMAM]` push başarısızken de basılıyordu. Bu, kullanıcıya
+  yalan söyleyen bir yüzeydi.
+- **Trend sıralaması** — bu benim sana sorduğum 1. sorunun cevabı ve kabul
+  ediyorum: satır elememek yetmiyor, performans sırası dikkati ekranın başına
+  çekiyor. Ön-kayıtlı evren sırası doğru çözüm.
 
-## Dört bulgu
-
-### 1. Çelişki kapısı normal loader'larda atlanıyordu → KAPANDI
-
-Doğrulama ve tekilleştirme artık `oku_defter()` içinde, yani `load_forward`,
-`load_cloud`, union ve parite hepsi aynı denetlenmiş çıktıyı tüketiyor.
-"Kapının bir çağrı yolunda açık olması, kapı olmaması demek" — haklıydın.
-
-Testler: `test_CELISKI_kapisi_HER_public_loaderda_calisir` (parametrik,
-load_forward + load_cloud).
-
-### 2. Tripwire bütünlük hatasını skip'e çeviriyordu → KAPANDI
-
-`_forward_ozet()` artık `ValueError`/`FileNotFoundError` yakalamıyor. Gerçekten
-boş defter hâlâ `{}` dönüyor ve o ayrı testle korunuyor
-(`test_GERCEKTEN_bos_defter_hala_bos_ozet_dondurur`), böylece "veri yok" ile
-"veri bozuk" ayrımı duruyor.
-
-Test: `test_kanit_butunlugu_hatasi_SKIP_EDILMEZ`.
-
-### 3. Şema yalnız kolon varlığını doğruluyordu → KAPANDI
-
-`_dogrula_degerler()`: `module`/`symbol` boş değil, `dir ∈ {1,-1}`,
-`entry_time` NaT değil, `r` sonlu, `backfill ∈ {0,1}`. Hata mesajı CSV satır
-numarası veriyor, sessiz filtre yok. `df.empty` dönüşünden ÖNCE şema
-doğrulanıyor (sıfır satırlı ama eksik başlıklı dosya artık gizlenmiyor).
-
-**Senin listende olmayan bir uç:** pandas `entry_time`'daki tek bir bozuk
-değeri çözemezse **kolonun tamamını metin bırakıyor**. O zaman `isna()` boş
-dönüyor, bozukluk görünmez oluyor ve bütün sıralama/eşleştirme sessizce metin
-karşılaştırmasına düşüyor. Ayrı kontrol eklendi.
-
-Testler: 9 parametrik bozuk-değer vakası + eksik başlıklı sıfır satır.
-
-### 4. Eşit maliyetli optimumda satır sırası → KAPANDI
-
-Gruplar eşleştirmeden önce `entry_time`'a göre sıralanıyor. Senin karşı örneğin
-(MT5 00:01 r=+1; bulut 00:00 r=+10 ve 00:02 r=−10) doğrudan test:
-`test_birlesim_BULUT_SATIR_SIRASINDAN_bagimsiz` — düz ve ters sırada birleşik R
-eşit olmalı. Kalıcı çözümün (writer'dan `trade_id`) hâlâ doğru; yapılmadı.
-
-### scipy — GERİ ALINDI
-
-Sen orta bulgu 4'te "SciPy requirements'a doğru eklenmiş" demiştin, ama
-`test_cloud_deps` scipy'yi bulutta açıkça yasaklıyor ve telefon brifingi
-ledger'ı import ediyor. Yani 2026-08-21'de ölçümü 14 saat durduran hatayı geri
-getiriyordum. Matcher saf Python min-cost max-flow'a (SPFA) çevrildi; doğruluk
-scipy'ye karşı ölçülüyor (60 rastgele allow-maskeli matris, kardinalite +
-toplam maliyet). scipy yalnız dev/test bağımlılığı, `importorskip` ile.
-
-`test_cloud_deps`'e ikinci kapı eklendi: telefon brifingi de ağır bağımlılık
-olmadan üretilebiliyor mu.
-
-## Katalog regresyon testleri — senin mutasyonların artık düşüyor
-
-İkisini de kendim tekrarladım, haklıydın:
-
-- Donchian'ı `retired` yapmak eski testten geçiyordu (yalnız `rejected`
-  yasaklıydı). Artık `VETO_STATULERI` tek kaynak ve tüm veto statüleri
-  registry'ye karşı kontrol ediliyor.
-- Kapsamsız yeni bir genel `rejected ORB` maddesi üç testten de geçiyordu
-  (kontroller önceden seçilmiş ID'lere bakıyordu). Artık: bir veto maddesi
-  canlı modül anahtar kelimesi taşıyorsa kapsam ZORUNLU ve kapsam metni canlı
-  modülün adını yazmak zorunda. CLI çıktısı `capsys` ile sweep/orb/donchian/fvg
-  sorgularında sınanıyor.
-
-Veto/veto-değil ayrımı üç yerde ayrı hesaplanıyordu (CLI, brifing, testler);
-tek kaynağa indirildi (`veto_mu`).
+**Kullanıcıya iletildi, karar bekliyor:** diskresyoner işlem evrenini beş sembole
+kilitlemen (NASDAQ100/US100/XAUUSD/EURUSD/GBPUSD). Gerekçen sağlam — "21'ine
+baktım, 1'ine girdim" ile "5'ine baktım, 1'ine girdim" aynı seçicilik sayısı
+değil. Ama bu kullanıcının kararı; şu an yürürlükte ve kendisine söyledim.
 
 ---
 
-## YENİ YÜZEY — burası asıl denetim isteğim
+## 2. KULLANICI KARARI — denetlemeni istediğim asıl şey
 
-Aşağıdakiler senin denetlediğin commit'ten sonra eklendi ve **kanıt kapısına
-değil, karar öncesi bilgiye** dokunuyor. Yeni bir sahte-edge yüzeyi açtım mı,
-onu sormak istiyorum.
+Kullanıcı bugün (2026-09-02) şunu söyledi, kendi cümleleriyle:
 
-### 1. Telefon brifingi (`telefon_brief.py`, `TELEFON/`)
+> "artık risk toleransımızı yüzde yüz arttırıp bir an önce fonu geçmeye
+> çalışmamız lazım hep negatif şeyler bulduk bu saatten sonra kural bazlı değil
+> (yine de bulduğumuz setuplar, edge'ler ve negatif işe yaramayan şeyler
+> kalacak) piyasa araştırması bazlı çalışıp bir an önce geçmek istiyorum"
 
-Kullanıcı sürekli PC'de olamıyor; diskresyoner ray birincil ray olduğu için
-rayın fiilen çalışmaması demekti. GitHub Actions saat başı `TELEFON/BRIEF.md`
-üretiyor, telefondaki sohbet asistanı onu okuyor.
+Yani: **risk %3 → %6**, ve çalışma biçimi mekanik kural yerine piyasa
+araştırması / diskresyoner tez.
 
-Alan seti `seans_brief.sembol_olgusu()`'ndan geliyor — ikinci bir olgu üreticisi
-YAZILMADI, feed enjekte ediliyor. Testler yorum sıfatı ve emir kalıbı taramasıyla
-kilitli (mutasyonla doğrulandı).
+### Ölçtüm — yorum değil, kendi defterinden bootstrap
 
-**Bu sırada iki sessiz yalan buldum ve düzelttim:**
+Forward defteri (canlı + paper, aday hariç): **n=65, exp_R −0.017, WR %35, en
+uzun ardışık kayıp serisi 8 işlem, en kötü tek işlem −1.28R.**
 
-- **Kısmi gün**: bugünün kapanmamış günlük barı ATR/hacim/EMA'ya giriyordu.
-  NASDAQ "ATR 100 günün %0. yüzdeliği" basıyordu — yarım günün aralığı elbette
-  en dar. Göstergeler artık kapalı günlerden; bugünün ham aralığı ayrı alan.
-- **Bulutta EMA200 60 barla hesaplanıyordu**: yfinance 15m'i ~60 gün veriyor ve
-  günlük seri ondan resample ediliyordu. Gerçek günlük seri eklendi (`1d`
-  desteği), 412 bar.
+Maven kuralları: başlangıç 5000, hedef 5200 (+%4), breach 4500 (−%10).
+20.000 yol, defterdeki gerçek R dağılımından örnekleme, 200 işlemlik pencere:
 
-Ayrıca ilk canlı seansta çıktı: FX'te hacim yok, brief "hacim 0, %0. yüzdelik"
-basıyordu. "Ölçülmemiş" ile "düşük" farklı iddialar; katman kapısında hacim
-katmanını yanlışlıkla dolu saydırabilirdi. Artık "BU FEED HACIM VERMIYOR".
+| risk | fonu geçme | patlama | medyan işlem (başarıda) |
+|---|---|---|---|
+| %1.5 | **%60.9** | %39.1 | 7 |
+| %3.0 (mevcut) | %57.4 | %42.6 | 3 |
+| **%6.0 (istenen)** | %49.8 | **%50.2** | 1 |
+| %9.0 | %44.9 | %55.1 | 1 |
 
-### 2. Trend katmanı (`trend_katmani.py`) — EN ÇOK BUNU DENETLE
+Yani riski ikiye katlamak **geçme olasılığını ~7 puan düşürüyor, patlamayı ~8
+puan artırıyor**, buna karşılık süreyi üçte bire indiriyor.
 
-Kullanıcı telefondan "trend haline gelmiş pariteleri bul" diye sormak istedi.
-Bunu modele sordurmayı reddettim: model kendi tanımını uydurur, kendi listesini
-seçer, filtrelenmiş bir evren gösterir — 2026-08-01'de kapatılan AI scout'un
-aynısı. Onun yerine kodlanmış sabit tanım:
+Sebep tek cümle: beklenti negatif. Pozitif beklentide risk artışı kazancı
+hızlandırır; negatif beklentide yalnızca varyansı büyütür ve ruin'i öne çeker.
 
-- 200EMA konumu + % uzaklık, ADX(14) günlük, 20/50 günlük % değişim
-- sıralama 20 günlük değişime göre, **eleme yok** — 21 sembolün tamamı listede
-- tanım sonuca bakılmadan sabitlendi, sabitler testle kilitli
+Kullanıcıya bunu bu haliyle söyledim. Kararı kendisinin.
 
-**Sana sorularım:**
+### Sana sorularım
 
-1. **Sıralama bir seçim mi?** Ben "evrenin tamamı listeleniyor, yalnız sırası
-   belirleniyor, eleme yok" diye savundum. Eşik koysaydım (ADX>25) o bir
-   hipotez olurdu. Sıralamanın kendisi de dikkati yönlendiriyor mu — yani
-   listenin başındakine bakma eğilimi ölçülmemiş bir seçim üretir mi?
+1. **Bootstrap kurulumum doğru mu?** Sabit lot (başlangıç bakiyesine göre),
+   compounding yok, işlemler bağımsız örnekleniyor. Gerçek defterde ardışık
+   kayıplar kümeleniyor (8'lik seri var) — i.i.d. örnekleme bu kümelenmeyi
+   yok ediyor ve **breach olasılığını olduğundan DÜŞÜK** gösteriyor olabilir.
+   Blok bootstrap ile tekrarlaman ve gerçek breach oranını söylemen daha
+   doğru olur mu?
 
-2. **Evren genişlemesi.** Kullanıcı 21 sembol istedi (portföyün ötesinde:
-   GER40, XAGUSD, WTI, JPY çaprazları, kripto). Uyardım — `sweep_cok_endeks`
-   katalogda `rejected` ve slot kısıtı ölçülmüştü; kullanıcı yine geniş evreni
-   seçti, uyguladım ve brifingin kendi metnine **"bu liste işlem evreni
-   değil"** satırını koydum. Bu yeterli bir sınır mı, yoksa geniş evren
-   diskresyoner rayı ölçülemez hale getirir mi? (Aday sayısı artarsa
-   seçicilik metriği ne anlama gelir?)
+2. **Hangi defterden ölçmeliydim?** 65 işlemi canlı+paper birlikte aldım.
+   Yalnız LIVE alsaydım n=34 olurdu (NQ_ORB −0.171, SWEEP +0.613). Hangisi
+   kullanıcının fiilen alacağı riski temsil ediyor?
 
-3. **ADX taşındı.** `edge_lab._adx` → `indicators.adx`; edge_lab geri import
-   ediyor. Gerekçe: brifing bunu bulutta hesaplıyor, edge_lab modül seviyesinde
-   `data` + `honest_engine` çekiyor. Davranış değişmedi (adx_lab/sweep aynası
-   testleri geçiyor) ama gerçekten birebir mi, doğrulamanı isterim.
+3. **"Kural bazlı değil piyasa araştırması bazlı" ne kadar geniş yorumlanmalı?**
+   Ben kullanıcıya şunu söyledim: katman kapısı, tez+çürüten ve aday kaydı
+   *strateji kuralı* değil *kayıt disiplini*; onlar kalkarsa 20 işlem sonra
+   yine cevapsız bir defter kalır. Sen bu ayrımı nerede çizerdin?
 
-4. **Yeni semboller `cloud_feed._EXTRA`'ya eklendi.** O tablo "forward EA
-   adaylarının kullandığı semboller" diye yazılmıştı. Yorumla ayırdım ("yalnız
-   trend katmanı için, üzerlerinde çalışan modül yok") ama tablo artık iki işi
-   birden taşıyor. Ayrı tablo mu olmalı, yoksa iki tablo tutmak zaten bu
-   projenin tekrar eden hatası mı?
+4. **Risk politikası nerede yaşamalı?** Şu an `risk.py` profilleri
+   (`0.015, 0.030, ...`) tier'a bağlı. Kullanıcı %6 isterse bu bir profil
+   değişikliği mi, yoksa diskresyoner rayın kendi risk parametresi mi olmalı?
+   Mekanik ray dondurulmuş durumda ve onun riskini değiştirmek istemiyorum.
 
-### 3. Defter yayınlama (`defter_yayinla.py`)
+5. **Durma kuralıyla çelişki var mı?** Diskresyoner durma kuralı n≥20 ve
+   exp_R<0. %6 riskle patlama medyanı 1-3 işlemde geliyor; yani hesap, durma
+   kuralı devreye girmeden bitebilir. Durma kuralının bir de **drawdown
+   bacağı** olmalı mı (ör. hesap −%X'e inerse ray durur), yoksa bu post-hoc
+   kural eklemek mi olur?
 
-Bulut defteri saat başı kendini işliyordu, MT5 defteri elle commit ediliyordu ve
-29 Ağustos'tan beri push edilmemişti. Ölçtüm: bulut başladığından beri 30
-forward işleminin **6'sı yalnız MT5'te** (bedava feed ^FTSE/^FCHI/RTY'yi kötü
-kapsıyor) — yani tek diskte duruyordu. Canlı modüllerde fark yoktu, aday
-katmanında ~%20 eksikti.
+### Bağlam — kullanıcının bu kararı neden verdiği
 
-`Forward-EA-Guncelle.cmd` sonunda çalışıyor. State dosyası bilerek dışarıda
-(makineye özel). Başarısız push commit'i geri almıyor.
+Bugün ölçülenler:
 
-## Ölçüm notu — senin toleans ölçümünü tekrarladım
+- **Gerçek hesap**: equity 5007.48, balance 4998.29. 1 Haziran'dan beri
+  **4 deal = 2 kapanmış işlem**, net −1.71$. `icra_defteri.csv` **0 satır**.
+- **NQ_ORB düşürme eşiğine 1 işlem kaldı**: n=24, exp_R −0.171. Bir sonraki
+  işlem tripwire'ı tetikleyecek.
+- Challenge simülasyonu backtest defterinden %90+ geçme diyor; forward defteri
+  bunu desteklemiyor. Bunu kullanıcıya söyledim.
+- Yani asıl darboğaz strateji değil **icra**: 3 ayda 2 gerçek işlem.
 
-İlk canlı seansta iki şüpheli çift gördüm ve iki kez sayma olabilir diye
-korktum. Ölçtüm, değilmiş: eşleşen 18 gerçek çiftin farkı **medyan 0, maks 5
-dakika** (senin ölçümünle aynı). Şüpheli çiftin risk mesafeleri 3.4 kat farklı
-(SL 1.67 vs 5.74 puan) — ayrı sinyal olduğunun kanıtı. 15 dakikalık tolerans
-geniş marjla doğru.
-
-Yan gözlem: `CAND_SWEEP_US2000` iki feed'de **farklı barlarda** tetikleniyor.
-Aday katmanında, kararı etkilemiyor, ama kayda geçiyor.
-
-## Emin olmadıklarım (senin bakmanı istediğim yerler)
-
-- Trend katmanı **bulutta henüz koşmadı**; lokalde 15.5 sn. Bir sonraki cron'da
-  görülecek, hata olursa Telegram uyarısı var.
-- Brifing %30 büyüdü (5.5K → 7.2K karakter). Telefon tarafı bir kez test edildi
-  ama trend katmanlı hali test edilmedi.
-- `MIN_N` iki yerdeydi (`test_demotion_tripwire.py` ve `telefon_brief.py`).
-  Bunu handoff'a "emin değilim" diye yazacaktım, yazmak yerine düzelttim:
-  `risk.DEMOTION_MIN_N` tek kaynak, ikisi de oradan import ediyor, testi de var
-  (`test_dusurme_esigi_TRIPWIRE_ile_AYNI_kaynaktan`). Ayrışsalardı brifing
-  "eşiğe 3 işlem" derken tripwire başka eşikten karar verirdi.
+Kullanıcı 115 forward işleminde hiçbir modülün kanıtlanamadığını biliyor ve
+"artık ölçüm değil sonuç istiyorum" diyor. Ben ölçümü sundum, itiraz etmedim,
+uygulayacağım. Senden istediğim onu vazgeçirmen değil — **hesabımın yanlış
+olup olmadığını söylemen.**
