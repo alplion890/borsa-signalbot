@@ -99,11 +99,19 @@ strateji deneyelim" fikri gelirse: bütçe yok, ray kapalı.
    - **Katalogda yoksa** "çalışır" demek değil, "ölçülmemiş" demek.
    - Kapsam satırı varsa oku: isim benzerliği çalışan bir modülü vetolamaz.
 5. **20:00 TR'den sonra yeni giriş yok.**
-6. **Aday kaydı.** İşleme girmeden önce aday kaydedilir. Sen kaydı yapamazsın;
+6. **Telefondan işlem açıldıysa (2026-09-03 akışı).** Kullanıcı seansta telefondan
+   işlem açıp kaydı sonra veriyor; scalp yapılmadığı için işlem hâlâ açıkken
+   yazılıyor ve sonuç henüz belli değil. Senin işin: **tezi ve çürüteni o anda,
+   telefonda yazdırmak.** "Neden girdin, bu tezi ne yanlışlar, hangi katmanlar
+   doluydu, giriş ve stop kaç" — bunları konuşmada netleştir ki PC'ye
+   geçildiğinde hafızadan değil kayıttan yazılsın. Ayrıca **işlemin açıldığı
+   saati** sor; kayıt gecikmesi ölçülüyor.
+
+7. **Aday kaydı.** İşleme girmeden önce aday kaydedilir. Sen kaydı yapamazsın;
    ona **tam olarak yazması gereken satırı** verirsin (aşağıdaki şablon) ve
    PC'ye geçtiğinde çalıştırmasını söylersin. Kayıt yapılmadıysa ona hatırlat:
    ön-kayıtsız işlem ölçülemez.
-7. **Durma kuralı**: diskresyoner defterde n≥20 ve exp_R<0 olursa ray durur.
+8. **Durma kuralı**: diskresyoner defterde n≥20 ve exp_R<0 olursa ray durur.
    Brief'te "DURMA KURALI TETİKLENDİ" yazıyorsa yeni işlem konuşmazsın.
 
 ### Aday kaydı şablonu

@@ -120,7 +120,12 @@ def solvency_kapisi(bakiye: float, risk_usd: float) -> None:
             f"guvenlik payi {GUVENLIK_TAMPONU:.0f})")
 
 KOLONLAR = [
-    "id", "durum", "aday_utc", "acilis_utc", "kapanis_utc",
+    # `kayit_utc`: satirin fiilen YAZILDIGI an. `acilis_utc` islemin acildigi an.
+    # Ikisi ayri (2026-09-03): kullanici telefondan islem acip kaydi sonra
+    # veriyor. Yasaklamak yerine OLCUYORUZ -- gecikme buyudukce tez, aradaki
+    # fiyat hareketinden etkilenmis olabilir. 20 islem sonunda "gecikmeli
+    # kayitlar farkli mi" sorusu cevaplanabilir kalsin.
+    "id", "durum", "aday_utc", "acilis_utc", "kayit_utc", "kapanis_utc",
     "sembol", "yon", "timeframe", "narrative", "katmanlar",
     "tetik", "giris", "stop", "hedef", "cikis", "r",
     # GERCEKLESEN RISK (2026-09-03): R tek basina yetmiyor -- ayni R farkli
@@ -137,6 +142,7 @@ class Kayit:
     durum: str
     aday_utc: str
     acilis_utc: str
+    kayit_utc: str
     kapanis_utc: str
     sembol: str
     yon: str
@@ -161,6 +167,25 @@ class Kayit:
     def katman_sayisi(self) -> int:
         return len([k for k in self.katmanlar.split(",") if k.strip()])
 
+    @property
+    def kayit_gecikmesi_dk(self) -> float | None:
+        """Islem acildiktan KAC DAKIKA sonra deftere yazildi.
+
+        0 = on-kayit (kayit once, islem sonra). Buyuk deger = islem acikken
+        yazilmis; tez aradaki fiyat hareketinden etkilenmis OLABILIR. Bu bir
+        yasak degil, olculen bir alan.
+        """
+        if not self.acilis_utc or not self.kayit_utc:
+            return None
+        from datetime import datetime
+        bicim = "%Y-%m-%d %H:%M:%S"
+        try:
+            acilis = datetime.strptime(self.acilis_utc[:19], bicim)
+            kayit = datetime.strptime(self.kayit_utc[:19], bicim)
+        except ValueError:
+            return None
+        return round((kayit - acilis).total_seconds() / 60, 1)
+
 
 def _f(x):
     return float(x) if x not in ("", None) else None
@@ -170,7 +195,7 @@ def _satir_to_kayit(s: dict) -> Kayit:
     return Kayit(
         id=int(s["id"]), durum=s.get("durum", "acik"),
         aday_utc=s.get("aday_utc", ""), acilis_utc=s.get("acilis_utc", ""),
-        kapanis_utc=s.get("kapanis_utc", ""), sembol=s["sembol"], yon=s["yon"],
+        kayit_utc=s.get("kayit_utc", ""), kapanis_utc=s.get("kapanis_utc", ""), sembol=s["sembol"], yon=s["yon"],
         timeframe=s.get("timeframe", ""), narrative=s.get("narrative", ""),
         katmanlar=s.get("katmanlar", ""), tetik=_f(s.get("tetik")),
         giris=_f(s.get("giris")), stop=float(s["stop"]), hedef=_f(s.get("hedef")),
@@ -291,7 +316,7 @@ def aday(sembol: str, yon: str, tetik: float, stop: float, tez: str, curuten: st
     kayitlar = yukle(path)
     yeni = Kayit(
         id=_yeni_id(kayitlar), durum="aday", aday_utc=_simdi(simdi),
-        acilis_utc="", kapanis_utc="", sembol=sembol, yon=yon,
+        acilis_utc="", kayit_utc=_simdi(simdi), kapanis_utc="", sembol=sembol, yon=yon,
         timeframe=timeframe, narrative=narrative, katmanlar=kat,
         tetik=tetik, giris=None, stop=stop, hedef=hedef, cikis=None, r=None,
         bakiye=bakiye, risk_pct=risk_pct if bakiye else None, risk_usd=risk_usd,
@@ -305,15 +330,21 @@ def ac(sembol: str, yon: str, giris: float, stop: float, tez: str, curuten: str,
        katmanlar: str, narrative: str = "", timeframe: str = "",
        hedef: float | None = None, path: Path | None = None,
        simdi: str | None = None, bakiye: float | None = None,
-       risk_pct: float = RISK_PCT) -> Kayit:
-    """Dogrudan islem ac (aday asamasindan gecmeden)."""
+       risk_pct: float = RISK_PCT, acilis: str | None = None) -> Kayit:
+    """Dogrudan islem ac (aday asamasindan gecmeden).
+
+    `acilis`: islemin GERCEKTEN acildigi an (telefondan acilip sonra
+    kaydedildiyse gecmis bir zaman). Verilmezse kayit ani kullanilir.
+    Kayit ani her halukarda ayri yazilir; ikisi arasindaki fark olculur.
+    """
     sembol = _dogrula_sembol(sembol)
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, giris)
     risk_usd = _risk_kapisi(bakiye, risk_pct)
     kayitlar = yukle(path)
     _acik_kontrol(kayitlar)
     yeni = Kayit(
-        id=_yeni_id(kayitlar), durum="acik", aday_utc="", acilis_utc=_simdi(simdi),
+        id=_yeni_id(kayitlar), durum="acik", aday_utc="",
+        acilis_utc=_simdi(acilis or simdi), kayit_utc=_simdi(simdi),
         kapanis_utc="", sembol=sembol, yon=yon, timeframe=timeframe,
         narrative=narrative, katmanlar=kat, tetik=None, giris=giris, stop=stop,
         hedef=hedef, cikis=None, r=None,
@@ -336,8 +367,11 @@ def _bul(kayitlar: list[Kayit], kid: int, beklenen: str) -> int:
 
 
 def tetikle(kid: int, giris: float, path: Path | None = None,
-            simdi: str | None = None) -> Kayit:
-    """Aday tetiklendi -> acik islem."""
+            simdi: str | None = None, acilis: str | None = None) -> Kayit:
+    """Aday tetiklendi -> acik islem.
+
+    `acilis`: gercek tetiklenme ani (sonradan kaydediliyorsa gecmis zaman).
+    """
     kayitlar = yukle(path)
     idx = _bul(kayitlar, kid, "aday")
     _acik_kontrol(kayitlar)
@@ -346,7 +380,9 @@ def tetikle(kid: int, giris: float, path: Path | None = None,
         raise ValueError("long islemde stop giristen kucuk olmali")
     if k.yon == "short" and k.stop <= giris:
         raise ValueError("short islemde stop giristen buyuk olmali")
-    kayitlar[idx] = replace(k, durum="acik", giris=giris, acilis_utc=_simdi(simdi))
+    kayitlar[idx] = replace(k, durum="acik", giris=giris,
+                            acilis_utc=_simdi(acilis or simdi),
+                            kayit_utc=_simdi(simdi))
     _yaz(kayitlar, path)
     return kayitlar[idx]
 
@@ -387,8 +423,12 @@ def ozet(path: Path | None = None) -> dict:
     alinan = len(kapali) + sum(1 for k in kayitlar if k.durum == "acik")
     bakilan = alinan + pas_sayisi
     n = len(kapali)
+    gecikmeler = [k.kayit_gecikmesi_dk for k in kayitlar
+                  if k.kayit_gecikmesi_dk is not None]
     temel = {
         "n": n, "pas": pas_sayisi,
+        "kayit_gecikme_medyan_dk": (
+            sorted(gecikmeler)[len(gecikmeler) // 2] if gecikmeler else None),
         "aday_acik": sum(1 for k in kayitlar if k.durum == "aday"),
         "secicilik": (100 * pas_sayisi / bakilan) if bakilan else float("nan"),
     }
@@ -452,6 +492,9 @@ def main() -> None:
     p.add_argument("--curuten")
     p.add_argument("--sebep")
     p.add_argument("--not", dest="not_")
+    p.add_argument("--acilis", default=None,
+                   help="islemin GERCEK acilis ani (UTC, 'YYYY-MM-DD HH:MM'); "
+                        "telefondan acip sonra kaydediyorsan ver")
     p.add_argument("--bakiye", type=float, default=None,
                    help="giristeki hesap bakiyesi; verilmezse MT5'ten okunur")
     p.add_argument("--risk-pct", type=float, default=RISK_PCT,
@@ -470,8 +513,10 @@ def main() -> None:
         if bakiye is None:
             print("  UYARI: bakiye okunamadi; risk alanlari bos kalacak ve "
                   "solvency kapisi CALISMAYACAK. --bakiye ile ver.")
+        ek = {"acilis": a.acilis} if (a.ac and a.acilis) else {}
         k = fn(a.sembol, a.yon, ref, a.stop, a.tez, a.curuten, a.katmanlar,
-               a.narrative, a.tf, a.hedef, bakiye=bakiye, risk_pct=a.risk_pct)
+               a.narrative, a.tf, a.hedef, bakiye=bakiye, risk_pct=a.risk_pct,
+               **ek)
         print(f"{k.durum.upper()}: id={k.id} {k.sembol} {k.yon} "
               f"{ref_ad}={ref} stop={k.stop} katman={k.katman_sayisi}/"
               f"{len(KATMANLAR)}")
@@ -486,7 +531,7 @@ def main() -> None:
     if a.tetikle is not None:
         if a.giris is None:
             p.error("--tetikle icin --giris gerekli")
-        k = tetikle(a.tetikle, a.giris)
+        k = tetikle(a.tetikle, a.giris, acilis=a.acilis)
         print(f"ACILDI: id={k.id} giris={k.giris} stop={k.stop}")
     elif a.pas is not None:
         if not a.sebep:

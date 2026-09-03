@@ -323,3 +323,38 @@ def test_risk_alanlari_DEFTERE_yazilip_geri_OKUNUR(defter):
     _ac(defter, bakiye=5000.0)
     okunan = yukle(defter)[-1]
     assert okunan.risk_usd == 300.0 and okunan.bakiye == 5000.0
+
+
+# --- kayit gecikmesi (2026-09-03) ----------------------------------------
+#
+# Kullanici telefondan islem acip kaydi sonra veriyor. Scalp olmadigi icin
+# islem hala acikken yaziliyor ve sonuc henuz belli degil -- on-kaydin
+# korudugu sey bu. Ama gecikme buyudukce tez, aradaki fiyat hareketinden
+# etkilenmis olabilir. Yasak koymak yerine alani OLCUYORUZ.
+
+
+def test_acilis_ve_kayit_ANI_ayri_tutulur(defter):
+    k = ac("XAUUSD", "long", 4400.0, 4380.0, TEZ, CURUTEN, "narrative,trend",
+           path=defter, acilis="2026-09-03 18:30:00",
+           simdi="2026-09-03 21:00:00")
+    assert k.acilis_utc.startswith("2026-09-03 18:30")
+    assert k.kayit_utc.startswith("2026-09-03 21:00")
+    assert k.kayit_gecikmesi_dk == 150.0
+
+
+def test_acilis_verilmezse_gecikme_SIFIR(defter):
+    k = ac("XAUUSD", "long", 4400.0, 4380.0, TEZ, CURUTEN, "narrative,trend",
+           path=defter, simdi="2026-09-03 18:30:00")
+    assert k.kayit_gecikmesi_dk == 0.0
+
+
+def test_gecikme_DEFTERE_yazilip_geri_okunur(defter):
+    ac("XAUUSD", "long", 4400.0, 4380.0, TEZ, CURUTEN, "narrative,trend",
+       path=defter, acilis="2026-09-03 18:00:00", simdi="2026-09-03 19:00:00")
+    assert yukle(defter)[-1].kayit_gecikmesi_dk == 60.0
+
+
+def test_ozet_kayit_gecikmesini_RAPORLAR(defter):
+    ac("XAUUSD", "long", 4400.0, 4380.0, TEZ, CURUTEN, "narrative,trend",
+       path=defter, acilis="2026-09-03 18:00:00", simdi="2026-09-03 18:45:00")
+    assert ozet(defter)["kayit_gecikme_medyan_dk"] == 45.0

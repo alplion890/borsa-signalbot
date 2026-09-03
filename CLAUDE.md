@@ -48,6 +48,12 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
    - kapsam satırı varsa oku: isim benzerliği çalışan modülü vetolamaz
 5. Aday **girmeden önce** kaydedilir; pas geçilenler de kaydedilir (seçicilik
    ancak böyle ölçülür).
+
+   **Telefondan açılan işlem (2026-09-03):** kullanıcı seansta telefondan açıp
+   kaydı sonra veriyor. Kabul edildi çünkü scalp yok — işlem hâlâ açıkken
+   yazılıyor, sonuç belli değil. `--acilis` ile GERÇEK açılış saati verilir;
+   kayıt anı ayrı tutulur ve `kayit_gecikmesi_dk` ölçülür. Gecikme yasak değil,
+   ölçülen bir alan: 20 işlem sonunda "gecikmeli kayıtlar farklı mı" sorulabilir.
 6. Durma kuralı: n≥20 ve exp_R<0 → ray durur. Bu EDGE ölçer; hayatta kalmayı
    garanti etmez, o yüzden ayrıca solvency kapısı var (aşağıda).
 
