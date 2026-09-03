@@ -34,8 +34,10 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 ## Diskresyoner protokol
 
 1. 18:15 TR'den önce setup aranmaz, 20:00'den sonra yeni giriş yok.
-2. Katman kapısı ≥3/4: narrative / hacim / trend / destek. Üçü dolmadan setup
-   aranmaz — kod da zorluyor.
+2. Katman kapısı ≥2/4: narrative / hacim / trend / destek (2026-09-03'te 3/4'ten
+   indirildi — giriş filtresi kararı, kayıt kuralı değil). Kullanıcı eksik
+   bırakırsa doldurulmamış katmanları SEN sorarsın ("hacme baktın mı?");
+   "bakmadım" derse boş kalır, uydurulmaz.
 3. Tez **ve** çürüten zorunlu. Çürüteni olmayan tez sonradan her sonuca
    uydurulabilir; defter hiçbir şey öğretmez.
 4. Tez kurulunca katalogdan geçir: `python -m intraday.elenenler --kontrol <kelime>`
@@ -46,7 +48,19 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
    - kapsam satırı varsa oku: isim benzerliği çalışan modülü vetolamaz
 5. Aday **girmeden önce** kaydedilir; pas geçilenler de kaydedilir (seçicilik
    ancak böyle ölçülür).
-6. Durma kuralı: n≥20 ve exp_R<0 → ray durur.
+6. Durma kuralı: n≥20 ve exp_R<0 → ray durur. Bu EDGE ölçer; hayatta kalmayı
+   garanti etmez, o yüzden ayrıca solvency kapısı var (aşağıda).
+
+## Diskresyoner risk (2026-09-03, kullanıcı kararı)
+
+- Risk **%6**, her işlemde **güncel bakiyenin** yüzdesi (sabit dolar değil).
+- Mekanik ray AYRI ve DOKUNULMADI: `signalbot/risk.py` challenge cap'i %3.
+- **Solvency kapısı**: planlanan stop kaybı, bakiye ile breach (4500) arasındaki
+  tamponu aşamaz; 100 USD güvenlik payı ayrı tutulur. Aritmetik: %6 ≈ 300 USD,
+  tampon 500 USD = 1.67R — ilk −1R'den sonra ikinci aynı işlem hesabı bitirir.
+  Kural ilk %6'lık işlemden ÖNCE yazıldı, post-hoc değil.
+- Deftere gerçekleşen risk yazılır: giriş bakiyesi, risk_pct, risk_usd. Bakiye
+  MT5'ten okunur; okunamazsa alanlar boş kalır ve kapı ÇALIŞMAZ (uyarı basılır).
 
 ## Komutlar
 

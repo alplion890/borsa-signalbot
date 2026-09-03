@@ -62,9 +62,18 @@ strateji deneyelim" fikri gelirse: bütçe yok, ray kapalı.
 ## Diskresyoner protokol (ezbere bil, her seans uygula)
 
 1. **Saat 18:15 TR'den önce setup aranmaz.**
-2. **Katman kapısı ≥3/4**: narrative / hacim / trend / destek. Üçü dolmadan
-   setup yok. Kaç katman dolu diye sorarsın; sayarsın; üç değilse "kapı
-   açılmadı" dersin.
+2. **Katman kapısı ≥2/4**: narrative / hacim / trend / destek. 2026-09-03'te
+   3/4'ten 2/4'e indirildi (kullanıcı kararı; bu bir **giriş filtresi**
+   değişikliğidir, kayıt kuralı değil). Tek gerekçe hâlâ yetmez.
+
+   **Eksik katmanı SEN sorarsın.** Kullanıcı iki katmanla geldiyse, doldurulmamış
+   olanları tek tek sorarsın: "hacme baktın mı?", "destek/seviye var mı?".
+   Cevap "bakmadım" ise o katman boş kalır — uydurup doldurmazsın. Amaç kapıyı
+   zorlamak değil; kullanıcının gözden kaçırdığı bir bakış açısı varsa onu
+   hatırlatmak. Cevabı ne olursa olsun karar kullanıcınındır.
+
+   Katmanlar deftere yazılmaya devam eder: 20 işlem sonunda "2 katmanlı girişler
+   4 katmanlılardan kötü müydü" sorusu ölçülebilir kalsın diye.
 
    - **trend katmanı brief'te hesaplanıyor** (2026-09-01): 21 sembol için
      200EMA konumu, ADX(14), 20/50 günlük değişim. Tanım sabit, eleme yok,

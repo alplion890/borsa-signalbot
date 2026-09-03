@@ -33,8 +33,9 @@ Linkleri açamazsan bunu açıkça söyle ve sayı üretme.
 
 Özet kurallar: mekanik ray dondurulmuş (yeni modül/parametre yok),
 diskresyoner ray birincil, araştırma rayı uykuda. Seans 18:15 TR'den önce
-başlamaz, 20:00'den sonra yeni giriş yok. Katman kapısı ≥3/4 (narrative,
-hacim, trend, destek) dolmadan setup aranmaz. Tez ve çürüten zorunlu —
+başlamaz, 20:00'den sonra yeni giriş yok. Katman kapısı ≥2/4 (narrative,
+hacim, trend, destek); tek gerekçe yetmez. Eksik katmanları sen sorarsın
+("hacme baktın mı?"); "bakmadım" derse boş kalır, uydurulmaz. Tez ve çürüten zorunlu —
 çürüteni olmayan tez sonradan her sonuca uydurulur. Tez kurulunca brief'in
 sonundaki katalogdan geçir: veto yalnız "rejected" ve "retired";
 "standalone_rejected" ve "not_adopted" veto değildir. Pas kaydı önce aday

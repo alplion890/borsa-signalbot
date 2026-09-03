@@ -60,10 +60,14 @@ def test_curuten_alani_ZORUNLU(defter):
         _ac(defter, curuten="bilmiyorum")
 
 
-def test_katman_kapisi_UCTEN_AZSA_reddeder(defter):
-    """Protokol taahhudu: >=3/4 dolmadan setup aranmaz. Kural kodda."""
+def test_katman_kapisi_TEK_katmani_reddeder(defter):
+    """Giris filtresi 2026-09-03'te 3/4'ten 2/4'e indi (kullanici karari).
+
+    Tek gerekce hala yetmiyor: kapinin varlik sebebi "bir sey gordum, girdim"
+    kaydini engellemek. Iki ayri gerekce, sonradan hatirlanabilir bir tez birakir.
+    """
     with pytest.raises(ValueError, match="katman kapisi"):
-        _ac(defter, katmanlar="narrative,hacim")
+        _ac(defter, katmanlar="narrative")
 
 
 def test_bilinmeyen_katman_reddedilir(defter):
@@ -73,7 +77,13 @@ def test_bilinmeyen_katman_reddedilir(defter):
 
 def test_tekrarli_katman_sayiyi_SISIRMEZ(defter):
     with pytest.raises(ValueError, match="katman kapisi"):
-        _ac(defter, katmanlar="narrative,narrative,hacim")
+        _ac(defter, katmanlar="narrative,narrative")
+
+
+def test_IKI_katman_kabul(defter):
+    """2/4 karari: kod iki gerekceli girisi kabul etmeli."""
+    k = _ac(defter, katmanlar="narrative,trend")
+    assert k.katman_sayisi == 2
 
 
 def test_dort_katman_kabul(defter):
@@ -241,5 +251,75 @@ def test_esikte_POZITIFSE_tetiklenmez(defter):
 
 
 def test_MIN_KATMAN_taahhudu_kodda_sabit():
-    """Protokol >=3/4 dedi. Sessizce gevsetilirse burasi kirilir."""
-    assert MIN_KATMAN == 3
+    """Esik 2026-09-03'te 3 -> 2 indi; kullanici karari, git gecmisinde gorunur.
+
+    Sayi burada kilitli kalmali: bir sonraki degisiklik de sessiz olmasin,
+    sonuca bakilarak gevsetilmesin. Katmanlar deftere yazilmaya devam ettigi
+    icin "2 katmanli girisler 4 katmanlilardan kotu muydu" sorusu 20 islem
+    sonunda OLCULEBILIR -- filtre gevsedi, olcum gevsemedi.
+    """
+    assert MIN_KATMAN == 2
+
+
+# --- risk politikasi ve solvency kapisi (2026-09-03) ---------------------
+#
+# Kullanici riski %3'ten %6'ya cikardi. Bootstrap (20.000 yol, defterin kendi R
+# dagilimi): gecme %57 -> %50, breach %43 -> %50, medyan 3 -> 1 islem. Karar
+# kullanicinin; ama %6 = ~300 USD ve breach'e tampon 500 USD = 1.67R, yani bir
+# tam stop sonrasi ikinci ayni islem hesabi bitirebilir. Durma kurali
+# (n>=20 & exp_R<0) EDGE olcer, hayatta kalmayi garanti etmez -- bu kapi onu
+# tamamliyor. Hermes denetimi 2026-09-03.
+
+
+def test_RISK_diskresyoner_rayda_AYRI_mekanige_dokunmaz():
+    """Mekanik ray dondurulmus; challenge cap'i risk.py'de %3 kalmali."""
+    from .diskresyoner import RISK_PCT
+    from ..signalbot.risk import _PROFILES
+
+    assert RISK_PCT == 0.06
+    challenge = _PROFILES["bnpl_challenge"]
+    assert challenge.max_open_risk_pct <= 0.03, (
+        "diskresyoner karari mekanik profile sizmis")
+
+
+def test_risk_GUNCEL_bakiyeden_hesaplanir():
+    """Sabit dolar degil: kaybettikce risk kuculmeli."""
+    from .diskresyoner import risk_dolar
+
+    assert risk_dolar(5000.0) == 300.0
+    assert risk_dolar(4800.0) == 288.0
+
+
+def test_SOLVENCY_tamponu_asan_islem_REDDEDILIR(defter):
+    """Ikinci -1R hesabi patlatacaksa kod islemi kabul etmemeli."""
+    from .diskresyoner import BREACH_BAKIYE, GUVENLIK_TAMPONU
+
+    # 4700: breach'e 200, guvenlik payindan sonra 100 USD kullanilabilir.
+    # %6 = 282 USD -> tampondan buyuk.
+    with pytest.raises(ValueError, match="SOLVENCY"):
+        _ac(defter, bakiye=4700.0)
+    assert 4700.0 - BREACH_BAKIYE - GUVENLIK_TAMPONU < 4700.0 * 0.06
+
+
+def test_SOLVENCY_tampon_bittiginde_islem_YOK(defter):
+    with pytest.raises(ValueError, match="tampon yok"):
+        _ac(defter, bakiye=4550.0)
+
+
+def test_saglikli_bakiyede_islem_ACILIR_ve_risk_KAYDEDILIR(defter):
+    k = _ac(defter, bakiye=5000.0)
+    assert k.bakiye == 5000.0
+    assert k.risk_pct == 0.06
+    assert k.risk_usd == 300.0
+
+
+def test_bakiye_verilmezse_risk_alanlari_BOS_kalir(defter):
+    """Eski satirlarla uyum: kayit yazilir ama '%6 ile ne oldu' cevaplanamaz."""
+    k = _ac(defter)
+    assert k.bakiye is None and k.risk_usd is None
+
+
+def test_risk_alanlari_DEFTERE_yazilip_geri_OKUNUR(defter):
+    _ac(defter, bakiye=5000.0)
+    okunan = yukle(defter)[-1]
+    assert okunan.risk_usd == 300.0 and okunan.bakiye == 5000.0

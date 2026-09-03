@@ -56,7 +56,12 @@ MIN_N = 20          # durma kurali esigi -- tripwire testi ile ayni
 MIN_TEZ = 20        # karakter; "iyi gorunuyor" tez degildir
 MIN_CURUTEN = 15
 KATMANLAR = ("narrative", "hacim", "trend", "destek")
-MIN_KATMAN = 3      # protokol taahhudu: >=3/4
+# 2026-09-03, kullanici karari: 3/4 -> 2/4. Bu bir GIRIS FILTRESI degisikligidir,
+# kayit kurali degil (Hermes denetimi 2026-09-03: ikisini birbirine karistirmak
+# yanlisti -- kod ucuncu katman yoksa setup'i REDDEDIYORDU, yani veto).
+# Katmanlar deftere yazilmaya devam eder; 20 islem sonunda "2 katmanli girisler
+# 4 katmanlilardan kotu muydu" sorusu olculebilir kalir.
+MIN_KATMAN = 2
 
 # Trend tablosu 21 sembollük GÖZLEM yüzeyidir; fırsat paydasını sessizce
 # genişletmemesi için diskresyoner aday/işlem evreni ayrı ve fail-closed.
@@ -65,10 +70,63 @@ ISLEM_EVRENI = ("NASDAQ100", "US100", "XAUUSD", "EURUSD", "GBPUSD")
 
 DURUMLAR = ("aday", "acik", "kapali", "pas")
 
+# --- RISK POLITIKASI (2026-09-03, kullanici karari) --------------------
+#
+# Diskresyoner ray MEKANIK raydan AYRI risk tasir. `signalbot/risk.py`
+# degistirilmedi: mekanik ray dondurulmus ve challenge cap'i orada %3.
+# Karisik tutmak, bir rayin karari otekinin lot buyuklugunu degistirmek
+# demek olurdu.
+#
+# TABAN: her islemde GUNCEL bakiyenin yuzdesi (sabit dolar degil). Boylece
+# kaybettikce risk kuculur. `risk.py` de ayni mantikta calisiyor.
+RISK_PCT = 0.06
+
+# Maven challenge: 5000 baslangic, 4500 breach. Tampon 500 dolar.
+BREACH_BAKIYE = 4500.0
+# %6 = ~300 dolar. Tampon 500 dolar = 1.67R. Yani ILK -1R'den sonra ikinci
+# %6'lik islem tek basina hesabi patlatabilir. Bu kapi onu engeller.
+# Guvenlik payi: tamponun tamami kumar edilmesin.
+GUVENLIK_TAMPONU = 100.0
+
+
+def risk_dolar(bakiye: float, risk_pct: float = RISK_PCT) -> float:
+    """Guncel bakiyeye gore planlanan dolar riski."""
+    return round(bakiye * risk_pct, 2)
+
+
+def solvency_kapisi(bakiye: float, risk_usd: float) -> None:
+    """Planlanan stop kaybi, breach'e kalan tamponu ASAMAZ.
+
+    NEDEN POST-HOC DEGIL (Hermes denetimi 2026-09-03): bu kural ilk %6'lik
+    islemden ONCE yaziliyor. Post-hoc olan, kayiplari gordukten sonra esigi
+    sonuca gore secmektir.
+
+    Aritmetik: %6 ~ 300 dolar risk, breach'e tampon 500 dolar = 1.67R. Bir tam
+    stop sonrasi ~200 dolar kalir; ayni yuzdeyle ikinci islem breach sinirini
+    asar. Yani durma kurali (n>=20 ve exp_R<0) devreye girmeden hesap bitebilir
+    -- o kural EDGE olcer, hayatta kalmayi garanti etmez.
+    """
+    tampon = bakiye - BREACH_BAKIYE - GUVENLIK_TAMPONU
+    if tampon <= 0:
+        raise ValueError(
+            f"SOLVENCY: bakiye {bakiye:.2f}, breach {BREACH_BAKIYE:.0f}, "
+            f"guvenlik payi {GUVENLIK_TAMPONU:.0f} -> kullanilabilir tampon yok. "
+            "Yeni islem acilmaz.")
+    if risk_usd > tampon:
+        raise ValueError(
+            f"SOLVENCY: planlanan risk {risk_usd:.2f} USD, kullanilabilir "
+            f"tampon {tampon:.2f} USD. Riski dusur ya da islem acma. "
+            f"(bakiye {bakiye:.2f}, breach {BREACH_BAKIYE:.0f}, "
+            f"guvenlik payi {GUVENLIK_TAMPONU:.0f})")
+
 KOLONLAR = [
     "id", "durum", "aday_utc", "acilis_utc", "kapanis_utc",
     "sembol", "yon", "timeframe", "narrative", "katmanlar",
     "tetik", "giris", "stop", "hedef", "cikis", "r",
+    # GERCEKLESEN RISK (2026-09-03): R tek basina yetmiyor -- ayni R farkli
+    # bakiyede farkli dolar demek. Girisdeki bakiye, planlanan yuzde ve dolar
+    # riski yazilmadan "%6 ile ne oldu" sorusu sonradan cevaplanamaz.
+    "bakiye", "risk_pct", "risk_usd",
     "tez", "curuten", "pas_sebebi", "sonuc_notu",
 ]
 
@@ -91,6 +149,9 @@ class Kayit:
     hedef: float | None
     cikis: float | None
     r: float | None
+    bakiye: float | None
+    risk_pct: float | None
+    risk_usd: float | None
     tez: str
     curuten: str
     pas_sebebi: str
@@ -113,7 +174,9 @@ def _satir_to_kayit(s: dict) -> Kayit:
         timeframe=s.get("timeframe", ""), narrative=s.get("narrative", ""),
         katmanlar=s.get("katmanlar", ""), tetik=_f(s.get("tetik")),
         giris=_f(s.get("giris")), stop=float(s["stop"]), hedef=_f(s.get("hedef")),
-        cikis=_f(s.get("cikis")), r=_f(s.get("r")), tez=s["tez"],
+        cikis=_f(s.get("cikis")), r=_f(s.get("r")),
+        bakiye=_f(s.get("bakiye")), risk_pct=_f(s.get("risk_pct")),
+        risk_usd=_f(s.get("risk_usd")), tez=s["tez"],
         curuten=s["curuten"], pas_sebebi=s.get("pas_sebebi", ""),
         sonuc_notu=s.get("sonuc_notu", ""),
     )
@@ -202,19 +265,36 @@ def _acik_kontrol(kayitlar: list[Kayit]) -> None:
         )
 
 
+def _risk_kapisi(bakiye: float | None, risk_pct: float) -> float | None:
+    """Bakiye verildiyse riski hesapla ve solvency kapisindan gecir.
+
+    Bakiye verilmediyse kayit yine yazilir (eski satirlarla uyum) ama gerceklesen
+    risk alanlari bos kalir -- o zaman "%6 ile ne oldu" sorusu o satir icin
+    cevaplanamaz. CLI bakiyeyi MT5'ten okuyup gecirir.
+    """
+    if bakiye is None:
+        return None
+    risk_usd = risk_dolar(bakiye, risk_pct)
+    solvency_kapisi(bakiye, risk_usd)
+    return risk_usd
+
+
 def aday(sembol: str, yon: str, tetik: float, stop: float, tez: str, curuten: str,
          katmanlar: str, narrative: str = "", timeframe: str = "",
          hedef: float | None = None, path: Path | None = None,
-         simdi: str | None = None) -> Kayit:
+         simdi: str | None = None, bakiye: float | None = None,
+         risk_pct: float = RISK_PCT) -> Kayit:
     """Setup adayi kaydet -- HENUZ islem degil. Seciciligi olcmek icin."""
     sembol = _dogrula_sembol(sembol)
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, tetik)
+    risk_usd = _risk_kapisi(bakiye, risk_pct)
     kayitlar = yukle(path)
     yeni = Kayit(
         id=_yeni_id(kayitlar), durum="aday", aday_utc=_simdi(simdi),
         acilis_utc="", kapanis_utc="", sembol=sembol, yon=yon,
         timeframe=timeframe, narrative=narrative, katmanlar=kat,
         tetik=tetik, giris=None, stop=stop, hedef=hedef, cikis=None, r=None,
+        bakiye=bakiye, risk_pct=risk_pct if bakiye else None, risk_usd=risk_usd,
         tez=tez.strip(), curuten=curuten.strip(), pas_sebebi="", sonuc_notu="",
     )
     _yaz(kayitlar + [yeni], path)
@@ -224,17 +304,21 @@ def aday(sembol: str, yon: str, tetik: float, stop: float, tez: str, curuten: st
 def ac(sembol: str, yon: str, giris: float, stop: float, tez: str, curuten: str,
        katmanlar: str, narrative: str = "", timeframe: str = "",
        hedef: float | None = None, path: Path | None = None,
-       simdi: str | None = None) -> Kayit:
+       simdi: str | None = None, bakiye: float | None = None,
+       risk_pct: float = RISK_PCT) -> Kayit:
     """Dogrudan islem ac (aday asamasindan gecmeden)."""
     sembol = _dogrula_sembol(sembol)
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, giris)
+    risk_usd = _risk_kapisi(bakiye, risk_pct)
     kayitlar = yukle(path)
     _acik_kontrol(kayitlar)
     yeni = Kayit(
         id=_yeni_id(kayitlar), durum="acik", aday_utc="", acilis_utc=_simdi(simdi),
         kapanis_utc="", sembol=sembol, yon=yon, timeframe=timeframe,
         narrative=narrative, katmanlar=kat, tetik=None, giris=giris, stop=stop,
-        hedef=hedef, cikis=None, r=None, tez=tez.strip(), curuten=curuten.strip(),
+        hedef=hedef, cikis=None, r=None,
+        bakiye=bakiye, risk_pct=risk_pct if bakiye else None, risk_usd=risk_usd,
+        tez=tez.strip(), curuten=curuten.strip(),
         pas_sebebi="", sonuc_notu="",
     )
     _yaz(kayitlar + [yeni], path)
@@ -318,6 +402,30 @@ def ozet(path: Path | None = None) -> dict:
             "wr": 100 * kazanan / n, "durma_tetik": n >= MIN_N and exp_r < 0}
 
 
+def _mt5_bakiye() -> float | None:
+    """Bakiyeyi MT5'ten oku. Terminal kapaliysa None -- uydurma yok.
+
+    Lazy import: `telefon_brief` bu modulu bulutta import ediyor ve orada MT5
+    yok (`test_cloud_deps`).
+    """
+    try:
+        import MetaTrader5 as mt5
+    except Exception:
+        return None
+    try:
+        if not mt5.initialize():
+            return None
+        hesap = mt5.account_info()
+        return float(hesap.balance) if hesap else None
+    except Exception:
+        return None
+    finally:
+        try:
+            mt5.shutdown()
+        except Exception:
+            pass
+
+
 def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -344,6 +452,10 @@ def main() -> None:
     p.add_argument("--curuten")
     p.add_argument("--sebep")
     p.add_argument("--not", dest="not_")
+    p.add_argument("--bakiye", type=float, default=None,
+                   help="giristeki hesap bakiyesi; verilmezse MT5'ten okunur")
+    p.add_argument("--risk-pct", type=float, default=RISK_PCT,
+                   dest="risk_pct", help=f"varsayilan {RISK_PCT}")
     a = p.parse_args()
 
     if a.aday or a.ac:
@@ -354,10 +466,19 @@ def main() -> None:
             p.error("zorunlu: " + ", ".join("--" + k for k in eksik))
         fn = aday if a.aday else ac
         ref = a.tetik if a.aday else a.giris
+        bakiye = a.bakiye if a.bakiye is not None else _mt5_bakiye()
+        if bakiye is None:
+            print("  UYARI: bakiye okunamadi; risk alanlari bos kalacak ve "
+                  "solvency kapisi CALISMAYACAK. --bakiye ile ver.")
         k = fn(a.sembol, a.yon, ref, a.stop, a.tez, a.curuten, a.katmanlar,
-               a.narrative, a.tf, a.hedef)
+               a.narrative, a.tf, a.hedef, bakiye=bakiye, risk_pct=a.risk_pct)
         print(f"{k.durum.upper()}: id={k.id} {k.sembol} {k.yon} "
-              f"{ref_ad}={ref} stop={k.stop} katman={k.katman_sayisi}/4")
+              f"{ref_ad}={ref} stop={k.stop} katman={k.katman_sayisi}/"
+              f"{len(KATMANLAR)}")
+        if k.risk_usd is not None:
+            tampon = k.bakiye - BREACH_BAKIYE - GUVENLIK_TAMPONU
+            print(f"  risk    : %{k.risk_pct*100:.1f} = {k.risk_usd:.2f} USD "
+                  f"(bakiye {k.bakiye:.2f}, breach'e kullanilabilir {tampon:.2f})")
         print(f"  tez     : {k.tez}")
         print(f"  curuten : {k.curuten}")
         return
