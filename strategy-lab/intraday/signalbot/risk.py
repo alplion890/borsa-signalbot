@@ -29,7 +29,9 @@ _VALUE_PER_POINT = {
 #                      Yanlis tarafta durdugu icin yarim riskle calisiyordu.
 # EUR/GBP London PAPER kalir: Persembe filtresi 2026-08-05'te kaldirilinca
 # config degisti, onceki 6 islem gecersiz -> su an kanitsiz (kullanici karari).
-_LIVE_MODULES = {"NQ_ORB_STRONG_TREND", "SWEEP_CORE_AVOID_MID_VWAP"}
+# NQ_ORB_STRONG_TREND 2026-09-04'te dusuruldu: forward n=25 (esik), exp_R=-0.106.
+# Taahhut 2026-08-21'de, sonuc gorulmeden yazildi (bkz [[Borsa - NQ ORB Dusurme Taahhudu]]).
+_LIVE_MODULES = {"SWEEP_CORE_AVOID_MID_VWAP"}
 
 # Dusurme esigi: bir LIVE modul bu kadar forward islemden sonra hala negatif
 # beklentideyse PAPER'a duser. Taahhut `test_demotion_tripwire.py`'de.

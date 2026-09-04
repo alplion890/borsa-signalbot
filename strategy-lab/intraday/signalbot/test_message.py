@@ -159,7 +159,7 @@ def test_message_blocks_trade_when_minimum_lot_exceeds_risk():
     """Stop cok genisse %1 risk 0.01 lotun altina duser -> islem alinmamali."""
     plan = risk_plan(
         phase="bnpl_challenge", balance=5000,
-        module_name="NQ_ORB_STRONG_TREND", module_weight=1.0,
+        module_name="SWEEP_CORE_AVOID_MID_VWAP", module_weight=1.0,
         symbol_key="NASDAQ100", entry=20000, sl=19000,
     )
     assert plan.normal_usd > 0 and plan.normal_lot == 0
@@ -175,7 +175,7 @@ def test_message_blocks_trade_when_minimum_lot_exceeds_risk():
 
 def test_live_message_has_maven_order_card():
     plan = risk_plan(
-        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        phase="bnpl_challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     msg = format_signal(
@@ -201,7 +201,7 @@ def test_order_card_writes_levels_as_offsets_when_ref_close_given():
     Ham fiyat yazilirsa US100'de ~1.5R yanlis seviye verir.
     """
     plan = risk_plan(
-        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        phase="bnpl_challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     msg = format_signal(
@@ -228,7 +228,7 @@ def test_card_states_target_size_in_R_and_dollars():
     kartta ayni gorunurdu.
     """
     plan = risk_plan(
-        phase="bnpl_challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        phase="bnpl_challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=1.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     msg = format_signal(

@@ -20,14 +20,18 @@ def test_lot_never_rounds_above_dollar_risk_or_forces_minimum():
 
 
 def test_tier_is_the_forward_proven_pair():
-    """Gercek para sadece forward defterinde kaniti olan ikiliye acilir."""
-    assert tier_of("NQ_ORB_STRONG_TREND") is Tier.LIVE
+    """Gercek para sadece forward defterinde kaniti olan modul(ler)e acilir."""
     assert tier_of("SWEEP_CORE_AVOID_MID_VWAP") is Tier.LIVE
 
 
 def test_tier_gold_is_paper_after_negative_forward_evidence():
     """GOLD forward'da -0.152 exp_R verdi (18 islem) -> gercek para YOK."""
     assert tier_of("GOLD_NY_ORB_TREND") is Tier.PAPER
+
+
+def test_tier_nq_orb_is_paper_after_negative_forward_evidence():
+    """NQ_ORB 2026-09-04'te dusuruldu: forward n=25, exp_R=-0.106 < 0."""
+    assert tier_of("NQ_ORB_STRONG_TREND") is Tier.PAPER
 
 
 def test_tier_london_modules_are_paper_until_reproven():
@@ -50,7 +54,7 @@ def test_challenge_live_risk_is_1_5_then_3_after_a_winner():
 def test_challenge_live_never_exceeds_cap_even_with_high_weight():
     """Agirlik ne olursa olsun tek islem %3 tavanini asamaz."""
     plan = risk_plan(
-        phase="challenge", balance=5000, module_name="NQ_ORB_STRONG_TREND",
+        phase="challenge", balance=5000, module_name="SWEEP_CORE_AVOID_MID_VWAP",
         module_weight=4.0, symbol_key="NASDAQ100", entry=20000, sl=19950,
     )
     assert plan.normal_pct == 0.030

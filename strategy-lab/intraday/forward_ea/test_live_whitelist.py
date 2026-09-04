@@ -28,8 +28,9 @@ from ..signalbot.risk import Tier, tier_of
 from . import order_executor as oe
 
 # Karar Kurali (vault: "Borsa - Karar Kurali (baslama ve durma)", madde 2):
-# girilecek SADECE bu ikisi.
-KARAR_KURALI_IKILI = {"NQ_ORB_STRONG_TREND", "SWEEP_CORE_AVOID_MID_VWAP"}
+# girilecek SADECE bunlar. NQ_ORB_STRONG_TREND 2026-09-04'te dusuruldu
+# (forward n=25, exp_R=-0.106) -- bkz [[Borsa - NQ ORB Dusurme Taahhudu]].
+KARAR_KURALI_IKILI = {"SWEEP_CORE_AVOID_MID_VWAP"}
 
 
 def test_whitelist_matches_karar_kurali() -> None:

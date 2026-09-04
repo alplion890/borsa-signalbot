@@ -24,7 +24,7 @@ def _pos(module: str, symbol: str, minutes_ago: float,
 def test_fresh_live_position_sends_message_with_card():
     outbox: list[str] = []
     sent = notify_new_positions(
-        [_pos("NQ_ORB_STRONG_TREND", "NASDAQ100", minutes_ago=5)],
+        [_pos("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", minutes_ago=5)],
         send_fn=outbox.append,
     )
     assert len(sent) == 1 and len(outbox) == 1
@@ -74,7 +74,7 @@ def test_unknown_symbol_does_not_kill_the_whole_cycle():
     outbox: list[str] = []
     sent = notify_new_positions(
         [
-            _pos("NQ_ORB_STRONG_TREND", "US30", minutes_ago=5),
+            _pos("SWEEP_CORE_AVOID_MID_VWAP", "US30", minutes_ago=5),
             _pos("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", minutes_ago=5),
         ],
         send_fn=outbox.append,
