@@ -79,13 +79,19 @@ DURUMLAR = ("aday", "acik", "kapali", "pas")
 #
 # TABAN: her islemde GUNCEL bakiyenin yuzdesi (sabit dolar degil). Boylece
 # kaybettikce risk kuculur. `risk.py` de ayni mantikta calisiyor.
-RISK_PCT = 0.06
+#
+# 2026-09-04: %6 -> %3'e indirildi. Bootstrap (defterin kendi R dagilimi,
+# n=65-66, exp_R -0.015, 20.000 yol): %6 gecme %50/patlama %50/medyan 1 islem;
+# %3 gecme %57/patlama %43/medyan 3 islem. Kullanici karari: "en az ama en
+# yuksek riskli" -- olculu uc tier'dan (1.5/3/6) ortanca, hala agresif ama
+# solvency kapisinin haftalik 5 islem hedefini 1 islemde bogmamasi icin.
+# Bkz [[Borsa - Risk Politikasi AB]] (mekanik rayin AYRI %3 A/B'si, karistirma).
+RISK_PCT = 0.03
 
 # Maven challenge: 5000 baslangic, 4500 breach. Tampon 500 dolar.
 BREACH_BAKIYE = 4500.0
-# %6 = ~300 dolar. Tampon 500 dolar = 1.67R. Yani ILK -1R'den sonra ikinci
-# %6'lik islem tek basina hesabi patlatabilir. Bu kapi onu engeller.
-# Guvenlik payi: tamponun tamami kumar edilmesin.
+# %3 = ~150 dolar. Tampon 500 dolar = 3.33R. Guvenlik payi: tamponun tamami
+# kumar edilmesin.
 GUVENLIK_TAMPONU = 100.0
 
 

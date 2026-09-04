@@ -263,12 +263,12 @@ def test_MIN_KATMAN_taahhudu_kodda_sabit():
 
 # --- risk politikasi ve solvency kapisi (2026-09-03) ---------------------
 #
-# Kullanici riski %3'ten %6'ya cikardi. Bootstrap (20.000 yol, defterin kendi R
-# dagilimi): gecme %57 -> %50, breach %43 -> %50, medyan 3 -> 1 islem. Karar
-# kullanicinin; ama %6 = ~300 USD ve breach'e tampon 500 USD = 1.67R, yani bir
-# tam stop sonrasi ikinci ayni islem hesabi bitirebilir. Durma kurali
-# (n>=20 & exp_R<0) EDGE olcer, hayatta kalmayi garanti etmez -- bu kapi onu
-# tamamliyor. Hermes denetimi 2026-09-03.
+# 2026-09-04: risk %6'dan %3'e indirildi. Bootstrap (20.000 yol, defterin
+# kendi R dagilimi): %6 gecme %50/patlama %50/medyan 1 islem; %3 gecme
+# %57/patlama %43/medyan 3 islem. Kullanici karari: olculu uc tier'dan
+# (1.5/3/6) ortanca -- solvency kapisi ile haftalik >=1 islem tempo hedefi
+# arasindaki gerilimi hafifletir. Hermes denetimi 2026-09-03 (o zamanki %6
+# icin), tier degisimi sonradan.
 
 
 def test_RISK_diskresyoner_rayda_AYRI_mekanige_dokunmaz():
@@ -276,7 +276,7 @@ def test_RISK_diskresyoner_rayda_AYRI_mekanige_dokunmaz():
     from .diskresyoner import RISK_PCT
     from ..signalbot.risk import _PROFILES
 
-    assert RISK_PCT == 0.06
+    assert RISK_PCT == 0.03
     challenge = _PROFILES["bnpl_challenge"]
     assert challenge.max_open_risk_pct <= 0.03, (
         "diskresyoner karari mekanik profile sizmis")
@@ -286,19 +286,19 @@ def test_risk_GUNCEL_bakiyeden_hesaplanir():
     """Sabit dolar degil: kaybettikce risk kuculmeli."""
     from .diskresyoner import risk_dolar
 
-    assert risk_dolar(5000.0) == 300.0
-    assert risk_dolar(4800.0) == 288.0
+    assert risk_dolar(5000.0) == 150.0
+    assert risk_dolar(4800.0) == 144.0
 
 
 def test_SOLVENCY_tamponu_asan_islem_REDDEDILIR(defter):
     """Ikinci -1R hesabi patlatacaksa kod islemi kabul etmemeli."""
     from .diskresyoner import BREACH_BAKIYE, GUVENLIK_TAMPONU
 
-    # 4700: breach'e 200, guvenlik payindan sonra 100 USD kullanilabilir.
-    # %6 = 282 USD -> tampondan buyuk.
+    # 4620: breach'e 120, guvenlik payindan sonra 20 USD kullanilabilir.
+    # %3 = 138.6 USD -> tampondan buyuk.
     with pytest.raises(ValueError, match="SOLVENCY"):
-        _ac(defter, bakiye=4700.0)
-    assert 4700.0 - BREACH_BAKIYE - GUVENLIK_TAMPONU < 4700.0 * 0.06
+        _ac(defter, bakiye=4620.0)
+    assert 4620.0 - BREACH_BAKIYE - GUVENLIK_TAMPONU < 4620.0 * 0.03
 
 
 def test_SOLVENCY_tampon_bittiginde_islem_YOK(defter):
@@ -309,8 +309,8 @@ def test_SOLVENCY_tampon_bittiginde_islem_YOK(defter):
 def test_saglikli_bakiyede_islem_ACILIR_ve_risk_KAYDEDILIR(defter):
     k = _ac(defter, bakiye=5000.0)
     assert k.bakiye == 5000.0
-    assert k.risk_pct == 0.06
-    assert k.risk_usd == 300.0
+    assert k.risk_pct == 0.03
+    assert k.risk_usd == 150.0
 
 
 def test_bakiye_verilmezse_risk_alanlari_BOS_kalir(defter):
@@ -322,7 +322,7 @@ def test_bakiye_verilmezse_risk_alanlari_BOS_kalir(defter):
 def test_risk_alanlari_DEFTERE_yazilip_geri_OKUNUR(defter):
     _ac(defter, bakiye=5000.0)
     okunan = yukle(defter)[-1]
-    assert okunan.risk_usd == 300.0 and okunan.bakiye == 5000.0
+    assert okunan.risk_usd == 150.0 and okunan.bakiye == 5000.0
 
 
 # --- kayit gecikmesi (2026-09-03) ----------------------------------------
