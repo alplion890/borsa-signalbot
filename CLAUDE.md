@@ -25,8 +25,10 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 
 ## Üç raylı düzen (bağlayıcı, 2026-08-28)
 
-- **Mekanik ray — DONDURULMUŞ.** NQ_ORB ve SWEEP_CORE çalışıyor, tripwire
-  kararı otomatik veriyor. Yeni modül, yeni parametre, yeni araştırma YOK.
+- **Mekanik ray — DONDURULMUŞ.** SWEEP_CORE tek LIVE modül (NQ_ORB
+  2026-09-04'te düşürme taahhüdü tetiklendi, n=25 exp_R=−0.106 → PAPER'a
+  düştü). Tripwire kararı otomatik veriyor. Yeni modül, yeni parametre, yeni
+  araştırma YOK.
 - **Diskresyoner ray — BİRİNCİL.** İşlem burada açılıyor. Protokol aşağıda.
 - **Araştırma rayı — UYKUDA.** Ölçüldü: 14 yıllık veri 1-3 hipotez finanse
   ediyor, darboğaz VERİ. Yeni strateji fikri gelirse: bütçe yok.
@@ -57,16 +59,29 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 6. Durma kuralı: n≥20 ve exp_R<0 → ray durur. Bu EDGE ölçer; hayatta kalmayı
    garanti etmez, o yüzden ayrıca solvency kapısı var (aşağıda).
 
-## Diskresyoner risk (2026-09-03, kullanıcı kararı)
+## Diskresyoner risk (2026-09-04'te %3'e indirildi)
 
-- Risk **%6**, her işlemde **güncel bakiyenin** yüzdesi (sabit dolar değil).
-- Mekanik ray AYRI ve DOKUNULMADI: `signalbot/risk.py` challenge cap'i %3.
+- Risk **%3**, her işlemde **güncel bakiyenin** yüzdesi (sabit dolar değil).
+  2026-09-03'te %6'ydı; haftalık ≥5 işlem hedefi solvency kapısıyla çeliştiği
+  için kullanıcı üç ölçülü tier'dan (1.5/3/6) ortancayı seçti (bkz
+  [[Borsa - Diskresyoner Defter Taahhudu]] 2026-09-04 bölümü).
+- Mekanik ray AYRI ve DOKUNULMADI: `signalbot/risk.py` challenge cap'i %3
+  (aynı sayı, farklı kaynak — karıştırma).
 - **Solvency kapısı**: planlanan stop kaybı, bakiye ile breach (4500) arasındaki
-  tamponu aşamaz; 100 USD güvenlik payı ayrı tutulur. Aritmetik: %6 ≈ 300 USD,
-  tampon 500 USD = 1.67R — ilk −1R'den sonra ikinci aynı işlem hesabı bitirir.
-  Kural ilk %6'lık işlemden ÖNCE yazıldı, post-hoc değil.
+  tamponu aşamaz; 100 USD güvenlik payı ayrı tutulur. Aritmetik: %3 ≈ 150 USD,
+  tampon 500 USD = 3.33R. Kural ilk %6'lık işlemden ÖNCE yazıldı, post-hoc değil.
 - Deftere gerçekleşen risk yazılır: giriş bakiyesi, risk_pct, risk_usd. Bakiye
   MT5'ten okunur; okunamazsa alanlar boş kalır ve kapı ÇALIŞMAZ (uyarı basılır).
+
+## Rejim/makro okuma (2026-09-04, kullanıcı kararı)
+
+Sabit kural araması yavaş (kanıta ~56 ay). Claude/Hermes artık seansta **sadece
+sayı** verir — makro olay + tarih, sembollerde kırılım/yeni high-low/trend
+metriği, sıfat ve yön yok. Yorum/karar/ACİ/fibonacci doğrulaması kullanıcıda.
+Araştırıldı ve ölçüldü: trend-günü ön-sınıflandırma ve AI'nin yön tahmini
+kanıtsız/negatif kanıtlı; makro release sadece **oynaklık zamanlaması** verir,
+yön vermez. Detay: [[Borsa - Rejim Okuma Donusu 2026-09-04]],
+[[Borsa - AI Destekli Rejim Okuma Arastirmasi 2026-09-04]].
 
 ## Komutlar
 

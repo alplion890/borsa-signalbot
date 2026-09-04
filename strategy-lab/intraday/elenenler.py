@@ -9,7 +9,7 @@ STATU SART (Hermes denetimi 2026-08-29): katalogun hepsi "kullanma" degil.
   not_adopted         -> pozitif ama kitabin altinda, secilmedi  (veto DEGIL)
   retired             -> uretimden cikarildi                     (VETO)
 Ayrica `kapsam` alani, calisan bir modulle isim cakismasini keser: "sweep"
-sorgusu calisan SWEEP_CORE'u, "orb" sorgusu canli NQ_ORB'u vetolamaz.
+sorgusu calisan SWEEP_CORE'u, "orb" sorgusu aday/PAPER NQ_ORB'u vetolamaz.
 
 NEDEN VETO, NEDEN SINYAL DEGIL (2026-08-28 karari):
 "Calismiyor" ile "tersi calisir" ayni sey degildir.
