@@ -1,6 +1,6 @@
 # Seans brifingi (olgu)
 
-Uretim: **2026-09-04 22:12 TR** / 2026-09-04 19:12 UTC  
+Uretim: **2026-09-07 14:00 TR** / 2026-09-07 11:00 UTC  
 Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 > **Fiyatlar endeks kotasyonu, broker fiyati DEGIL.** ^NDX ile MavenTrade US100 arasinda olculmus basis ~-170 puan (2026-08-24). Buradaki seviyeleri dogrudan emir fiyati olarak kullanma; terminaldeki fiyatla farki kendin hesapla.
@@ -18,28 +18,27 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ## Takvim
 
-- BUGUN NFP duyuru 08:30 ET
+- Bugun FOMC/CPI/NFP yok.
 - 2026-09-11  CPI
 
 ## Seans
 
-- Tokyo: kapali, acilisa 4.8 saat
-- Londra: kapali, acilisa 11.8 saat
-- New York: ACIK, kapanisa 1.8 saat
+- Tokyo: kapali, acilisa 13.0 saat
+- Londra: ACIK, kapanisa 5.0 saat
+- New York: kapali, acilisa 2.0 saat
 
 ## Semboller
 
 
 ### NASDAQ100 (15m)
 
-- son kapanis: 29528  (bar 2026-09-04 19:00:00 UTC)
-- dun araligi: 29075 → 29584
-- bugun araligi: 29468 → 29704
-- 200EMA (gunluk): 27435  (uzaklik +2092.8 / %+7.63)
-- ATR(14) son kapali gun: 474.62  (100 gunun %13. yuzdeligi)
-- hacim (son kapali gun): 442,250  (20 gunun %21. yuzdeligi)
+- son kapanis: 29565  (bar 2026-09-04 20:45:00 UTC)
+- dun araligi: 29468 → 29704
+- bugun araligi: 29530 → 29684
+- 200EMA (gunluk): 27454  (uzaklik +2111.5 / %+7.69)
+- ATR(14) son kapali gun: 457.62  (100 gunun %3. yuzdeligi)
+- hacim (son kapali gun): 539,285  (20 gunun %63. yuzdeligi)
 - donus seviyeleri (son 60 gun):
-  - 2026-07-17  30062  (direnc)
   - 2026-07-21  28408  (destek)
   - 2026-07-23  29365  (direnc)
   - 2026-07-31  27202  (destek)
@@ -47,17 +46,17 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
   - 2026-08-19  30343  (direnc)
   - 2026-08-26  28947  (destek)
   - 2026-09-01  29812  (direnc)
+  - 2026-09-04  28927  (destek)
 
 ### XAUUSD (5m)
 
-- son kapanis: 4471.6  (bar 2026-09-04 19:00:00 UTC)
-- dun araligi: 4426 → 4510
-- bugun araligi: 4412 → 4537.8
-- 200EMA (gunluk): 4314.7  (uzaklik +156.9 / %+3.64)
-- ATR(14) son kapali gun: 83.646  (100 gunun %52. yuzdeligi)
-- hacim (son kapali gun): 72  (20 gunun %0. yuzdeligi)
+- son kapanis: 4476.6  (bar 2026-09-04 20:55:00 UTC)
+- dun araligi: 4429.8 → 4429.8
+- bugun araligi: 4430.4 → 4481.3
+- 200EMA (gunluk): 4316.4  (uzaklik +160.2 / %+3.71)
+- ATR(14) son kapali gun: 82.093  (100 gunun %47. yuzdeligi)
+- hacim (son kapali gun): 16  (20 gunun %0. yuzdeligi)
 - donus seviyeleri (son 60 gun):
-  - 2026-07-24  4152.1  (direnc)
   - 2026-07-31  4017.9  (destek)
   - 2026-08-03  4118.5  (direnc)
   - 2026-08-17  4445  (direnc)
@@ -65,17 +64,17 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
   - 2026-08-21  4327.6  (destek)
   - 2026-08-26  4670.9  (direnc)
   - 2026-09-01  4625.5  (direnc)
+  - 2026-09-04  4292.2  (destek)
 
 ### EURUSD (5m)
 
-- son kapanis: 1.1616  (bar 2026-09-04 19:10:00 UTC)
-- dun araligi: 1.1585 → 1.1629
-- bugun araligi: 1.1592 → 1.1636
-- 200EMA (gunluk): 1.1568  (uzaklik +0.0047893 / %+0.41)
-- ATR(14) son kapali gun: 0.0052211  (100 gunun %4. yuzdeligi)
+- son kapanis: 1.1628  (bar 2026-09-07 10:55:00 UTC)
+- dun araligi: 1.1587 → 1.1633
+- bugun araligi: 1.1609 → 1.1639
+- 200EMA (gunluk): 1.1568  (uzaklik +0.0059439 / %+0.51)
+- ATR(14) son kapali gun: 0.005188  (100 gunun %4. yuzdeligi)
 - hacim: BU FEED HACIM VERMIYOR (spot FX) -- hacim katmani brifingten doldurulamaz
 - donus seviyeleri (son 60 gun):
-  - 2026-07-20  1.1478  (direnc)
   - 2026-07-27  1.1365  (destek)
   - 2026-07-27  1.1438  (direnc)
   - 2026-07-30  1.1354  (destek)
@@ -83,17 +82,17 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
   - 2026-08-11  1.1579  (direnc)
   - 2026-08-17  1.1513  (destek)
   - 2026-08-25  1.1712  (direnc)
+  - 2026-09-04  1.1567  (destek)
 
 ### GBPUSD (5m)
 
-- son kapanis: 1.3516  (bar 2026-09-04 19:10:00 UTC)
-- dun araligi: 1.3481 → 1.3543
-- bugun araligi: 1.349 → 1.3548
-- 200EMA (gunluk): 1.342  (uzaklik +0.0096158 / %+0.72)
-- ATR(14) son kapali gun: 0.0066596  (100 gunun %1. yuzdeligi)
+- son kapanis: 1.3539  (bar 2026-09-07 10:55:00 UTC)
+- dun araligi: 1.349 → 1.3549
+- bugun araligi: 1.3507 → 1.3545
+- 200EMA (gunluk): 1.3421  (uzaklik +0.011858 / %+0.88)
+- ATR(14) son kapali gun: 0.006651  (100 gunun %1. yuzdeligi)
 - hacim: BU FEED HACIM VERMIYOR (spot FX) -- hacim katmani brifingten doldurulamaz
 - donus seviyeleri (son 60 gun):
-  - 2026-07-14  1.3452  (direnc)
   - 2026-07-16  1.3343  (destek)
   - 2026-07-20  1.3545  (direnc)
   - 2026-07-30  1.3273  (destek)
@@ -101,6 +100,7 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
   - 2026-08-11  1.3435  (destek)
   - 2026-08-17  1.3476  (destek)
   - 2026-08-25  1.3675  (direnc)
+  - 2026-09-04  1.3475  (destek)
 
 ## Trend katmani (sabit tanim, 21 sembol)
 
@@ -110,27 +110,27 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 | sembol | grup | 200EMA | uzaklik | ADX | 20g | 50g |
 |---|---|---|---|---|---|---|
-| NASDAQ100 | endeks | ustunde | %+7.5 | 14.6 | %+0.1 | %+0.0 |
-| SP500 | endeks | ustunde | %+7.5 | 12.9 | %+0.3 | %+4.4 |
-| US30 | endeks | ustunde | %+7.1 | 13.9 | %-0.5 | %+2.8 |
-| US2000 | endeks | ustunde | %+7.1 | 19.0 | %-1.3 | %-1.5 |
-| GER40 | endeks | ustunde | %+4.9 | 22.6 | %-0.5 | %+4.0 |
-| UK100 | endeks | ustunde | %+5.1 | 17.8 | %-0.5 | %+3.5 |
-| FRA40 | endeks | ustunde | %+0.4 | 29.2 | %-4.8 | %-1.7 |
-| JAP225 | endeks | ustunde | %+8.2 | 14.0 | %-1.5 | %-6.9 |
-| EURUSD | fx | ustunde | %+0.2 | 30.1 | %+0.2 | %+2.0 |
-| GBPUSD | fx | ustunde | %+0.5 | 25.4 | %+0.1 | %+2.4 |
-| USDJPY | fx | ustunde | %+0.6 | 40.2 | %+0.8 | %-1.8 |
-| AUDUSD | fx | ustunde | %+3.0 | 18.8 | %+1.5 | %+3.8 |
-| USDCAD | fx | altinda | %-0.4 | 26.7 | %-1.2 | %-2.7 |
-| USDCHF | fx | ustunde | %+1.5 | 16.8 | %+0.8 | %+0.0 |
-| NZDUSD | fx | ustunde | %+0.1 | 22.4 | %-0.6 | %+3.7 |
-| EURJPY | fx | ustunde | %+0.8 | 20.7 | %+1.1 | %+0.2 |
-| GBPJPY | fx | ustunde | %+1.1 | 20.8 | %+0.9 | %+0.6 |
-| XAUUSD | emtia | ustunde | %+3.8 | 23.7 | %+5.9 | %+12.6 |
-| XAGUSD | emtia | ustunde | %+2.4 | 23.7 | %+9.0 | %+15.4 |
-| WTI | emtia | ustunde | %+14.4 | 16.9 | %+18.1 | %+29.8 |
-| BTCUSDT | kripto | ustunde | %+11.8 | 45.2 | %+28.9 | %+25.5 |
+| NASDAQ100 | endeks | ustunde | %+7.6 | 13.6 | %-0.9 | %-0.5 |
+| SP500 | endeks | ustunde | %+7.0 | 12.5 | %-0.7 | %+4.0 |
+| US30 | endeks | ustunde | %+6.4 | 13.1 | %-1.3 | %+2.1 |
+| US2000 | endeks | ustunde | %+7.2 | 19.6 | %-2.1 | %-1.8 |
+| GER40 | endeks | ustunde | %+5.0 | 21.3 | %-1.0 | %+5.6 |
+| UK100 | endeks | ustunde | %+5.0 | 16.6 | %-0.3 | %+2.9 |
+| FRA40 | endeks | ustunde | %+0.3 | 30.7 | %-5.0 | %-1.3 |
+| JAP225 | endeks | ustunde | %+10.2 | 13.6 | %-0.6 | %-7.5 |
+| EURUSD | fx | ustunde | %+0.6 | 29.2 | %+0.9 | %+2.3 |
+| GBPUSD | fx | ustunde | %+0.9 | 23.9 | %+0.6 | %+2.6 |
+| USDJPY | fx | altinda | %-1.5 | 41.6 | %-1.7 | %-3.8 |
+| AUDUSD | fx | ustunde | %+3.5 | 19.0 | %+2.4 | %+4.4 |
+| USDCAD | fx | altinda | %-0.8 | 25.5 | %-1.6 | %-2.9 |
+| USDCHF | fx | ustunde | %+0.8 | 15.8 | %-0.6 | %-0.4 |
+| NZDUSD | fx | ustunde | %+0.7 | 22.3 | %+0.3 | %+4.3 |
+| EURJPY | fx | altinda | %-0.9 | 23.3 | %-0.8 | %-1.5 |
+| GBPJPY | fx | altinda | %-0.6 | 23.3 | %-1.2 | %-1.3 |
+| XAUUSD | emtia | ustunde | %+2.4 | 22.0 | %+2.1 | %+9.9 |
+| XAGUSD | emtia | ustunde | %+0.9 | 22.3 | %+4.3 | %+13.2 |
+| WTI | emtia | ustunde | %+14.4 | 17.8 | %+17.0 | %+27.2 |
+| BTCUSDT | kripto | ustunde | %+10.1 | 48.0 | %+24.5 | %+23.9 |
 
 ## Olculmus fikirler katalogu
 
