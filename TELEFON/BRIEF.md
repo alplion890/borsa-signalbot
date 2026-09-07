@@ -1,6 +1,6 @@
 # Seans brifingi (olgu)
 
-Uretim: **2026-09-07 14:00 TR** / 2026-09-07 11:00 UTC  
+Uretim: **2026-09-07 20:59 TR** / 2026-09-07 17:59 UTC  
 Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 > **Fiyatlar endeks kotasyonu, broker fiyati DEGIL.** ^NDX ile MavenTrade US100 arasinda olculmus basis ~-170 puan (2026-08-24). Buradaki seviyeleri dogrudan emir fiyati olarak kullanma; terminaldeki fiyatla farki kendin hesapla.
@@ -23,9 +23,9 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ## Seans
 
-- Tokyo: kapali, acilisa 13.0 saat
-- Londra: ACIK, kapanisa 5.0 saat
-- New York: kapali, acilisa 2.0 saat
+- Tokyo: kapali, acilisa 6.0 saat
+- Londra: kapali, acilisa 13.0 saat
+- New York: ACIK, kapanisa 3.0 saat
 
 ## Semboller
 
@@ -52,7 +52,7 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 - son kapanis: 4476.6  (bar 2026-09-04 20:55:00 UTC)
 - dun araligi: 4429.8 → 4429.8
-- bugun araligi: 4430.4 → 4481.3
+- bugun araligi: 4426.2 → 4481.3
 - 200EMA (gunluk): 4316.4  (uzaklik +160.2 / %+3.71)
 - ATR(14) son kapali gun: 82.093  (100 gunun %47. yuzdeligi)
 - hacim (son kapali gun): 16  (20 gunun %0. yuzdeligi)
@@ -68,10 +68,10 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ### EURUSD (5m)
 
-- son kapanis: 1.1628  (bar 2026-09-07 10:55:00 UTC)
+- son kapanis: 1.1629  (bar 2026-09-07 17:55:00 UTC)
 - dun araligi: 1.1587 → 1.1633
 - bugun araligi: 1.1609 → 1.1639
-- 200EMA (gunluk): 1.1568  (uzaklik +0.0059439 / %+0.51)
+- 200EMA (gunluk): 1.1568  (uzaklik +0.0060792 / %+0.53)
 - ATR(14) son kapali gun: 0.005188  (100 gunun %4. yuzdeligi)
 - hacim: BU FEED HACIM VERMIYOR (spot FX) -- hacim katmani brifingten doldurulamaz
 - donus seviyeleri (son 60 gun):
@@ -86,10 +86,10 @@ Kaynak: bulut feed (yfinance/Binance). Otomatik uretilir; yalniz olcum basar.
 
 ### GBPUSD (5m)
 
-- son kapanis: 1.3539  (bar 2026-09-07 10:55:00 UTC)
+- son kapanis: 1.3543  (bar 2026-09-07 17:55:00 UTC)
 - dun araligi: 1.349 → 1.3549
-- bugun araligi: 1.3507 → 1.3545
-- 200EMA (gunluk): 1.3421  (uzaklik +0.011858 / %+0.88)
+- bugun araligi: 1.3507 → 1.3548
+- 200EMA (gunluk): 1.3421  (uzaklik +0.012224 / %+0.91)
 - ATR(14) son kapali gun: 0.006651  (100 gunun %1. yuzdeligi)
 - hacim: BU FEED HACIM VERMIYOR (spot FX) -- hacim katmani brifingten doldurulamaz
 - donus seviyeleri (son 60 gun):
