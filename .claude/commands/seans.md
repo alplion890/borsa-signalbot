@@ -32,7 +32,7 @@ Sırayla:
 
 5. Kullanıcı bir tez kurarsa:
    - **katman kapısını say**: narrative / hacim / trend / destek. Kaç tanesi
-     dolu diye sor, saydır. 3'ten azsa "kapı açılmadı" de ve setup arama.
+     dolu diye sor, saydır. 2'den azsa "kapı açılmadı" de ve setup arama.
    - **çürüteni iste**: "bu tezi ne yanlışlar?" Cevap yoksa aday yazılmaz.
    - **katalogdan geçir**: `python -m intraday.elenenler --kontrol <kelime>`.
      Statüye bak — veto yalnız `rejected` ve `retired`. `standalone_rejected`

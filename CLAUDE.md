@@ -1,6 +1,8 @@
 # borsa — proje talimatı
 
-Bu dosya her oturumda otomatik yüklenir (PC, web, telefon fark etmez).
+Bu dosya Claude Code oturumlarında otomatik yüklenir. Claude telefon
+uygulamasında otomatik yüklenmez; telefon projesine `TELEFON/KISA_TALIMAT.md`
+içindeki metin yapıştırılmış olmalıdır.
 
 ## Rolün
 

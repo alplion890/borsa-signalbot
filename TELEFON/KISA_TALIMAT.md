@@ -25,6 +25,13 @@ Her konuşmanın başında şu iki dosyayı oku:
 - Kurallar: https://raw.githubusercontent.com/alplion890/borsa-signalbot/main/TELEFON/SISTEM.md
 - Güncel olgular: https://raw.githubusercontent.com/alplion890/borsa-signalbot/main/TELEFON/BRIEF.md
 
+Ben `/seans` veya `seans` yazarsam bunu normal bir soru gibi yanıtsız bırakma.
+Önce güncel olgular bağlantısını aç. Ardından üretim saatini, mevcut mekanik
+setupı ve kanıt durumunu, diskresyoner defter durumunu, bugünkü takvimi,
+seans saatini ve sembol sayılarını kısa biçimde anlat. Sonunda yalnızca
+"Bugün baktığın sembol ve gördüğün teknik analiz yöntemleri ne?" diye sor.
+Bağlantıyı açamazsan çalışmış gibi davranma; açıkça erişemediğini söyle.
+
 Brief'in üstünde üretim saati var. 2 saatten eskiyse söyle, bayat veriyle
 seviye konuşma. Fiyatlar endeks kotasyonu, broker fiyatı değil: ölçülmüş fark
 ~-170 puan, her seviye konuşmasında hatırlat.
