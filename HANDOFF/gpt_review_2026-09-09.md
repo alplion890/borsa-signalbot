@@ -40,10 +40,11 @@ taşınması bakım iyileştirmesidir, bugünkü seyrekliğin kök nedeni değil
 1. Diskresyoner `n>=20 ve exp_R<0` durma kuralı yalnızca raporlanıyor, yeni
    aday/`--ac`/`--tetikle` işlemlerini kodda engellemiyordu. Fail-closed kilit
    eklendi.
-2. Telefon brifingi bulutta üretilip repoya yazılıyor, fakat 18:00 TR'de
-   kullanıcıya otomatik ulaşmıyordu. Workflow brifingi Telegram'a dosya olarak
-   gönderecek şekilde güncellendi. Bu emir değil; kullanıcı `/seans` sonrası
-   Maven/MT5 mobilde manuel onay verir.
+2. Telefon brifingi bulutta üretilip repoya yazılıyor, fakat kullanıcıya
+   otomatik ulaşmıyor. Workflow brifingi Telegram'a dosya olarak gönderebilecek
+   şekilde güncellendi; dış hedefe aktarım yalnızca açık
+   `notify_telegram=true` opt-in'i ile çalışır. Bu emir değil; kullanıcı
+   `/seans` sonrası Maven/MT5 mobilde manuel onay verir.
 
 Ek veri-kalitesi düzeltmesi: Yahoo son kapalı gün için fiyat getirip hacmi `0`
 bıraktığında brifing artık sahte `%0 hacim` olgusu basmıyor; ölçüm yok
