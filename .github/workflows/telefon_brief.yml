@@ -8,8 +8,16 @@ on:
   schedule:
     # Seans penceresi: Londra oncesi ve NY seansi boyunca, saat basi.
     # UTC. 15:00 UTC = 18:00 TR (diskresyoner protokol 18:15'te basliyor).
-    - cron: "0 6,13,14,15,16,17,18,19 * * 1-5"
+    # 15:00 ayri tutulur: o kosum brifingi Telegram'a da yollar.
+    - cron: "0 6,13,14,16,17,18,19 * * 1-5"
+    - cron: "0 15 * * 1-5"
   workflow_dispatch:
+    inputs:
+      notify_telegram:
+        description: "Uretilen brifingi Telegram'a da yolla"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -21,6 +29,7 @@ concurrency:
 jobs:
   brief:
     runs-on: ubuntu-latest
+    environment: telegram bot token
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +68,27 @@ jobs:
           done
           echo "Brifing push edilemedi."
           exit 1
+
+      # Kullanici PC basinda degilken de seans baslayabilsin. Bu dosya emir
+      # vermez; olgulari telefona tasir. Maven FAQ'sine gore EA/server execution
+      # yasak oldugu icin emir yine MT5 mobilde kullanici tarafindan basilir.
+      - name: 18:00 TR brifingini Telegram'a yolla
+        if: ${{ github.event.schedule == '0 15 * * 1-5' || inputs.notify_telegram }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; seans brifingi gonderilemedi."
+            exit 1
+          fi
+          caption="18:00 TR seans brifingi hazir. Telefonda Claude projesine /seans yaz. Emir, Maven/MT5 mobilde yalnizca senin manuel onayinla girilir."
+          curl --fail-with-body -sS --max-time 30 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+            -F chat_id="${TELEGRAM_CHAT_ID}" \
+            -F document=@TELEFON/BRIEF.md \
+            -F caption="${caption}" >/dev/null
 
       # Sessiz basarisizlik = bayat brifing = telefonda eski fiyat. Haberi olsun.
       - name: Hata bildirimi (Telegram)

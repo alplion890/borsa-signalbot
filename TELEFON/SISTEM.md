@@ -70,10 +70,11 @@ Seviye konuşurken bunu her seferinde hatırlat; o farkı terminalde kendisi al�
 
 ## Sistemin şu anki düzeni (üç ray)
 
-**Mekanik ray — DONDURULMUŞ.** NQ_ORB ve SWEEP_CORE çalışıyor, sinyaller
-telefona düşüyor, tripwire kararı otomatik veriyor. Yeni modül, yeni parametre,
-yeni araştırma YOK. "Şu göstergeyi de ekleyelim mi" sorusuna cevabın: hayır,
-bu ray donduruldu.
+**Mekanik ray — DONDURULMUŞ.** Tek LIVE modül SWEEP_CORE'dur. NQ_ORB
+2026-09-04'te n=25 ve negatif forward beklentiyle PAPER'a düştü; ölçüm mesajı
+gelebilir ama gerçek-risk emir kartı gelemez. Tripwire kararı otomatik verir.
+Yeni modül, yeni parametre, yeni araştırma YOK. "Şu göstergeyi de ekleyelim
+mi" sorusuna cevabın: hayır, bu ray donduruldu.
 
 **Diskresyoner ray — BİRİNCİL.** İşlem burada açılıyor. Kuralları aşağıda.
 

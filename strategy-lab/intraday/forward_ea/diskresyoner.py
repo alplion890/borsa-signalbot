@@ -296,6 +296,23 @@ def _acik_kontrol(kayitlar: list[Kayit]) -> None:
         )
 
 
+def _durma_kontrol(kayitlar: list[Kayit]) -> None:
+    """On-kayitli durma taahhudunu yeni risk almadan once zorla.
+
+    `ozet().durma_tetik` yalnizca ekranda gorunen bir uyariydi. Kullanici veya
+    telefon akisi o uyariyi atlarsa CLI yeni aday ve islem kabul edebiliyordu;
+    konusmaya dayanan fren, projenin kendi tanimiyla fren degildir.
+    """
+    kapali = [k for k in kayitlar if k.durum == "kapali" and k.r is not None]
+    if len(kapali) < MIN_N:
+        return
+    exp_r = sum(k.r for k in kapali) / len(kapali)
+    if exp_r < 0:
+        raise ValueError(
+            f"DURMA KURALI: n={len(kapali)} ve exp_R={exp_r:+.3f} < 0. "
+            "Yeni aday/islem acilmaz; once defter gozden gecirilmeli.")
+
+
 def _risk_kapisi(bakiye: float | None, risk_pct: float) -> float | None:
     """Bakiye verildiyse riski hesapla ve solvency kapisindan gecir.
 
@@ -320,6 +337,7 @@ def aday(sembol: str, yon: str, tetik: float, stop: float, tez: str, curuten: st
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, tetik)
     risk_usd = _risk_kapisi(bakiye, risk_pct)
     kayitlar = yukle(path)
+    _durma_kontrol(kayitlar)
     yeni = Kayit(
         id=_yeni_id(kayitlar), durum="aday", aday_utc=_simdi(simdi),
         acilis_utc="", kayit_utc=_simdi(simdi), kapanis_utc="", sembol=sembol, yon=yon,
@@ -347,6 +365,7 @@ def ac(sembol: str, yon: str, giris: float, stop: float, tez: str, curuten: str,
     yon, kat = _dogrula(yon, tez, curuten, katmanlar, stop, giris)
     risk_usd = _risk_kapisi(bakiye, risk_pct)
     kayitlar = yukle(path)
+    _durma_kontrol(kayitlar)
     _acik_kontrol(kayitlar)
     yeni = Kayit(
         id=_yeni_id(kayitlar), durum="acik", aday_utc="",
@@ -379,6 +398,7 @@ def tetikle(kid: int, giris: float, path: Path | None = None,
     `acilis`: gercek tetiklenme ani (sonradan kaydediliyorsa gecmis zaman).
     """
     kayitlar = yukle(path)
+    _durma_kontrol(kayitlar)
     idx = _bul(kayitlar, kid, "aday")
     _acik_kontrol(kayitlar)
     k = kayitlar[idx]

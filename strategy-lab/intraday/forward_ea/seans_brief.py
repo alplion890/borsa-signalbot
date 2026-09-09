@@ -111,7 +111,11 @@ def _hacim_yoksa_nan(hacim: pd.Series, pencere: int) -> tuple[float, float]:
     ayni gostermek okuyani yaniltir.
     """
     son = hacim.dropna().iloc[-pencere:]
-    if son.empty or (son == 0).all():
+    # Yahoo bazen futures gunluk serisinde son kapali gunun fiyatini getirip
+    # hacmini 0 birakiyor. Onceki gunlerde hacim olsa bile son deger 0 ise bu
+    # "hacim sifir" olgusu degil, o gun icin olcum yoklugudur. Katman kapisini
+    # sahte bir %0 yuzdelikle doldurmamak icin fail-closed davran.
+    if son.empty or (son == 0).all() or son.iloc[-1] <= 0:
         return float("nan"), float("nan")
     return float(hacim.iloc[-1]), _yuzdelik(hacim, pencere)
 

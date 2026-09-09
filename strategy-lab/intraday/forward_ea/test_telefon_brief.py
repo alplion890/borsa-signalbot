@@ -183,6 +183,17 @@ def test_feed_hacim_vermiyorsa_SIFIR_basmaz():
     assert o.hacim_yuzdelik != o.hacim_yuzdelik
 
 
+def test_son_gun_hacmi_SIFIRSA_olcum_yok_sayilir():
+    """Gecmiste hacim olmasi son bardaki Yahoo boslugunu gercek yapmaz."""
+    eksik_son = _bar_serisi()
+    eksik_son.loc[eksik_son.index[-1], "volume"] = 0.0
+
+    o = sembol_olgusu("NASDAQ100", "1d", veri=lambda s, t: eksik_son)
+
+    assert o.hacim_bugun != o.hacim_bugun
+    assert o.hacim_yuzdelik != o.hacim_yuzdelik
+
+
 def test_brief_hacim_yoksa_ACIKCA_soyler(monkeypatch):
     sifir_hacim = _bar_serisi()
     sifir_hacim["volume"] = 0.0
@@ -220,3 +231,15 @@ def test_dusurme_esigi_TRIPWIRE_ile_AYNI_kaynaktan():
 
     assert telefon_brief.MIN_N is DEMOTION_MIN_N
     assert tw.MIN_N is DEMOTION_MIN_N
+
+
+def test_telefon_workflow_1800_briefini_telegrama_tasir():
+    """PC disi akis: 18:00 TR olgulari telefona gelir, otomatik emir yoktur."""
+    workflow = (telefon_brief.Path(__file__).resolve().parents[3]
+                / ".github" / "workflows" / "telefon_brief.yml")
+    metin = workflow.read_text(encoding="utf-8")
+
+    assert 'cron: "0 15 * * 1-5"' in metin
+    assert "/sendDocument" in metin
+    assert "manuel onayinla" in metin
+    assert "order_send" not in metin

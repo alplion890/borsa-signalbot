@@ -233,6 +233,20 @@ def test_durma_esiginde_negatifse_TETIKLENIR(defter):
     assert ozet(defter)["durma_tetik"]
 
 
+def test_durma_tetiklenince_YENI_RISK_kodda_engellenir(defter):
+    """Uyariyi gormemek, on-kayitli freni atlamaya izin vermemeli."""
+    bekleyen = _aday(defter)
+    for _ in range(MIN_N):
+        _long_kaybeden(defter)
+
+    with pytest.raises(ValueError, match="DURMA KURALI"):
+        _aday(defter, sembol="XAUUSD")
+    with pytest.raises(ValueError, match="DURMA KURALI"):
+        _ac(defter, sembol="XAUUSD")
+    with pytest.raises(ValueError, match="DURMA KURALI"):
+        tetikle(bekleyen.id, giris=24990.0, path=defter)
+
+
 def test_PAS_kayitlari_esigi_DOLDURMAZ(defter):
     """Durma esigi kapanmis ISLEM sayar; bakip gectiklerin degil."""
     for _ in range(MIN_N):
