@@ -122,6 +122,40 @@ def test_sinyal_yoksa_defter_bos_ama_state_yazilir(tmp_path):
     assert (tmp_path / "cloud_state.json").exists()
 
 
+def test_ayni_sembolde_baska_modul_pozisyonu_ilerletmez():
+    """NQ 5m pozisyonu SWEEP 15m veya CAND_NQ bariyla kapanmamalidir."""
+    from .positions import Book, PaperPosition
+
+    p = PaperPosition(
+        module="NQ_ORB_STRONG_TREND", symbol="NASDAQ100", direction=1,
+        entry_time=pd.Timestamp("2026-09-01 16:30"), entry=100.0,
+        sl=90.0, tp=110.0, weight=1.0, max_hold_bars=48, cost_per_side=0.0,
+    )
+    book = Book(open_positions=[p])
+    book.update_module("CAND_NQ_DUAL_THRUST", "NASDAQ100",
+                       pd.Timestamp("2026-09-01 17:00"), 120.0, 80.0, 100.0)
+
+    assert p.status == "open"
+    assert p.bars_held == 0
+    assert not book.closed
+
+
+def test_pozisyon_giristen_eski_barda_kapanmaz():
+    from .positions import PaperPosition
+
+    p = PaperPosition(
+        module="NQ", symbol="NASDAQ100", direction=1,
+        entry_time=pd.Timestamp("2026-09-01 16:30"), entry=100.0,
+        sl=90.0, tp=110.0, weight=1.0, max_hold_bars=48, cost_per_side=0.0,
+    )
+
+    kapandi = p.update(pd.Timestamp("2026-09-01 10:15"), 120.0, 80.0, 100.0)
+
+    assert not kapandi
+    assert p.status == "open"
+    assert p.bars_held == 0
+
+
 def test_telegram_ve_emir_yolu_HIC_YOK():
     src = (cloud_runner.__file__ or "")
     text = open(src, encoding="utf-8").read()

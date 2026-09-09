@@ -233,16 +233,20 @@ def test_dusurme_esigi_TRIPWIRE_ile_AYNI_kaynaktan():
     assert tw.MIN_N is DEMOTION_MIN_N
 
 
-def test_telefon_workflow_briefi_YALNIZ_ACIK_OPTIN_ile_telegrama_tasir():
-    """Dis hedefe brifing acik opt-in ister; otomatik emir yine yoktur."""
+def test_telefon_workflow_iki_onayli_saatte_iki_mesaj_gonderir():
+    """Kullanici iki zamanli otomatik Telegram gonderimine acik onay verdi."""
     workflow = (telefon_brief.Path(__file__).resolve().parents[3]
                 / ".github" / "workflows" / "telefon_brief.yml")
     metin = workflow.read_text(encoding="utf-8")
 
-    bildirim = metin.split("- name: Brifingi Telegram'a yolla", 1)[1]
+    bildirim = metin.split("- name: Iki kisa mesaji Telegram'a yolla", 1)[1]
     bildirim = bildirim.split("- name: Hata bildirimi", 1)[0]
-    assert "/sendDocument" in metin
-    assert "manuel onayinla" in metin
-    assert "if: ${{ inputs.notify_telegram }}" in bildirim
-    assert "github.event.schedule" not in bildirim
+    assert 'cron: "20 13 * * 1-5"' in metin
+    assert 'cron: "15 15 * * 1-5"' in metin
+    assert "/sendMessage" in bildirim
+    assert "durum.txt /tmp/telegram-brief/brief.txt" in bildirim
+    assert "github.event_name == 'schedule'" in bildirim
+    assert "inputs.notify_telegram" in bildirim
+    assert "vars.ACCOUNT_PHASE" in metin
+    assert "vars.MAVEN_PHASE" not in metin
     assert "order_send" not in metin

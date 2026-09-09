@@ -1,5 +1,18 @@
 # Telefondaki asistan için kural seti
 
+## Otomatik Telegram brifingi
+
+Hafta ici **16:20 TR** ve **18:15 TR** saatlerinde iki kisa mesaj gelir:
+
+1. Maven fazi, LIVE/PAPER forward sonuclari, acik setup ve diskresyoner defter.
+2. Yalniz forward'da pozitif kalan LIVE edge ile resmi/ucretsiz Fed+BLS/BEA
+   takvimi ve makro basligi. BLS canli kaynagi PPI/JOLTS gibi yakin yuksek
+   etkili olaylari, yerel takvim FOMC/CPI/NFP'nin yedi gununu kapsar.
+
+Bulut broker bakiyesini okuyamaz; bu alan mesajda acikca "okunmuyor" yazar.
+Mesajlar emir acmaz. Elenmis teknikler yeniden sinyal diye sunulmaz; Maven/MT5
+emri yalnizca kullanici tarafindan telefonda manuel girilir.
+
 Bu dosyayı **claude.ai → Projects → yeni proje → "Proje talimatları"** alanına
 yapıştır. Telefondan sesli konuşurken o proje seçili olsun.
 

@@ -37,6 +37,12 @@ class PaperPosition:
         """Yeni bar ile pozisyonu guncelle. Kapandiysa True doner."""
         if self.status != "open":
             return True
+        # Ayni sembolde farkli modul/timeframe beslemeleri sirayla islenir.
+        # Eski dongu baska modulun daha eski barini bu pozisyona uygulayip
+        # exit_time < entry_time uretebiliyordu. Gecmis/esit bar bir pozisyonu
+        # ne ilerletebilir ne de kapatabilir.
+        if pd.Timestamp(bar_time) <= pd.Timestamp(self.entry_time):
+            return False
         self.bars_held += 1
         risk = self.risk
         if risk <= 0:
@@ -107,6 +113,25 @@ class Book:
         still_open = []
         for p in self.open_positions:
             if p.symbol != symbol:
+                still_open.append(p)
+                continue
+            if p.update(bar_time, high, low, close):
+                self.closed.append(p.to_row())
+            else:
+                still_open.append(p)
+        self.open_positions = still_open
+
+    def update_module(self, module: str, symbol: str, bar_time, high, low, close) -> None:
+        """Yalniz o modulun pozisyonunu kendi feed bariyla ilerlet.
+
+        Birden cok modul NASDAQ100 kullaniyor ve bazilari 5m, bazilari 15m.
+        Sembol bazli guncelleme NQ_ORB pozisyonunu CAND_NQ ve SWEEP barlariyla
+        tekrar tekrar ilerletiyor, timeout sayacini sisiriyor ve feed'lerin son
+        barlari farkliysa zamani geriye goturuyordu.
+        """
+        still_open = []
+        for p in self.open_positions:
+            if p.module != module or p.symbol != symbol:
                 still_open.append(p)
                 continue
             if p.update(bar_time, high, low, close):

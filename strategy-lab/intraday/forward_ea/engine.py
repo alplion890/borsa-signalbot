@@ -96,7 +96,11 @@ def cycle(modules: list[LiveModule], book: Book, last_bar: dict, fetch: Fetch,
             sub = df.iloc[:k + 1]
             bar = sub.iloc[-1]
             bt = sub.index[-1]
-            book.update_symbol(mod.symbol_key, bt, float(bar["high"]),
+            # Ayni sembol birden cok modul/timeframe tarafindan kullaniliyor.
+            # Pozisyon yalniz kendi modulunun sirali barlariyla ilerlemeli;
+            # sembol bazli guncelleme baska feed'in eski barinda kapanis ve
+            # sisirilmis bars_held uretiyordu.
+            book.update_module(mod.name, mod.symbol_key, bt, float(bar["high"]),
                                float(bar["low"]), float(bar["close"]))
             if not book.has_open(mod.name, mod.symbol_key):
                 sig = mod.detect(sub)
