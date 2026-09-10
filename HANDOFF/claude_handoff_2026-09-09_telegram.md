@@ -13,21 +13,49 @@ Hafta ici iki sabit Turkiye saati secildi:
 Her saatte iki ayri sade metin mesaji gider. Emir acilmaz; Maven/MT5 icrasi
 kullanicinin telefondaki manuel onayinda kalir.
 
-## Mesaj 1 - fon ve setup durumu
+## 2026-09-10 kullanici duzeltmesi (onceki formatin yerine gecer)
 
-`intraday.forward_ea.telegram_brief.durum_mesaji()` su alanlari tek mesajda
-uretir:
+Kullanicinin verdigi prompt:
 
-- TR ve New York saati ile ABD nakit seans durumu,
-- repo ayarindaki Maven fazi ve LIVE risk profili,
-- guncel broker bakiyesinin buluttan okunamadigi uyarisi,
-- varsayilan mekanik modullerin LIVE/PAPER tier'i, n ve forward exp_R'si,
-- `cloud_state.json` icindeki acik forward setup ve state bayatlik etiketi,
-- diskresyoner aday/pas/kapanmis islem/durma durumu.
+> "tarama verisi guncel degil dogrulanamadi fln iste nasdaq kirilimi belli
+> degil fln filan diyor saat o zamani gectigi icin mi cunku sunu anlamadin ben
+> o an haberleri ve teknik analiz verilerini gormek istiyorum alpaca api mi
+> versem mesela olur mu bu botun gun icin gercekten bana islem actirmasini
+> istiyorum bu mesajlarda hicbir sey soylemiyor guncel durum ve o anki piyasa
+> durumu firsat varsa bizim setupimiza gore o yoksa sadece o anki durumu o
+> kadar yani yorumlamaya acik olmali ve makro haberler ile o an goze carpan
+> iste hacimle beraber trendin artmasi gibi seyleri de soylemeli"
 
-Tier tek kaynaktan `signalbot.risk.tier_of()` ile, performans tek kanonik
-`birlesik_forward()` okuyucusuyla gelir. Aday/PAPER pozisyonlar acikca gercek
-risksiz yazilir. LIVE isimli bir bulut pozisyonu da broker emri gibi sunulmaz.
+Yeni yorumlama sozlesmesi:
+
+- Claude eski `cloud_state.json` yasina bakip piyasanin guncel durumunu bos
+  birakmaz. Telegram ureticisi her kosumda NQ vadeli 15dk verisini yeniden
+  indirir ve yalniz kapanmis, en fazla 45 dakika gecikmeli bari kullanir.
+- Mesaj trend yonunu, ADX gucunu, VWAP konumunu, son bir saatlik hareketi ve
+  son bar hacminin onceki 20 bara oranini yorumlar. Hacim artisi fiyat/trend
+  yonuyle uyusuyorsa bunu acikca soyler; uyusmuyorsa teyitsiz der.
+- Tek pozitif LIVE kanitli yontem `SWEEP_CORE_AVOID_MID_VWAP`tir. Ancak tarama
+  NQ vadeli feed'indedir; Maven US100 ile mum/VWAP/ADX/sweep eslesmesi garanti
+  degildir. Tetiklenirse "NQ proxy aday" denir ve LONG/SHORT ile relatif giris,
+  stop, hedef ancak MT5 US100 15dk grafikte ayni sweep ve yon dogrulanmak
+  kosuluyla yazilir. Yoksa piyasa durumu yine anlatilir ve yalniz "NQ proxy
+  Sweep tetiklenmedi" denir.
+- Firsat kapisi ile kanit satiri ayni forward olcumunden uretilir. Defter
+  okunamazsa, n=0 ise veya exp_R pozitif degilse sinyal gorulse bile gercek
+  islem adayi sunulmaz.
+- Relatif seviyelerde `P`, Maven MT5 US100 grafigindeki son kapanmis 15dk mum
+  kapanisidir. NQ vadeli ham fiyatini MT5'e dogrudan kopyalama.
+- Negatif/PAPER stratejiler, OB/FVG veto listeleri ve gecmis arastirma
+  tartismalari guncel firsat mesajini doldurmaz.
+- Makro bolumu resmi/ucretsiz BLS iCalendar + Fed/BEA RSS kaynaklarini kullanir.
+- Fon fazi repo `ACCOUNT_PHASE` ayaridir; broker bakiyesi bagli degildir.
+
+## Mesaj 1 - fon ve anlik setup
+
+`durum_mesaji()` TR/ET seansini, Maven fazi/riskini ve `_anlik_nasdaq()` ile o
+anda yeniden hesaplanan NQ proxy adayini yazar. Bu, broker feed'iyle dogrudan
+gercek LIVE sinyal iddiasi degildir. `cloud_state.json` sadece PAPER defterinde
+acik test olup olmadigini gostermek icin kullanilir.
 
 Claude'un `HANDOFF/bekleyen_duzeltmeler_2026-09-09.md` bulgusu takip edildi.
 Kok neden `engine.cycle()` icinde ayni sembolu kullanan farkli modul/timeframe
@@ -35,22 +63,21 @@ barlarinin tum sembol pozisyonlarini ilerletmesiydi. Dongu artik
 `Book.update_module()` ile yalniz ilgili modul pozisyonunu ilerletiyor;
 `PaperPosition.update()` giristen eski/esit bari de reddediyor. Mevcut ham CSV
 degistirilmedi: birlesik forward icindeki `exit_time < entry_time` NQ satirlari
-Telegram istatistiginden haric tutulur ve birinci mesaj kac satirin dislandigini
-acikca yazar. Bu kapidan sonra NQ_ORB yine PAPER, n=25 ve exp_R yaklasik -0.008.
+kanittan haric tutulur. Bu audit ayrintisi sade Telegram mesajini doldurmaz.
+Bu kapidan sonra NQ_ORB yine PAPER, n=25 ve exp_R yaklasik -0.008.
 
-## Mesaj 2 - edge ve makro
+## Mesaj 2 - guncel piyasa, edge ve makro
 
-`edge_mesaji()` yalniz forward'da pozitif kalan tek LIVE teknik yapinin sabit
-tanimini basar: NASDAQ100 15dk likidite sweep + VWAP yonu + ADX>25, min 2R.
-Guncel n/exp_R her uretimde defterden gelir ve kucuk orneklem uyarisi zorunludur.
+`edge_mesaji()` NQ trend/ADX/VWAP/hacim yorumunu, o anki proxy Sweep sonucunu
+ve kanonik forward n/exp_R kanitini basar. Setup yokken genel trendi islem
+sinyali diye genisletmez; setup varken MT5 US100 teyit kapisini ve relatif
+seviyeleri aciklar.
 
 Makro bolumu mevcut `signalbot.market_context` altyapisindan resmi/ucretsiz BLS
 iCalendar ile Fed/BEA RSS'ini kullanir. Boylece yakin CPI/NFP yaninda PPI,
 GDP, PCE ve JOLTS gibi onemli olaylar ile en fazla bir resmi baslik gelir.
 Ag kaynagi calismazsa yerel on-kayitli yedi gunluk FOMC/CPI/NFP takvimine
-duser. ET saati `America/New_York` ile TR'ye cevrilir. Haberden yon veya al/sat
-tahmini uretilmez. Elenmis teknikler ile tek basina FVG/EMA/VWAP yeniden edge
-diye sunulmaz.
+duser. ET saati `America/New_York` ile TR'ye cevrilir.
 
 ## Workflow
 
@@ -67,8 +94,10 @@ takvimini de uygular.
 
 ## Claude icin davranis
 
-Telegram mesajini okurken onu emir sinyali gibi genisletme. Kullanici setup
-sorarsa LIVE/PAPER ayrimini aynen koru, state `BAYAT` ise guncelmis gibi anlatma,
-broker bakiyesi icin sayi uydurma. FOMC/CPI/NFP olgusundan yon cikarimi yapma.
-`/seans` akisi ve 18:15-20:00 TR diskresyoner protokolu `TELEFON/SISTEM.md` ile
-aynen devam eder.
+Mesaji sade Turkceyle yorumla: once "firsat var/yok", sonra trend-hacim
+durumu, sonra makro. Genel yukari/asagi trendi tek basina emir sinyali yapma;
+aday cagrisi yalniz pozitif forward kanitli LIVE Sweep NQ'da tetiklendiyse
+vardir. Bunu yine de "NQ proxy" diye adlandir ve kullanici MT5 US100 15dk
+grafikte ayni sweep/yonu dogrulamadan gercek firsat sayma. PAPER'i gercek islem
+diye sunma, broker bakiyesi uydurma. Teyitli aday varsa telefondaki MT5'te
+relatif seviyeleri uygulamasina yardim et; otomatik emir verme.

@@ -1,8 +1,8 @@
 """Telegram icin iki kisa Maven mesajini uret.
 
-Mesaj 1 operasyon durumudur: fon profili, LIVE/PAPER kanit durumu ve acik
-forward setup'lari. Mesaj 2 yalniz olculmus edge ile resmi/ucretsiz makro
-takvimini tasir. Yorum, yon tahmini ve otomatik emir yoktur.
+Mesaj 1 fon profili ile o anda yeniden taranan LIVE firsati tasir. Mesaj 2
+guncel NQ trend/hacim/volatilite yorumunu, olculmus edge kanitini ve
+resmi/ucretsiz makro takvimi verir. Otomatik emir yoktur.
 """
 from __future__ import annotations
 
@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from ..signalbot import market_context
+from ..indicators import adx, daily_vwap, ema
+from ..signalbot import free_data, market_context
 from ..signalbot.risk import Tier, profile_for, tier_of
 from . import diskresyoner
 from .ledger import birlesik_forward
@@ -69,6 +70,22 @@ class KanitOzeti:
     gecersiz_zaman_satiri: int = 0
 
 
+@dataclass(frozen=True)
+class PiyasaOzeti:
+    teknik: str
+    hacim: str
+    firsat: str
+    veri: str
+
+
+@dataclass(frozen=True)
+class SweepKaniti:
+    n: int
+    exp_r: float
+    onayli: bool
+    metin: str
+
+
 def _stats() -> KanitOzeti:
     """Gercek forward satirlarini ozetle; fiziksel imkansizlari kanit sayma."""
     d = birlesik_forward(include_candidates=False)
@@ -84,6 +101,28 @@ def _stats() -> KanitOzeti:
         alt = d[d["module"] == modul.name]
         sonuc[modul.name] = (len(alt), float(alt["r"].mean()) if len(alt) else float("nan"))
     return KanitOzeti(sonuc, gecersiz)
+
+
+def _sweep_kaniti() -> SweepKaniti:
+    """Sweep icin mesaj ve gercek-firsat kapisini ayni olcumden uret."""
+    try:
+        ozet = _stats()
+        n, exp_r = ozet.moduller.get(
+            "SWEEP_CORE_AVOID_MID_VWAP", (0, float("nan")))
+        onayli = (
+            tier_of("SWEEP_CORE_AVOID_MID_VWAP") is Tier.LIVE
+            and n > 0 and math.isfinite(exp_r) and exp_r > 0
+        )
+    except Exception as exc:
+        return SweepKaniti(
+            0, float("nan"), False,
+            f"olcum okunamadi: {type(exc).__name__}",
+        )
+    metin = (
+        f"NASDAQ100 Sweep: {n} forward islem, ort. {exp_r:+.3f}R"
+        if onayli else "dogrulanmis pozitif LIVE yontem yok"
+    )
+    return SweepKaniti(n, exp_r, onayli, metin)
 
 
 def _acik_setuplar(state_path: Path = DEFAULT_STATE) -> tuple[str, list[dict]]:
@@ -126,6 +165,121 @@ def _istatistik_satiri(ad: str, n: int, exp_r: float) -> str:
     return f"{ad}: n={n}, exp_R={deger}"
 
 
+def _anlik_nasdaq(simdi: datetime, fetch=None,
+                  kanit: SweepKaniti | None = None) -> PiyasaOzeti:
+    """Son kapanmis NQ 15dk barindan yorum ve proxy Sweep adayi uret."""
+    kanit = kanit or _sweep_kaniti()
+    try:
+        getir = fetch or free_data.ohlcv
+        ham = getir("NASDAQ100", "15m", days=59)
+        if ham is None or len(ham) < 520:
+            raise ValueError("en az 520 bar gerekli")
+
+        frame = ham.copy()
+        simdi_ts = pd.Timestamp(simdi)
+        if frame.index.tz is None:
+            simdi_ts = simdi_ts.tz_localize(None) if simdi_ts.tzinfo else simdi_ts
+        elif simdi_ts.tzinfo is None:
+            simdi_ts = simdi_ts.tz_localize("UTC")
+        else:
+            simdi_ts = simdi_ts.tz_convert(frame.index.tz)
+        kapanmis = frame.index + pd.Timedelta(minutes=15) <= simdi_ts
+        frame = frame.loc[kapanmis]
+        if len(frame) < 520:
+            raise ValueError("yeterli kapanmis bar yok")
+
+        bar_zamani = pd.Timestamp(frame.index[-1])
+        kapanis_zamani = bar_zamani + pd.Timedelta(minutes=15)
+        yas_dk = (simdi_ts - kapanis_zamani).total_seconds() / 60
+        if yas_dk < 0 or yas_dk > 45:
+            raise ValueError(f"son kapanmis bar {yas_dk:.0f} dakika eski")
+
+        close = float(frame["close"].iloc[-1])
+        ema20 = float(ema(frame["close"], 20).iloc[-1])
+        ema50 = float(ema(frame["close"], 50).iloc[-1])
+        adx14 = float(adx(frame, 14, shift=0).iloc[-1])
+        vwap = float(daily_vwap(frame).iloc[-1])
+        hareket = float((close / frame["close"].iloc[-5] - 1) * 100)
+
+        if close > ema20 > ema50:
+            trend = "yukari"
+        elif close < ema20 < ema50:
+            trend = "asagi"
+        else:
+            trend = "karisik/yatay"
+        guc = "guclu" if math.isfinite(adx14) and adx14 >= 25 else "zayif"
+        vwap_yonu = "ustunde" if close >= vwap else "altinda"
+        teknik = (
+            f"NQ 15dk: {trend} trend, {guc} (ADX {adx14:.1f}); "
+            f"VWAP {vwap_yonu}; son 1 saat %{hareket:+.2f}"
+        )
+
+        onceki_hacim = frame["volume"].astype(float).iloc[-21:-1]
+        hacim_ort = float(onceki_hacim.mean()) if len(onceki_hacim) else 0.0
+        son_hacim = float(frame["volume"].iloc[-1])
+        if hacim_ort <= 0 or son_hacim <= 0:
+            hacim = "Hacim: bu feed'de guncel olcum yok"
+        else:
+            oran = son_hacim / hacim_ort
+            trend_teyit = ((trend == "yukari" and hareket > 0)
+                           or (trend == "asagi" and hareket < 0))
+            if oran >= 1.3 and trend_teyit:
+                yorum = "artiyor ve trendi destekliyor"
+            elif oran >= 1.3:
+                yorum = "artiyor ama fiyat yonuyle teyitli degil"
+            elif oran < 0.7:
+                yorum = "zayif"
+            else:
+                yorum = "normal"
+            hacim = f"Hacim: {oran:.1f}x, {yorum}"
+
+        live_modul = next(
+            (m for m in default_modules()
+             if m.name == "SWEEP_CORE_AVOID_MID_VWAP"
+             and tier_of(m.name) is Tier.LIVE),
+            None,
+        )
+        if live_modul is None:
+            firsat = "YOK - onayli LIVE yontem yok"
+        else:
+            sinyal = live_modul.detect(frame)
+            if sinyal is None:
+                firsat = "YOK - NQ proxy Sweep tetiklenmedi"
+            else:
+                yon = "LONG" if sinyal.direction == 1 else "SHORT"
+                if not kanit.onayli:
+                    firsat = (
+                        f"GORULDU - NQ proxy Sweep {yon}, fakat pozitif forward "
+                        "kaniti dogrulanmadi; gercek islem adayi degildir"
+                    )
+                else:
+                    giris = sinyal.entry - close
+                    stop = sinyal.sl - close
+                    hedef = sinyal.tp - close
+                    firsat = (
+                        f"ADAY - NQ proxy Sweep {yon}. MT5 US100 15dk grafikte ayni "
+                        f"sweep ve yonu dogrula. Dogrulanirsa son kapanisi P al: "
+                        f"giris P{giris:+.1f}, stop P{stop:+.1f}, hedef P{hedef:+.1f}"
+                    )
+
+        kapanis_dt = kapanis_zamani.to_pydatetime()
+        if kapanis_dt.tzinfo is None:
+            kapanis_dt = kapanis_dt.replace(tzinfo=UTC)
+        veri = (
+            f"Veri: NQ=F kapanmis 15dk bar {kapanis_dt.astimezone(TR).strftime('%H:%M TR')}, "
+            f"{yas_dk:.0f} dk gecikme"
+        )
+        return PiyasaOzeti(teknik, hacim, firsat, veri)
+    except Exception as exc:
+        neden = f"{type(exc).__name__}: {exc}"
+        return PiyasaOzeti(
+            "NQ 15dk: guncel teknik veri alinamadi",
+            "Hacim: bilinmiyor",
+            "DOGRULANAMADI - anlik piyasa verisi yok",
+            "Veri hatasi: " + neden[:160],
+        )
+
+
 def _seans_satiri(simdi: datetime) -> str:
     ny = simdi.astimezone(NY)
     tarih = ny.date().isoformat()
@@ -149,8 +303,12 @@ def _seans_satiri(simdi: datetime) -> str:
 
 
 def durum_mesaji(simdi_utc: datetime | None = None,
-                 state_path: Path = DEFAULT_STATE) -> str:
+                 state_path: Path = DEFAULT_STATE,
+                 piyasa: PiyasaOzeti | None = None,
+                 kanit: SweepKaniti | None = None) -> str:
     simdi = simdi_utc or datetime.now(UTC)
+    kanit = kanit or _sweep_kaniti()
+    piyasa = piyasa or _anlik_nasdaq(simdi, kanit=kanit)
     faz = os.environ.get("MAVEN_PHASE", os.environ.get("PHASE", "bnpl_challenge"))
     try:
         _, profil = profile_for(faz)
@@ -162,14 +320,14 @@ def durum_mesaji(simdi_utc: datetime | None = None,
 
     state_zamani, aciklar = _acik_setuplar(state_path)
     state_guncel = _state_guncel_mi(state_zamani, simdi)
-    live_setup, paper_setup = [], []
+    paper_setup = []
     for p in aciklar if state_guncel else []:
         ad = str(p.get("module", "?"))
         yon = "LONG" if p.get("direction") == 1 else "SHORT"
         tier = tier_of(ad)
         ad_kisa = _YONTEM_ADLARI.get(ad, ad)
-        hedef = live_setup if tier is Tier.LIVE else paper_setup
-        hedef.append(f"{ad_kisa} {yon}")
+        if tier is Tier.PAPER:
+            paper_setup.append(f"{ad_kisa} {yon}")
 
     try:
         d = diskresyoner.ozet()
@@ -182,22 +340,21 @@ def durum_mesaji(simdi_utc: datetime | None = None,
         disk = f"defter okunamadi: {type(exc).__name__}"
 
     tr_saat = simdi.astimezone(TR).strftime("%Y-%m-%d %H:%M TR")
-    if state_guncel:
-        gercek_firsat = " | ".join(live_setup) if live_setup else "YOK - onayli LIVE setup olusmadi"
-        paper_durum = " | ".join(paper_setup) if paper_setup else "acik test yok"
-    else:
-        gercek_firsat = "DOGRULANAMADI - tarama verisi guncel degil"
-        paper_durum = "dogrulanamadi"
+    paper_durum = (
+        (" | ".join(paper_setup) if paper_setup else "acik test yok")
+        if state_guncel else "kayit guncel degil"
+    )
     satirlar = [
         f"MAVEN DURUMU | {tr_saat}",
         _seans_satiri(simdi),
         f"Hesap: {profil_satiri}",
         "Bakiye: buluta bagli degil",
-        "Gercek islem firsati: " + gercek_firsat,
+        "LIVE firsat adayi: " + piyasa.firsat,
         "Paper test: " + paper_durum,
-        f"Tarama verisi: {_state_etiketi(state_zamani, simdi)}",
-        "Manuel takip: " + disk,
+        piyasa.veri,
     ]
+    if disk != "aday=0, pas=0, kapanmis n=0":
+        satirlar.append("Manuel takip: " + disk)
     return "\n".join(satirlar)
 
 
@@ -274,42 +431,21 @@ def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
 
 
 def edge_mesaji(simdi_utc: datetime | None = None,
-                state_path: Path = DEFAULT_STATE) -> str:
-    """Pozitif forward sonucu olan yontemlerin guncel setup durumu ve makro."""
+                state_path: Path = DEFAULT_STATE,
+                piyasa: PiyasaOzeti | None = None,
+                kanit: SweepKaniti | None = None) -> str:
+    """Anlik piyasa yorumu, LIVE edge kaniti ve resmi makro."""
     simdi = simdi_utc or datetime.now(UTC)
-    try:
-        ozet = _stats()
-    except Exception as exc:
-        ozet = KanitOzeti({})
-        kanit_hatasi = f"Ölçüm okunamadı: {type(exc).__name__}"
-    else:
-        kanit_hatasi = ""
-
-    state_zamani, aciklar = _acik_setuplar(state_path)
-    state_guncel = _state_guncel_mi(state_zamani, simdi)
-    acik_yon = ({
-        str(p.get("module", "?")): "LONG" if p.get("direction") == 1 else "SHORT"
-        for p in aciklar
-    } if state_guncel else {})
-    firsatlar = []
-    for modul in default_modules():
-        n, exp_r = ozet.moduller.get(modul.name, (0, float("nan")))
-        if n <= 0 or not math.isfinite(exp_r) or exp_r <= 0:
-            continue
-        tier = tier_of(modul.name)
-        ad = _YONTEM_ADLARI.get(modul.name, modul.name)
-        if not state_guncel:
-            durum = "DURUM BELİRSİZ - tarama güncel değil"
-        elif modul.name in acik_yon:
-            durum = f"AKTİF {acik_yon[modul.name]}" if tier is Tier.LIVE else f"PAPER {acik_yon[modul.name]}"
-        else:
-            durum = "BEKLE - şu an setup yok" if tier is Tier.LIVE else "PAPER - şu an setup yok"
-        firsatlar.append(f"{ad}: {durum} | {n} işlem, ort. {exp_r:+.3f}R")
+    kanit = kanit or _sweep_kaniti()
+    piyasa = piyasa or _anlik_nasdaq(simdi, kanit=kanit)
 
     makro, resmi_baslik = _makro_ozeti(simdi)
     satirlar = [
-        "PİYASA FIRSATLARI",
-        *(firsatlar or [kanit_hatasi or "Pozitif sonuçlu güncel yöntem yok"]),
+        "PİYASA ŞİMDİ",
+        piyasa.teknik,
+        piyasa.hacim,
+        "Fırsat: " + piyasa.firsat,
+        "Kanıt: " + kanit.metin,
         "Önemli makro: " + " | ".join(makro),
     ]
     if resmi_baslik:
@@ -319,7 +455,13 @@ def edge_mesaji(simdi_utc: datetime | None = None,
 
 def mesajlar(simdi_utc: datetime | None = None,
              state_path: Path = DEFAULT_STATE) -> tuple[str, str]:
-    return durum_mesaji(simdi_utc, state_path), edge_mesaji(simdi_utc, state_path)
+    simdi = simdi_utc or datetime.now(UTC)
+    kanit = _sweep_kaniti()
+    piyasa = _anlik_nasdaq(simdi, kanit=kanit)
+    return (
+        durum_mesaji(simdi, state_path, piyasa, kanit),
+        edge_mesaji(simdi, state_path, piyasa, kanit),
+    )
 
 
 def main() -> None:

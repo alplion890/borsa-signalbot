@@ -2,16 +2,22 @@
 
 ## Otomatik Telegram brifingi
 
-Hafta ici **16:20 TR** ve **18:15 TR** saatlerinde iki kisa mesaj gelir:
+Hafta ici hedef **16:20 TR** ve **18:15 TR** saatlerinde iki kisa mesaj gelir
+(GitHub cron yogunlukta gecikebilir):
 
-1. Maven fazi, LIVE/PAPER forward sonuclari, acik setup ve diskresyoner defter.
-2. Yalniz forward'da pozitif kalan LIVE edge ile resmi/ucretsiz Fed+BLS/BEA
-   takvimi ve makro basligi. BLS canli kaynagi PPI/JOLTS gibi yakin yuksek
-   etkili olaylari, yerel takvim FOMC/CPI/NFP'nin yedi gununu kapsar.
+1. Maven fazi/risk profili, o anda yeniden taranan NQ proxy Sweep adayi ve
+   PAPER defterindeki acik test.
+2. Son kapanmis NQ 15dk barindan trend, ADX, VWAP, son bir saatlik hareket ve
+   hacim teyidi; kaniti pozitif bir proxy aday varsa MT5 dogrulama kosulu ve
+   relatif giris/stop/hedef; resmi/ucretsiz Fed+BLS/BEA makro takvimi.
 
 Bulut broker bakiyesini okuyamaz; bu alan mesajda acikca "okunmuyor" yazar.
-Mesajlar emir acmaz. Elenmis teknikler yeniden sinyal diye sunulmaz; Maven/MT5
-emri yalnizca kullanici tarafindan telefonda manuel girilir.
+NQ verisi her brifing kosusunda yeniden indirilir; eski `cloud_state.json`
+gercek firsati engellemez. Yalniz kapanmis ve en fazla 45 dakika gecikmeli bar
+yorumlanir. NQ vadeli ile Maven US100 ayni feed degildir; NQ sinyali bu nedenle
+yalniz proxy adaydir. Aday ancak pozitif LIVE forward kaniti varsa yazilir ve
+kullanici MT5 US100 15dk grafikte ayni sweep/yönü dogrular. Seviyeler basis
+farkini azaltmak icin son MT5 15dk kapanisina relatif verilir.
 
 Bu dosyayı **claude.ai → Projects → yeni proje → "Proje talimatları"** alanına
 yapıştır. Telefondan sesli konuşurken o proje seçili olsun.
