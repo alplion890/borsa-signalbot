@@ -9,7 +9,8 @@ STATU SART (Hermes denetimi 2026-08-29): katalogun hepsi "kullanma" degil.
   not_adopted         -> pozitif ama kitabin altinda, secilmedi  (veto DEGIL)
   retired             -> uretimden cikarildi                     (VETO)
 Ayrica `kapsam` alani, calisan bir modulle isim cakismasini keser: "sweep"
-sorgusu calisan SWEEP_CORE'u, "orb" sorgusu aday/PAPER NQ_ORB'u vetolamaz.
+sorgusu calisan SWEEP_CORE'u, "orb" sorgusu emekli NQ_ORB gecmisini yanlis
+yorumlayamaz.
 
 NEDEN VETO, NEDEN SINYAL DEGIL (2026-08-28 karari):
 "Calismiyor" ile "tersi calisir" ayni sey degildir.
@@ -273,8 +274,9 @@ KATALOG: tuple[Elenen, ...] = (
         tarih="2026-08-28",
         kaynak="modules.py + [[Borsa - Uc Rayli Son Duzen]]",
         anahtarlar=("gold", "altin", "orb", "ny orb", "acilis range"),
-        kapsam=("XAUUSD 5m ORB modulune. NQ_ORB_STRONG_TREND AYRI modul, canli ve "
-                "olculmeye devam ediyor -- 'ORB' kelimesi ikisini birden vetolamaz."),
+        kapsam=("XAUUSD 5m ORB modulune. NQ_ORB_STRONG_TREND ayri moduldu; "
+                "2026-09-11'de negatif forward sonucuyla tarama/Telegram "
+                "listesinden cikarildi. 'ORB' kelimesi SWEEP_CORE'u vetolamaz."),
     ),
     Elenen(
         id="ic_bar_bazli",

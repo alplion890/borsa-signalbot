@@ -9,6 +9,7 @@ London, ES div) ayni protokolle eklenir — README'ye bak.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Callable
 
@@ -223,15 +224,14 @@ def default_modules() -> list[LiveModule]:
     Bu liste tier DEGILDIR: LIVE/PAPER ayrimi `signalbot/risk.py`'de tutulur,
     burasi yalnizca "hangi modul taranir ve bildirilir" sorusunu cevaplar.
 
-    GUNCEL (2026-08-28): NQ_ORB, SWEEP_CORE, EUR_LONDON, GBP_LONDON.
+    GUNCEL (2026-09-11): SWEEP_CORE, EUR_LONDON, GBP_LONDON.
     Kume `test_module_parity.test_final_module_count_and_weights` ile kilitli;
     degistiren once gerekce yazar.
 
-    GOLD_NY_ORB_TREND EMEKLI (asagida gerekce). Eski docstring "Gold + NQ ORB"
-    diyordu ve EUR/GBP'yi "devre disi" olarak anlatiyordu -- ikisi de artik
-    yanlis: EUR/GBP 2026-08-05'te devreye alindi, GOLD 2026-08-28'de cikti.
+    GOLD_NY_ORB_TREND ve NQ_ORB_STRONG_TREND emekli edildi. EUR/GBP
+    2026-08-05'te devreye alindi; GOLD 2026-08-28'de, NQ_ORB ise negatif
+    forward sonucu nedeniyle 2026-09-11'de bildirim listesinden cikti.
     """
-    nq_orb = ORBCase("NASDAQ100", 14.5, 15, 20.5, "retest", "none", 1.5, "other_side", 1.0, 48)
     return [
         # GOLD_NY_ORB_TREND EMEKLI EDILDI 2026-08-28 (kullanici karari).
         #   forward exp_R -0.411, n=9, t=-2.05 -> defterdeki tek |t|>2 sonuc
@@ -242,8 +242,12 @@ def default_modules() -> list[LiveModule]:
         #   Gecmis 9 satir defterde adiyla duruyor. Geri donus: ATR filtresi
         #   yeniden gerekcelendirilir ve CAND_ katmaninda olculur.
         #   Kilit: test_live_whitelist.test_GOLD_artik_default_modules_de_DEGIL
-        LiveModule("NQ_ORB_STRONG_TREND", "NASDAQ100", "5m", 1.0, 48,
-                   _orb_detector(nq_orb, adx_min=28.0)),
+        # NQ_ORB_STRONG_TREND EMEKLI EDILDI 2026-09-11.
+        #   2026-09-04 dusurme olcumu: forward n=25, exp_R=-0.106.
+        #   risk.py PAPER tier'i gercek emri engelliyordu fakat bu liste ayni
+        #   zamanda Telegram tarama listesi oldugu icin telefona yaniltici
+        #   sinyal dusebiliyordu. Gecmis defter kayitlari silinmedi.
+        #   Kilit: test_live_whitelist.test_NQ_ORB_artik_default_modules_de_DEGIL
         LiveModule("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", "15m", 1.0, 480,
                    _sweep_core_detector()),
         # PERSEMBE (dow=3) FILTRESI KALDIRILDI 2026-08-05.
@@ -370,6 +374,25 @@ def candidate_modules() -> list[LiveModule]:
 def forward_test_modules() -> list[LiveModule]:
     """Forward EA'nin kosturdugu tam liste: canli portfoy + adaylar."""
     return [*default_modules(), *candidate_modules()]
+
+
+def retired_position_managers(
+        open_module_names: Iterable[str]) -> list[LiveModule]:
+    """Emekli modullerin yalniz mevcut acik pozisyonlarini sonlandir.
+
+    Bu yoneticiler yeni setup tespit etmez. Modul default listeden cikarildigi
+    anda state'te acik kalan paper pozisyonun sonsuza kadar yetimlesmesini
+    onler; SL/TP/timeout sonucu normal deftere yazilir.
+    """
+    aciklar = set(open_module_names)
+    if "NQ_ORB_STRONG_TREND" not in aciklar:
+        return []
+    return [
+        LiveModule(
+            "NQ_ORB_STRONG_TREND", "NASDAQ100", "5m", 1.0, 48,
+            lambda _frame: None,
+        ),
+    ]
 
 
 def experimental_modules() -> list[LiveModule]:

@@ -98,6 +98,42 @@ def test_acik_pozisyon_kosumlar_arasinda_KAYBOLMAZ(tmp_path):
     assert state["last_bar"]
 
 
+def test_emekli_nq_orb_acik_pozisyonu_kapanir_yenisi_acilmaz(
+        monkeypatch, tmp_path):
+    """Emekli modul yeni sinyal uretmez; state'teki acigi yetim birakmaz."""
+    state = {
+        "last_bar": {
+            "NQ_ORB_STRONG_TREND:NASDAQ100": "2026-08-01 00:00:00",
+        },
+        "open_positions": [{
+            "module": "NQ_ORB_STRONG_TREND",
+            "symbol": "NASDAQ100",
+            "direction": -1,
+            "entry_time": "2026-08-01 00:00:00",
+            "entry": 100.0,
+            "sl": 110.0,
+            "tp": 90.0,
+            "weight": 1.0,
+            "max_hold_bars": 48,
+            "cost_per_side": 0.0,
+            "bars_held": 47,
+        }],
+    }
+    (tmp_path / "cloud_state.json").write_text(
+        json.dumps(state), encoding="utf-8")
+    monkeypatch.setattr(cloud_runner, "forward_test_modules", lambda: [])
+
+    out = cloud_runner.run_once(fetch=_fetch(_bars()), state_dir=tmp_path)
+
+    sonraki = json.loads(
+        (tmp_path / "cloud_state.json").read_text(encoding="utf-8"))
+    ledger = pd.read_csv(tmp_path / "cloud_ledger.csv")
+    assert out["opened"] == 0
+    assert out["closed"] == 1
+    assert sonraki["open_positions"] == []
+    assert list(ledger["module"]) == ["NQ_ORB_STRONG_TREND"]
+
+
 def test_feed_hatasi_diger_modulleri_DUSURMEZ(tmp_path):
     frame = _bars()
 

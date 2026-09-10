@@ -40,14 +40,14 @@ def test_default_gbp_has_normal_range_filter():
 def test_final_module_count_and_weights():
     """Modul kumesini KILITLER -- sessiz ekleme/cikarma burada patlar.
 
-    2026-08-28: GOLD_NY_ORB_TREND cikarildi (emekli). Bu satiri guncellemek
-    kasitli bir karardi, gerekcesi modules.py'de ve
-    test_live_whitelist.test_GOLD_artik_default_modules_de_DEGIL icinde.
+    2026-08-28: GOLD_NY_ORB_TREND cikarildi (emekli).
+    2026-09-11: NQ_ORB_STRONG_TREND negatif forward sonucuyla cikarildi.
+    Bu satiri guncellemek kasitli bir karardi; gerekceler modules.py ve
+    test_live_whitelist icinde kilitlidir.
     Listeyi degistiren herkes ayni seyi yapmali: once gerekce, sonra satir.
     """
     live = {m.name: m.weight for m in modules.default_modules()}
     assert live == {
-        "NQ_ORB_STRONG_TREND": 1.0,
         "SWEEP_CORE_AVOID_MID_VWAP": 1.0,
         "EUR_LONDON_FADE_EMA": 1.0,
         "GBP_LONDON_STRONG_TREND": 0.25,

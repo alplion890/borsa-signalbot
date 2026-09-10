@@ -64,7 +64,9 @@ barlarinin tum sembol pozisyonlarini ilerletmesiydi. Dongu artik
 `PaperPosition.update()` giristen eski/esit bari de reddediyor. Mevcut ham CSV
 degistirilmedi: birlesik forward icindeki `exit_time < entry_time` NQ satirlari
 kanittan haric tutulur. Bu audit ayrintisi sade Telegram mesajini doldurmaz.
-Bu kapidan sonra NQ_ORB yine PAPER, n=25 ve exp_R yaklasik -0.008.
+Bu kapidan sonra NQ_ORB risk katmaninda PAPER kalir; 2026-09-11'de
+`default_modules()` tarama/Telegram listesinden de cikarildi. Gecmis kayitlari
+korunur fakat yeni telefon sinyali uretmez.
 
 ## Mesaj 2 - guncel piyasa, edge ve makro
 

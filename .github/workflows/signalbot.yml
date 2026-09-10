@@ -104,7 +104,7 @@ jobs:
                   print(f"   {k}: {json.dumps(v, ensure_ascii=False)[:180]}")
           PY
 
-      # default_modules(): GOLD_ORB, NQ_ORB, SWEEP_CORE, EUR_LONDON, GBP_LONDON.
+      # default_modules(): SWEEP_CORE, EUR_LONDON, GBP_LONDON.
       # Adaylar (CAND_*) ve BTC bilerek DISARIDA -- olcumleri forward EA yapar.
       - name: Canli modulleri tara
         if: ${{ !inputs.dump_state }}

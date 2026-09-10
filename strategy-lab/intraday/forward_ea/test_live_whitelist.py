@@ -82,3 +82,17 @@ def test_GOLD_artik_default_modules_de_DEGIL() -> None:
         "GOLD emekli edildi; default_modules'e geri eklenecekse once "
         "ATR filtresi gerekcelendirilmeli ve CAND_ olarak olculmeli."
     )
+
+
+def test_NQ_ORB_artik_default_modules_de_DEGIL() -> None:
+    """NQ ORB 2026-09-04'te negatif forward sonucuyla dusuruldu.
+
+    PAPER tier gercek emri zaten engelliyordu; bu kilit, modulu tarama ve
+    Telegram bildirim listesinden de uzak tutar (n=25, exp_R=-0.106).
+    """
+    from .modules import default_modules
+    isimler = {m.name for m in default_modules()}
+    assert "NQ_ORB_STRONG_TREND" not in isimler, (
+        "NQ ORB dusuruldu; default_modules'e geri eklenmeden once yeni ve "
+        "pozitif forward kaniti gerekir."
+    )

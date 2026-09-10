@@ -32,7 +32,7 @@ import pandas as pd
 
 from . import cloud_feed
 from .engine import book_from_state, cycle, pos_to_json
-from .modules import LiveModule, forward_test_modules
+from .modules import LiveModule, forward_test_modules, retired_position_managers
 from .positions import Book
 
 DEFAULT_STATE_DIR = (Path(__file__).resolve().parent.parent.parent
@@ -109,11 +109,15 @@ def run_once(warmup_days: int = 0, modules: list[LiveModule] | None = None,
     state_path = state_dir / STATE_NAME
     ledger_path = state_dir / LEDGER_NAME
 
-    modules = modules if modules is not None else forward_test_modules()
     fetch = fetch if fetch is not None else cloud_feed.ohlcv
 
     state = _load_state(state_path)
     book = book_from_state(state)
+    if modules is None:
+        modules = [
+            *forward_test_modules(),
+            *retired_position_managers(p.module for p in book.open_positions),
+        ]
     last_bar = dict(state.get("last_bar", {}))
     open_before = len(book.open_positions)
 

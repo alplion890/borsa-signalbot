@@ -1,5 +1,10 @@
 # Forward EA — MT5 Demo Canlı Forward Test
 
+> **Güncel durum (2026-09-11):** `NQ_ORB_STRONG_TREND`, negatif forward
+> sonucunun ardından `default_modules()` tarama/Telegram listesinden çıkarıldı.
+> Aşağıdaki eski NQ_ORB tabloları tarihsel araştırma kaydıdır; “devrede” diye
+> okunan satırlar güncel üretim durumunu göstermez.
+
 **Çözdüğü sorun:** Final portföy 7 modüllü + çok varlıklı; gerçek kullanım fon
 hesabı ister ve 7 indikatörü elle takip etmek pratik değil. Bu motor portföyü
 MT5 canlı feed'inde **otomatik** yürütür — fon hesabı gerekmez, `trade_allowed`

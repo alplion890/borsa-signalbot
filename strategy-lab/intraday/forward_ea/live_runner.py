@@ -40,7 +40,7 @@ from .engine import bars_per_day as _bars_per_day
 from .engine import cycle as _engine_cycle
 from .engine import naive as _naive
 from .engine import pos_to_json as _pos_to_json
-from .modules import LiveModule, forward_test_modules
+from .modules import LiveModule, forward_test_modules, retired_position_managers
 from .order_executor import OrderExecutor
 from .positions import Book, PaperPosition
 
@@ -161,7 +161,10 @@ def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False
     state = _load_state()
     book = _book_from_state(state)
     last_bar = state.get("last_bar", {})
-    modules = forward_test_modules()
+    modules = [
+        *forward_test_modules(),
+        *retired_position_managers(p.module for p in book.open_positions),
+    ]
     with mt5_io.session():
         acc = mt5_io.account()
         if not status_only:

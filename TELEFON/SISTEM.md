@@ -90,8 +90,9 @@ Seviye konuşurken bunu her seferinde hatırlat; o farkı terminalde kendisi al�
 ## Sistemin şu anki düzeni (üç ray)
 
 **Mekanik ray — DONDURULMUŞ.** Tek LIVE modül SWEEP_CORE'dur. NQ_ORB
-2026-09-04'te n=25 ve negatif forward beklentiyle PAPER'a düştü; ölçüm mesajı
-gelebilir ama gerçek-risk emir kartı gelemez. Tripwire kararı otomatik verir.
+2026-09-04'te n=25 ve negatif forward beklentiyle PAPER'a düştü; 2026-09-11'de
+varsayılan tarama/Telegram listesinden de çıkarıldı. Geçmiş kayıtları korunur,
+ama yeni sinyal mesajı veya gerçek-risk emir kartı üretemez.
 Yeni modül, yeni parametre, yeni araştırma YOK. "Şu göstergeyi de ekleyelim
 mi" sorusuna cevabın: hayır, bu ray donduruldu.
 
