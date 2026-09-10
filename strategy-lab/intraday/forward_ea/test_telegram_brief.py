@@ -32,18 +32,34 @@ def test_durum_mesaji_live_paper_fon_ve_setuplari_ayirir(monkeypatch, tmp_path):
         datetime(2026, 9, 9, 13, 20, tzinfo=UTC), state)
 
     assert "16:20 TR" in metin
-    assert "Fon profili (repo ayari): Maven BNPL challenge" in metin
-    assert "LIVE: SWEEP_CORE_AVOID_MID_VWAP: n=10, exp_R=+0.613R" in metin
-    assert "PAPER: NQ_ORB_STRONG_TREND: n=25, exp_R=-0.106R" in metin
-    assert "CAND_BTC_ABSORPTION BTCUSDT SHORT [PAPER; gercek risk yok]" in metin
-    assert "state 15:00 TR, BAYAT 80 dk" in metin
-    assert "Guncel broker bakiyesi buluttan okunmuyor" in metin
-    assert "exit<entry olan 2 satir kanita ALINMADI" in metin
-    assert "Otomatik emir YOK" in metin
+    assert "Hesap: Maven BNPL challenge" in metin
+    assert "Gercek islem firsati: DOGRULANAMADI - tarama verisi guncel degil" in metin
+    assert "Paper test: dogrulanamadi" in metin
+    assert "Tarama verisi: 15:00 TR, BAYAT 80 dk" in metin
+    assert "Bakiye: buluta bagli degil" in metin
+    assert "NQ_ORB_STRONG_TREND" not in metin
+    assert "exit<entry" not in metin
     assert len(metin) < 4096
 
 
-def test_edge_mesaji_yalniz_olculmus_live_teknigi_ve_resmi_takvimi_yazar(monkeypatch):
+def test_bayat_state_edge_mesajinda_aktif_firsat_olamaz(monkeypatch, tmp_path):
+    _sabit(monkeypatch)
+    monkeypatch.setattr(telegram_brief, "takvim_olgusu", lambda: ([], []))
+    monkeypatch.setattr(telegram_brief.market_context, "collect", lambda *a, **k: {})
+    state = tmp_path / "state.json"
+    state.write_text(
+        '{"updated_at":"2026-09-10T12:00:00+00:00","open_positions":['
+        '{"module":"SWEEP_CORE_AVOID_MID_VWAP","direction":1}]}'
+    )
+
+    metin = telegram_brief.edge_mesaji(
+        datetime(2026, 9, 10, 15, 15, tzinfo=UTC), state)
+
+    assert "NASDAQ100 Sweep (15 dk): DURUM BELİRSİZ - tarama güncel değil" in metin
+    assert "AKTİF LONG" not in metin
+
+
+def test_edge_mesaji_pozitif_yontemleri_guncel_durumla_yazar(monkeypatch, tmp_path):
     _sabit(monkeypatch)
     olay = MacroEvent(datetime(2026, 9, 11).date(), "CPI", time(8, 30))
     monkeypatch.setattr(telegram_brief, "takvim_olgusu", lambda: ([], [olay]))
@@ -55,16 +71,22 @@ def test_edge_mesaji_yalniz_olculmus_live_teknigi_ve_resmi_takvimi_yazar(monkeyp
         "recent_news": [{"headline": "Federal Reserve publishes policy statement"}],
     })
 
-    metin = telegram_brief.edge_mesaji(datetime(2026, 9, 10, 15, 15, tzinfo=UTC))
+    state = tmp_path / "state.json"
+    state.write_text(
+        '{"updated_at":"2026-09-10T15:10:00+00:00","open_positions":['
+        '{"module":"SWEEP_CORE_AVOID_MID_VWAP","direction":1}]}'
+    )
+    metin = telegram_brief.edge_mesaji(
+        datetime(2026, 9, 10, 15, 15, tzinfo=UTC), state)
 
-    assert "Tek pozitif LIVE teknik: NASDAQ100 15dk likidite sweep + VWAP yonu + ADX>25" in metin
-    assert "forward: n=10, exp_R=+0.613R" in metin
+    assert "NASDAQ100 Sweep (15 dk): AKTİF LONG | 10 işlem, ort. +0.613R" in metin
+    assert "EURUSD London Fade: PAPER - şu an setup yok | 9 işlem, ort. +0.308R" in metin
+    assert "NASDAQ100 Açılış Kırılımı" not in metin
+    assert "GBPUSD London Trend" not in metin
     assert "CPI: 15:30 TR (08:30 ET)" in metin
     assert "BUGUN Producer Price Index: 15:30 TR" in metin
-    assert "Fed+BLS/BEA" in metin
-    assert "Son resmi baslik: Federal Reserve publishes policy statement" in metin
-    assert "Orneklem kucuk" in metin
-    assert "FVG/EMA/VWAP sinyal sayilmaz" in metin
+    assert "Resmî başlık: Federal Reserve publishes policy statement" in metin
+    assert "FVG" not in metin
     assert len(metin) < 4096
 
 
@@ -77,8 +99,8 @@ def test_edge_negatifse_teknigi_edge_diye_sunmaz(monkeypatch):
 
     metin = telegram_brief.edge_mesaji(datetime(2026, 9, 10, 15, 15, tzinfo=UTC))
 
-    assert "Dogrulanmis pozitif LIVE edge YOK" in metin
-    assert "Tek pozitif LIVE teknik" not in metin
+    assert "Pozitif sonuçlu güncel yöntem yok" in metin
+    assert "NASDAQ100 Sweep" not in metin
 
 
 def test_canli_ve_yerel_CPI_iki_kere_yazilmaz(monkeypatch):
@@ -119,5 +141,5 @@ def test_cli_iki_ayri_dosya_yazar(monkeypatch, tmp_path):
 
     telegram_brief.main()
 
-    assert (tmp_path / "durum.txt").read_text(encoding="utf-8").startswith("1/2")
-    assert (tmp_path / "brief.txt").read_text(encoding="utf-8").startswith("2/2")
+    assert (tmp_path / "durum.txt").read_text(encoding="utf-8").startswith("MAVEN DURUMU")
+    assert (tmp_path / "brief.txt").read_text(encoding="utf-8").startswith("PİYASA FIRSATLARI")

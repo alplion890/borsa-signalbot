@@ -35,6 +35,13 @@ _PHASE_LABELS = {
     "funded": "Maven BNPL funded",
 }
 
+_YONTEM_ADLARI = {
+    "SWEEP_CORE_AVOID_MID_VWAP": "NASDAQ100 Sweep (15 dk)",
+    "NQ_ORB_STRONG_TREND": "NASDAQ100 Açılış Kırılımı",
+    "EUR_LONDON_FADE_EMA": "EURUSD London Fade",
+    "GBP_LONDON_STRONG_TREND": "GBPUSD London Trend",
+}
+
 # Resmi NYSE takvimi (https://www.nyse.com/trade/hours-calendars),
 # 2026-2028. Bu yillar disinda mesaj standart saat varsayimini acikca yazar.
 _NYSE_KAPALI = {
@@ -94,11 +101,24 @@ def _state_etiketi(raw: str, simdi: datetime) -> str:
         zaman = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         if zaman.tzinfo is None:
             zaman = zaman.replace(tzinfo=UTC)
-        yas_dk = max(0, int((simdi - zaman.astimezone(UTC)).total_seconds() / 60))
+        yas_dk = int((simdi - zaman.astimezone(UTC)).total_seconds() / 60)
+        if yas_dk < 0:
+            return zaman.astimezone(TR).strftime("%H:%M TR") + ", GECERSIZ GELECEK ZAMAN"
         bayat = f", BAYAT {yas_dk} dk" if yas_dk > 45 else f", {yas_dk} dk once"
         return zaman.astimezone(TR).strftime("%H:%M TR") + bayat
     except (ValueError, TypeError):
         return raw
+
+
+def _state_guncel_mi(raw: str, simdi: datetime) -> bool:
+    try:
+        zaman = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if zaman.tzinfo is None:
+            zaman = zaman.replace(tzinfo=UTC)
+        yas_dk = (simdi - zaman.astimezone(UTC)).total_seconds() / 60
+        return 0 <= yas_dk <= 45
+    except (ValueError, TypeError):
+        return False
 
 
 def _istatistik_satiri(ad: str, n: int, exp_r: float) -> str:
@@ -140,28 +160,16 @@ def durum_mesaji(simdi_utc: datetime | None = None,
     except ValueError:
         profil_satiri = f"BILINMEYEN FON FAZI: {faz}; risk plani kullanma"
 
-    try:
-        ozet = _stats()
-        live, paper = [], []
-        for modul in default_modules():
-            n, exp_r = ozet.moduller.get(modul.name, (0, float("nan")))
-            hedef = live if tier_of(modul.name) is Tier.LIVE else paper
-            hedef.append(_istatistik_satiri(modul.name, n, exp_r))
-    except Exception as exc:  # kanit yoksa mesaj fail-closed kalir
-        live = [f"DEFTER OKUNAMADI: {type(exc).__name__}"]
-        paper = ["DEFTER OKUNAMADI"]
-        ozet = KanitOzeti({}, 0)
-
     state_zamani, aciklar = _acik_setuplar(state_path)
-    setup = []
-    for p in aciklar:
+    state_guncel = _state_guncel_mi(state_zamani, simdi)
+    live_setup, paper_setup = [], []
+    for p in aciklar if state_guncel else []:
         ad = str(p.get("module", "?"))
         yon = "LONG" if p.get("direction") == 1 else "SHORT"
         tier = tier_of(ad)
-        nitelik = "gercek risk yok" if tier is Tier.PAPER else "bulut olcumu; broker emri degil"
-        setup.append(f"{ad} {p.get('symbol', '?')} {yon} [{tier.value}; {nitelik}]")
-    if not setup:
-        setup = ["acik forward setup yok"]
+        ad_kisa = _YONTEM_ADLARI.get(ad, ad)
+        hedef = live_setup if tier is Tier.LIVE else paper_setup
+        hedef.append(f"{ad_kisa} {yon}")
 
     try:
         d = diskresyoner.ozet()
@@ -174,21 +182,22 @@ def durum_mesaji(simdi_utc: datetime | None = None,
         disk = f"defter okunamadi: {type(exc).__name__}"
 
     tr_saat = simdi.astimezone(TR).strftime("%Y-%m-%d %H:%M TR")
+    if state_guncel:
+        gercek_firsat = " | ".join(live_setup) if live_setup else "YOK - onayli LIVE setup olusmadi"
+        paper_durum = " | ".join(paper_setup) if paper_setup else "acik test yok"
+    else:
+        gercek_firsat = "DOGRULANAMADI - tarama verisi guncel degil"
+        paper_durum = "dogrulanamadi"
     satirlar = [
-        f"1/2 MAVEN + SETUP DURUMU | {tr_saat}",
+        f"MAVEN DURUMU | {tr_saat}",
         _seans_satiri(simdi),
-        f"Fon profili (repo ayari): {profil_satiri}. Guncel broker bakiyesi buluttan okunmuyor.",
-        "LIVE: " + " | ".join(live),
-        "PAPER: " + " | ".join(paper),
-        "Simdi: " + " | ".join(setup) + f" (state {_state_etiketi(state_zamani, simdi)})",
-        "Diskresyoner: " + disk,
-        "Otomatik emir YOK; Maven/MT5 mobilde manuel onay gerekir.",
+        f"Hesap: {profil_satiri}",
+        "Bakiye: buluta bagli degil",
+        "Gercek islem firsati: " + gercek_firsat,
+        "Paper test: " + paper_durum,
+        f"Tarama verisi: {_state_etiketi(state_zamani, simdi)}",
+        "Manuel takip: " + disk,
     ]
-    if ozet.gecersiz_zaman_satiri:
-        satirlar.insert(
-            5,
-            f"Veri kapisi: exit<entry olan {ozet.gecersiz_zaman_satiri} satir kanita ALINMADI.",
-        )
     return "\n".join(satirlar)
 
 
@@ -264,45 +273,53 @@ def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
     return satirlar[:4], baslik or None
 
 
-def edge_mesaji(simdi_utc: datetime | None = None) -> str:
-    """Sadece forward'da pozitif kalan LIVE teknik ve resmi makro takvim."""
+def edge_mesaji(simdi_utc: datetime | None = None,
+                state_path: Path = DEFAULT_STATE) -> str:
+    """Pozitif forward sonucu olan yontemlerin guncel setup durumu ve makro."""
     simdi = simdi_utc or datetime.now(UTC)
     try:
-        n, exp_r = _stats().moduller.get(
-            "SWEEP_CORE_AVOID_MID_VWAP", (0, float("nan")))
-        kanit = _istatistik_satiri("forward", n, exp_r)
-        edge_var = (
-            tier_of("SWEEP_CORE_AVOID_MID_VWAP") is Tier.LIVE
-            and n > 0 and math.isfinite(exp_r) and exp_r > 0
-        )
+        ozet = _stats()
     except Exception as exc:
-        kanit = f"forward defteri okunamadi: {type(exc).__name__}"
-        edge_var = False
-    makro, resmi_baslik = _makro_ozeti(simdi)
-    if edge_var:
-        baslik = "2/2 KISA EDGE + MAKRO BRIEF"
-        teknik = "Tek pozitif LIVE teknik: NASDAQ100 15dk likidite sweep + VWAP yonu + ADX>25; min 2R."
-        kanit_satiri = f"Kanit: {kanit}. Orneklem kucuk; setup yoksa islem yok."
+        ozet = KanitOzeti({})
+        kanit_hatasi = f"Ölçüm okunamadı: {type(exc).__name__}"
     else:
-        baslik = "2/2 KISA KANIT + MAKRO BRIEF"
-        teknik = "Dogrulanmis pozitif LIVE edge YOK; mekanik islem acma."
-        kanit_satiri = f"Kanit: {kanit}."
+        kanit_hatasi = ""
+
+    state_zamani, aciklar = _acik_setuplar(state_path)
+    state_guncel = _state_guncel_mi(state_zamani, simdi)
+    acik_yon = ({
+        str(p.get("module", "?")): "LONG" if p.get("direction") == 1 else "SHORT"
+        for p in aciklar
+    } if state_guncel else {})
+    firsatlar = []
+    for modul in default_modules():
+        n, exp_r = ozet.moduller.get(modul.name, (0, float("nan")))
+        if n <= 0 or not math.isfinite(exp_r) or exp_r <= 0:
+            continue
+        tier = tier_of(modul.name)
+        ad = _YONTEM_ADLARI.get(modul.name, modul.name)
+        if not state_guncel:
+            durum = "DURUM BELİRSİZ - tarama güncel değil"
+        elif modul.name in acik_yon:
+            durum = f"AKTİF {acik_yon[modul.name]}" if tier is Tier.LIVE else f"PAPER {acik_yon[modul.name]}"
+        else:
+            durum = "BEKLE - şu an setup yok" if tier is Tier.LIVE else "PAPER - şu an setup yok"
+        firsatlar.append(f"{ad}: {durum} | {n} işlem, ort. {exp_r:+.3f}R")
+
+    makro, resmi_baslik = _makro_ozeti(simdi)
     satirlar = [
-        baslik,
-        teknik,
-        kanit_satiri,
-        "Makro (resmi/ucretsiz Fed+BLS/BEA): " + " | ".join(makro),
-        "Elenmis/sahte teknikler ve tek basina FVG/EMA/VWAP sinyal sayilmaz.",
-        "Haber yon tahmini degildir; kirmizi haber cevresinde Maven kisitlarini uygula.",
+        "PİYASA FIRSATLARI",
+        *(firsatlar or [kanit_hatasi or "Pozitif sonuçlu güncel yöntem yok"]),
+        "Önemli makro: " + " | ".join(makro),
     ]
     if resmi_baslik:
-        satirlar.insert(4, "Son resmi baslik: " + resmi_baslik[:180])
+        satirlar.append("Resmî başlık: " + resmi_baslik[:180])
     return "\n".join(satirlar)
 
 
 def mesajlar(simdi_utc: datetime | None = None,
              state_path: Path = DEFAULT_STATE) -> tuple[str, str]:
-    return durum_mesaji(simdi_utc, state_path), edge_mesaji(simdi_utc)
+    return durum_mesaji(simdi_utc, state_path), edge_mesaji(simdi_utc, state_path)
 
 
 def main() -> None:
