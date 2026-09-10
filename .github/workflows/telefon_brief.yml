@@ -89,10 +89,33 @@ jobs:
             exit 1
           fi
           for file in /tmp/telegram-brief/durum.txt /tmp/telegram-brief/brief.txt; do
-            curl --fail-with-body -sS --max-time 30 \
+            response="$(curl --fail-with-body -sS --max-time 30 \
               -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
-              --data-urlencode "text@${file}" >/dev/null
+              --data-urlencode "text@${file}")"
+            TELEGRAM_RESPONSE="$response" python - <<'PY'
+          import hashlib
+          import hmac
+          import json
+          import os
+
+          payload = json.loads(os.environ["TELEGRAM_RESPONSE"])
+          if payload.get("ok") is not True:
+              raise SystemExit(f"Telegram API teslimati reddetti: {payload.get('description', 'bilinmeyen hata')}")
+
+          result = payload.get("result") or {}
+          chat = result.get("chat") or {}
+          fingerprint = hmac.new(
+              os.environ["TELEGRAM_BOT_TOKEN"].encode(),
+              str(chat.get("id", "")).encode(),
+              hashlib.sha256,
+          ).hexdigest()[:12]
+          print(
+              "Telegram teslim onayi: "
+              f"message_id={result.get('message_id')}, "
+              f"chat_type={chat.get('type')}, chat_fingerprint={fingerprint}"
+          )
+          PY
           done
 
       # Sessiz basarisizlik = bayat brifing = telefonda eski fiyat. Haberi olsun.
