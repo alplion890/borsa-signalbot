@@ -165,6 +165,43 @@ def _istatistik_satiri(ad: str, n: int, exp_r: float) -> str:
     return f"{ad}: n={n}, exp_R={deger}"
 
 
+def _ayni_saat_hacim_orani(frame: pd.DataFrame, gun: int = 20,
+                           min_gozlem: int = 10) -> float | None:
+    """Son bar hacmini onceki gunlerin ayni New York saat dilimiyle kiyasla.
+
+    NQ hacmi gun icinde guclu bir periyodiklik tasir. Son bari onceki 20 ardil
+    barla kiyaslamak acilis/kapanis hacmini yanlislikla "anormal" gosterebilir.
+    Burada yalniz tamamlanmis gecmis gunlerin ayni 15 dakikalik kutulari ve
+    robust baz cizgisi olarak medyan kullanilir. LIVE sinyali filtrelenmez;
+    sonuc Telegram baglami ve ileriye donuk olcum icindir.
+    """
+    if frame.empty or "volume" not in frame:
+        return None
+
+    index = pd.DatetimeIndex(frame.index)
+    if index.tz is None:
+        index = index.tz_localize("UTC")
+    else:
+        index = index.tz_convert("UTC")
+    yerel = index.tz_convert("America/New_York")
+    son = yerel[-1]
+
+    hacimler = pd.to_numeric(frame["volume"], errors="coerce")
+    ayni_kutu = (
+        (yerel.hour == son.hour)
+        & (yerel.minute == son.minute)
+        & (yerel.date < son.date())
+    )
+    gecmis = hacimler.loc[ayni_kutu]
+    gecmis = gecmis[gecmis.notna() & (gecmis > 0)].tail(gun)
+    son_hacim = float(hacimler.iloc[-1])
+    if len(gecmis) < min_gozlem or not math.isfinite(son_hacim) or son_hacim <= 0:
+        return None
+
+    normal = float(gecmis.median())
+    return son_hacim / normal if normal > 0 else None
+
+
 def _anlik_nasdaq(simdi: datetime, fetch=None,
                   kanit: SweepKaniti | None = None) -> PiyasaOzeti:
     """Son kapanmis NQ 15dk barindan yorum ve proxy Sweep adayi uret."""
@@ -214,24 +251,21 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
             f"VWAP {vwap_yonu}; son 1 saat %{hareket:+.2f}"
         )
 
-        onceki_hacim = frame["volume"].astype(float).iloc[-21:-1]
-        hacim_ort = float(onceki_hacim.mean()) if len(onceki_hacim) else 0.0
-        son_hacim = float(frame["volume"].iloc[-1])
-        if hacim_ort <= 0 or son_hacim <= 0:
-            hacim = "Hacim: bu feed'de guncel olcum yok"
+        oran = _ayni_saat_hacim_orani(frame)
+        if oran is None:
+            hacim = "Hacim: ayni saat icin yeterli gecmis olcum yok"
         else:
-            oran = son_hacim / hacim_ort
             trend_teyit = ((trend == "yukari" and hareket > 0)
                            or (trend == "asagi" and hareket < 0))
             if oran >= 1.3 and trend_teyit:
-                yorum = "artiyor ve trendi destekliyor"
+                yorum = "olagandisi ve trendi destekliyor"
             elif oran >= 1.3:
-                yorum = "artiyor ama fiyat yonuyle teyitli degil"
+                yorum = "olagandisi ama fiyat yonuyle teyitli degil"
             elif oran < 0.7:
-                yorum = "zayif"
+                yorum = "bu saat icin zayif"
             else:
-                yorum = "normal"
-            hacim = f"Hacim: {oran:.1f}x, {yorum}"
+                yorum = "bu saat icin normal"
+            hacim = f"Hacim: ayni 15dk saat dilimi normalinin {oran:.1f}x'i; {yorum}"
 
         live_modul = next(
             (m for m in default_modules()

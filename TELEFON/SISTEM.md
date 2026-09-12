@@ -11,6 +11,21 @@ Hafta ici hedef **16:20 TR** ve **18:15 TR** saatlerinde iki kisa mesaj gelir
    hacim teyidi; kaniti pozitif bir proxy aday varsa MT5 dogrulama kosulu ve
    relatif giris/stop/hedef; resmi/ucretsiz Fed+BLS/BEA makro takvimi.
 
+### Hacim olcumu (2026-09-12)
+
+NQ hacmi artik son 20 ardil barin ortalamasi ile degil, **onceki 20 islem
+gununun ayni New York 15 dakikalik saat diliminin medyani** ile kiyaslanir.
+Boylece ABD acilisi ve kapanisindaki dogal hacim artisi yanlislikla "olagandisi
+hacim" diye sunulmaz. Saat eslemesi `America/New_York` ile yapilir; yaz/kis
+saati gecisleri UTC saatini kaydirsa da seans dilimi ayni kalir.
+
+Bu oran yalniz Telegram piyasa baglamidir; SWEEP_CORE girisini engellemez,
+sinyal sayisini degistirmez ve LIVE forward serisini yeniden baslatmaz. Esikler
+sabit ve betimseldir: `>=1.3x` olagandisi, `<0.7x` zayif, arasi normal. En az 10
+gecmis ayni-saat gozlemi yoksa sistem oran uydurmaz ve "yeterli gecmis olcum
+yok" yazar. Gelecekte bunu emir filtresi yapmak ayri, on-kayitli bir PAPER
+hipotezi gerektirir.
+
 Bulut broker bakiyesini okuyamaz; bu alan mesajda acikca "okunmuyor" yazar.
 NQ verisi her brifing kosusunda yeniden indirilir; eski `cloud_state.json`
 gercek firsati engellemez. Yalniz kapanmis ve en fazla 45 dakika gecikmeli bar
