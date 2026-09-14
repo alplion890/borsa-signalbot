@@ -30,17 +30,27 @@ DEFAULT_STATE = (Path(__file__).resolve().parent.parent.parent
                  / "outputs" / "intraday" / "forward_ea" / "cloud_state.json")
 
 _PHASE_LABELS = {
-    "bnpl_challenge": "Maven BNPL challenge",
-    "challenge": "Maven BNPL challenge",
-    "bnpl_funded": "Maven BNPL funded",
-    "funded": "Maven BNPL funded",
+    "bnpl_challenge": "Maven 5K değerlendirme hesabı",
+    "challenge": "Maven 5K değerlendirme hesabı",
+    "bnpl_funded": "Maven 5K finanse hesap",
+    "funded": "Maven 5K finanse hesap",
 }
 
 _YONTEM_ADLARI = {
-    "SWEEP_CORE_AVOID_MID_VWAP": "NASDAQ100 Sweep (15 dk)",
-    "NQ_ORB_STRONG_TREND": "NASDAQ100 Açılış Kırılımı",
-    "EUR_LONDON_FADE_EMA": "EURUSD London Fade",
-    "GBP_LONDON_STRONG_TREND": "GBPUSD London Trend",
+    "SWEEP_CORE_AVOID_MID_VWAP": "Nasdaq 100 kısa taşma ve geri dönüş yöntemi",
+    "NQ_ORB_STRONG_TREND": "Nasdaq 100 açılış kırılımı",
+    "EUR_LONDON_FADE_EMA": "Avro/dolar Londra dönüş denemesi",
+    "GBP_LONDON_STRONG_TREND": "Sterlin/dolar Londra yön denemesi",
+}
+
+_MAKRO_ADLARI = {
+    "cpi": "ABD tüketici enflasyonu",
+    "ppi": "ABD üretici enflasyonu",
+    "nfp": "ABD tarım dışı istihdam",
+    "fomc": "Fed faiz kararı",
+    "gdp": "ABD büyüme verisi",
+    "pce": "Fed'in izlediği tüketim enflasyonu",
+    "jolts": "ABD açık iş sayısı",
 }
 
 # Resmi NYSE takvimi (https://www.nyse.com/trade/hours-calendars),
@@ -116,11 +126,13 @@ def _sweep_kaniti() -> SweepKaniti:
     except Exception as exc:
         return SweepKaniti(
             0, float("nan"), False,
-            f"olcum okunamadi: {type(exc).__name__}",
+            f"Ölçüm sonucu okunamadı: {type(exc).__name__}",
         )
     metin = (
-        f"NASDAQ100 Sweep: {n} forward islem, ort. {exp_r:+.3f}R"
-        if onayli else "dogrulanmis pozitif LIVE yontem yok"
+        f"Gerçek para için kullanılan yöntem bağımsız ileri testte {n} işlem "
+        f"gördü. İşlem başına ortalama sonuç, başlangıçta göze alınan "
+        f"tutarın {exp_r:+.3f} katı."
+        if onayli else "Olumlu sonucu doğrulanmış bir gerçek para yöntemi yok."
     )
     return SweepKaniti(n, exp_r, onayli, metin)
 
@@ -246,26 +258,40 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
             trend = "karisik/yatay"
         guc = "guclu" if math.isfinite(adx14) and adx14 >= 25 else "zayif"
         vwap_yonu = "ustunde" if close >= vwap else "altinda"
+        trend_adi = {
+            "yukari": "yukarı",
+            "asagi": "aşağı",
+            "karisik/yatay": "karışık veya yatay",
+        }[trend]
+        guc_adi = "belirgin" if guc == "guclu" else "zayıf"
+        ortalama_konum = "üzerinde" if vwap_yonu == "ustunde" else "altında"
         teknik = (
-            f"NQ 15dk: {trend} trend, {guc} (ADX {adx14:.1f}); "
-            f"VWAP {vwap_yonu}; son 1 saat %{hareket:+.2f}"
+            f"Nasdaq vadeli, 15 dakikalık görünüm: kısa vadeli hareket "
+            f"{trend_adi} ve {guc_adi}. Fiyat bugünkü ortalama işlem "
+            f"fiyatının {ortalama_konum}; son 1 saat değişimi {hareket:+.2f}%."
         )
 
         oran = _ayni_saat_hacim_orani(frame)
         if oran is None:
-            hacim = "Hacim: ayni saat icin yeterli gecmis olcum yok"
+            hacim = (
+                "İşlem hacmi: Bu 15 dakikalık saat için karşılaştırmaya "
+                "yetecek geçmiş gün yok."
+            )
         else:
             trend_teyit = ((trend == "yukari" and hareket > 0)
                            or (trend == "asagi" and hareket < 0))
             if oran >= 1.3 and trend_teyit:
-                yorum = "olagandisi ve trendi destekliyor"
+                yorum = "alışılmadık yüksek ve fiyat hareketini destekliyor"
             elif oran >= 1.3:
-                yorum = "olagandisi ama fiyat yonuyle teyitli degil"
+                yorum = "alışılmadık yüksek ama fiyat yönüyle uyuşmuyor"
             elif oran < 0.7:
-                yorum = "bu saat icin zayif"
+                yorum = "bu saat için zayıf"
             else:
-                yorum = "bu saat icin normal"
-            hacim = f"Hacim: ayni 15dk saat dilimi normalinin {oran:.1f}x'i; {yorum}"
+                yorum = "bu saat için normal"
+            hacim = (
+                "İşlem hacmi: Önceki işlem günlerinde aynı saatte görülen "
+                f"normal hacmin {oran:.1f} katı; {yorum}."
+            )
 
         live_modul = next(
             (m for m in default_modules()
@@ -274,43 +300,50 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
             None,
         )
         if live_modul is None:
-            firsat = "YOK - onayli LIVE yontem yok"
+            firsat = "Yok — gerçek para için onaylı yöntem bulunamadı."
         else:
             sinyal = live_modul.detect(frame)
             if sinyal is None:
-                firsat = "YOK - NQ proxy Sweep tetiklenmedi"
+                firsat = (
+                    "Yok — Nasdaq vadeli grafiğinde ölçülmüş kısa taşma ve "
+                    "geri dönüş koşulu oluşmadı."
+                )
             else:
-                yon = "LONG" if sinyal.direction == 1 else "SHORT"
+                yon = "alış" if sinyal.direction == 1 else "satış"
                 if not kanit.onayli:
                     firsat = (
-                        f"GORULDU - NQ proxy Sweep {yon}, fakat pozitif forward "
-                        "kaniti dogrulanmadi; gercek islem adayi degildir"
+                        f"Grafikte {yon} yönünde kısa taşma ve geri dönüş görüldü; "
+                        "ancak yöntemin olumlu ileri test sonucu doğrulanmadığı "
+                        "için gerçek işlem adayı değildir."
                     )
                 else:
                     giris = sinyal.entry - close
                     stop = sinyal.sl - close
                     hedef = sinyal.tp - close
                     firsat = (
-                        f"ADAY - NQ proxy Sweep {yon}. MT5 US100 15dk grafikte ayni "
-                        f"sweep ve yonu dogrula. Dogrulanirsa son kapanisi P al: "
-                        f"giris P{giris:+.1f}, stop P{stop:+.1f}, hedef P{hedef:+.1f}"
+                        f"Aday var — Nasdaq vadeli grafiğinde {yon} yönünde kısa "
+                        "taşma ve geri dönüş görüldü. Maven US100 15 dakikalık "
+                        "grafikte aynı hareketi doğrula. Doğrulanırsa son kapanışa "
+                        f"göre giriş {giris:+.1f} puan, zarar durdur {stop:+.1f} "
+                        f"puan, hedef {hedef:+.1f} puan."
                     )
 
         kapanis_dt = kapanis_zamani.to_pydatetime()
         if kapanis_dt.tzinfo is None:
             kapanis_dt = kapanis_dt.replace(tzinfo=UTC)
         veri = (
-            f"Veri: NQ=F kapanmis 15dk bar {kapanis_dt.astimezone(TR).strftime('%H:%M TR')}, "
-            f"{yas_dk:.0f} dk gecikme"
+            "Veri zamanı: Nasdaq vadeli işlemlerinin son tamamlanmış 15 "
+            f"dakikalık mumu {kapanis_dt.astimezone(TR).strftime('%H:%M TR')}; "
+            f"veri {yas_dk:.0f} dakika gecikmeli."
         )
         return PiyasaOzeti(teknik, hacim, firsat, veri)
     except Exception as exc:
         neden = f"{type(exc).__name__}: {exc}"
         return PiyasaOzeti(
-            "NQ 15dk: guncel teknik veri alinamadi",
-            "Hacim: bilinmiyor",
-            "DOGRULANAMADI - anlik piyasa verisi yok",
-            "Veri hatasi: " + neden[:160],
+            "Nasdaq için güncel 15 dakikalık piyasa görünümü alınamadı.",
+            "İşlem hacmi bilinmiyor.",
+            "Doğrulanamadı — güncel piyasa verisi yok.",
+            "Veri hatası: " + neden[:160],
         )
 
 
@@ -319,21 +352,21 @@ def _seans_satiri(simdi: datetime) -> str:
     tarih = ny.date().isoformat()
     dakika = ny.hour * 60 + ny.minute
     if tarih in _NYSE_KAPALI:
-        durum = "NYSE tatili; nakit seans kapali"
+        durum = "ABD borsası tatil; normal seans kapalı"
     elif ny.weekday() >= 5:
         durum = "hafta sonu"
     else:
         kapanis = 13 * 60 if tarih in _NYSE_ERKEN_KAPANIS else 16 * 60
-        erken = " (erken kapanis 13:00)" if kapanis == 13 * 60 else ""
+        erken = " (erken kapanış 13:00)" if kapanis == 13 * 60 else ""
         if dakika < 9 * 60 + 30:
-            durum = f"nakit acilisa {9 * 60 + 30 - dakika} dk{erken}"
+            durum = f"ABD borsasının açılışına {9 * 60 + 30 - dakika} dakika{erken}"
         elif dakika < kapanis:
-            durum = f"nakit seans acik; kapanisa {kapanis - dakika} dk{erken}"
+            durum = f"ABD borsası açık; kapanışa {kapanis - dakika} dakika{erken}"
         else:
-            durum = f"nakit seans kapandi{erken}"
+            durum = f"ABD borsası kapandı{erken}"
         if ny.year not in {2026, 2027, 2028}:
-            durum += "; tatil takvimi bu yil icin pinli degil"
-    return f"ABD/NY {ny.strftime('%H:%M')} ET - {durum}"
+            durum += "; bu yılın tatil takvimi doğrulanmamış"
+    return f"New York saati {ny.strftime('%H:%M')} — {durum}"
 
 
 def durum_mesaji(simdi_utc: datetime | None = None,
@@ -346,18 +379,18 @@ def durum_mesaji(simdi_utc: datetime | None = None,
     faz = os.environ.get("MAVEN_PHASE", os.environ.get("PHASE", "bnpl_challenge"))
     try:
         _, profil = profile_for(faz)
-        profil_satiri = (
-            f"{_PHASE_LABELS.get(faz, faz)}; LIVE risk %{profil.normal_pct * 100:.2g}"
-        )
+        profil_satiri = _PHASE_LABELS.get(faz, faz)
+        risk_satiri = f"Planlanan gerçek işlem riski: bakiyenin %{profil.normal_pct * 100:.2g}'i"
     except ValueError:
-        profil_satiri = f"BILINMEYEN FON FAZI: {faz}; risk plani kullanma"
+        profil_satiri = f"Bilinmeyen hesap aşaması: {faz}"
+        risk_satiri = "Risk planı doğrulanamadı; işlem riski kullanma."
 
     state_zamani, aciklar = _acik_setuplar(state_path)
     state_guncel = _state_guncel_mi(state_zamani, simdi)
     paper_setup = []
     for p in aciklar if state_guncel else []:
         ad = str(p.get("module", "?"))
-        yon = "LONG" if p.get("direction") == 1 else "SHORT"
+        yon = "alış yönü" if p.get("direction") == 1 else "satış yönü"
         tier = tier_of(ad)
         ad_kisa = _YONTEM_ADLARI.get(ad, ad)
         if tier is Tier.PAPER:
@@ -365,30 +398,37 @@ def durum_mesaji(simdi_utc: datetime | None = None,
 
     try:
         d = diskresyoner.ozet()
-        disk = f"aday={d['aday_acik']}, pas={d['pas']}, kapanmis n={d['n']}"
+        disk = (
+            f"açık aday {d['aday_acik']}, vazgeçilen {d['pas']}, "
+            f"kapanan işlem {d['n']}"
+        )
         if d["n"]:
-            disk += f", exp_R={d['exp_R']:+.3f}"
+            disk += (
+                "; işlem başına ortalama sonuç, göze alınan tutarın "
+                f"{d['exp_R']:+.3f} katı"
+            )
         if d["durma_tetik"]:
-            disk += "; DURMA KURALI AKTIF"
+            disk += "; durma kuralı etkin"
     except Exception as exc:
-        disk = f"defter okunamadi: {type(exc).__name__}"
+        disk = f"takip defteri okunamadı: {type(exc).__name__}"
 
     tr_saat = simdi.astimezone(TR).strftime("%Y-%m-%d %H:%M TR")
     paper_durum = (
-        (" | ".join(paper_setup) if paper_setup else "acik test yok")
-        if state_guncel else "kayit guncel degil"
+        (" | ".join(paper_setup) if paper_setup else "açık deneme yok")
+        if state_guncel else "bulut kaydı güncel değil"
     )
     satirlar = [
-        f"MAVEN DURUMU | {tr_saat}",
+        f"MAVEN KISA DURUM | {tr_saat}",
         _seans_satiri(simdi),
-        f"Hesap: {profil_satiri}",
-        "Bakiye: buluta bagli degil",
-        "LIVE firsat adayi: " + piyasa.firsat,
-        "Paper test: " + paper_durum,
+        f"Hesap aşaması: {profil_satiri}",
+        risk_satiri,
+        "Hesap bakiyesi: Sistem uzaktan göremiyor.",
+        "Gerçek para bölümü (LIVE): " + piyasa.firsat,
+        "Deneme bölümü (PAPER — gerçek para değil): " + paper_durum,
         piyasa.veri,
     ]
-    if disk != "aday=0, pas=0, kapanmis n=0":
-        satirlar.append("Manuel takip: " + disk)
+    if disk != "açık aday 0, vazgeçilen 0, kapanan işlem 0":
+        satirlar.append("Kendi kararlarınla yapılan işlemlerin takibi: " + disk)
     return "\n".join(satirlar)
 
 
@@ -396,13 +436,16 @@ def _yerel_makro_satirlari(simdi: datetime) -> list[str]:
     bugunku, haftaki = takvim_olgusu()
     olaylar = [*bugunku, *haftaki]
     if not olaylar:
-        return ["Onumuzdeki 7 gunde FOMC/CPI/NFP yok."]
+        return [
+            "Önümüzdeki 7 günde Fed faiz kararı, ABD tüketici enflasyonu "
+            "veya tarım dışı istihdam açıklaması yok."
+        ]
     satirlar = []
     for olay in olaylar[:4]:
         et = datetime.combine(olay.gun, olay.aciklama_et, tzinfo=NY)
         tr = et.astimezone(TR)
-        ne = "BUGUN" if olay.gun == simdi.astimezone(TR).date() else olay.gun.isoformat()
-        satirlar.append(f"{ne} {olay.tip}: {tr.strftime('%H:%M TR')} ({et.strftime('%H:%M ET')})")
+        ne = "BUGÜN" if olay.gun == simdi.astimezone(TR).date() else olay.gun.isoformat()
+        satirlar.append(f"{ne} {_makro_adi(olay.tip)}: {tr.strftime('%H:%M TR')}")
     return satirlar
 
 
@@ -410,14 +453,24 @@ def _olay_kodu(ad: str) -> str:
     lower = ad.lower()
     esleme = (
         ("consumer price", "cpi"), ("producer price", "ppi"),
+        ("tüketici enflasyonu", "cpi"), ("üretici enflasyonu", "ppi"),
         ("employment situation", "nfp"), ("nonfarm", "nfp"),
-        ("payroll", "nfp"), ("federal open market", "fomc"),
+        ("payroll", "nfp"), ("tarım dışı", "nfp"),
+        ("federal open market", "fomc"), ("fed faiz", "fomc"),
         ("fomc", "fomc"), ("gross domestic product", "gdp"),
-        ("personal income and outlays", "pce"), ("job openings", "jolts"),
+        ("büyüme verisi", "gdp"),
+        ("personal income and outlays", "pce"),
+        ("tüketim enflasyonu", "pce"),
+        ("job openings", "jolts"), ("açık iş sayısı", "jolts"),
         ("cpi", "cpi"), ("ppi", "ppi"), ("nfp", "nfp"),
         ("gdp", "gdp"), ("pce", "pce"), ("jolts", "jolts"),
     )
     return next((kod for parca, kod in esleme if parca in lower), lower)
+
+
+def _makro_adi(ad: str) -> str:
+    """Bilinen ekonomi kısaltmalarını Telegram'da açık Türkçeye çevir."""
+    return _MAKRO_ADLARI.get(_olay_kodu(ad), ad)
 
 
 def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
@@ -434,10 +487,11 @@ def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
             zaman = datetime.fromisoformat(
                 str(olay["time_utc"]).replace("Z", "+00:00"))
             tr = zaman.astimezone(TR)
-            ad = str(olay.get("event", "makro olay")).strip()
-            anahtar_ad = _olay_kodu(ad)
+            ham_ad = str(olay.get("event", "ekonomi açıklaması")).strip()
+            ad = _makro_adi(ham_ad)
+            anahtar_ad = _olay_kodu(ham_ad)
             gorulen.add((tr.date().isoformat(), anahtar_ad))
-            ne = "BUGUN" if tr.date() == simdi.astimezone(TR).date() else tr.date().isoformat()
+            ne = "BUGÜN" if tr.date() == simdi.astimezone(TR).date() else tr.date().isoformat()
             satirlar.append(f"{ne} {ad}: {tr.strftime('%H:%M TR')}")
         except (KeyError, TypeError, ValueError):
             continue
@@ -449,7 +503,7 @@ def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
         tip = _olay_kodu(lower)
         if tip not in {"cpi", "nfp", "fomc"}:
             tip = ""
-        tarih = simdi.astimezone(TR).date().isoformat() if satir.startswith("BUGUN") else satir[:10]
+        tarih = simdi.astimezone(TR).date().isoformat() if satir.startswith("BUGÜN") else satir[:10]
         if tip and (tarih, tip) in gorulen:
             continue
         if satir not in satirlar:
@@ -458,7 +512,7 @@ def _makro_ozeti(simdi: datetime) -> tuple[list[str], str | None]:
             break
 
     if not satirlar:
-        satirlar = ["Resmi takvim verisi alinamadi."]
+        satirlar = ["Resmî ekonomi takvimi alınamadı."]
     haberler = baglam.get("recent_news", [])
     baslik = str(haberler[0].get("headline", "")).strip() if haberler else None
     return satirlar[:4], baslik or None
@@ -473,17 +527,15 @@ def edge_mesaji(simdi_utc: datetime | None = None,
     kanit = kanit or _sweep_kaniti()
     piyasa = piyasa or _anlik_nasdaq(simdi, kanit=kanit)
 
-    makro, resmi_baslik = _makro_ozeti(simdi)
+    makro, _ = _makro_ozeti(simdi)
     satirlar = [
-        "PİYASA ŞİMDİ",
+        "BUGÜNÜN PİYASA ÖZETİ",
         piyasa.teknik,
         piyasa.hacim,
-        "Fırsat: " + piyasa.firsat,
-        "Kanıt: " + kanit.metin,
-        "Önemli makro: " + " | ".join(makro),
+        "Şu anki fırsat: " + piyasa.firsat,
+        "Ölçüm sonucu: " + kanit.metin,
+        "Önemli ekonomi açıklamaları: " + " | ".join(makro),
     ]
-    if resmi_baslik:
-        satirlar.append("Resmî başlık: " + resmi_baslik[:180])
     return "\n".join(satirlar)
 
 
