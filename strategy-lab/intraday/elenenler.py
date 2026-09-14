@@ -240,8 +240,8 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("sweep", "cok enstruman", "breadth", "genisleme", "portfoy",
                     "slot", "endeks"),
         kapsam=("Veto YALNIZCA 'ayni kurali 7 endekse yay' genislemesine. Tek- "
-                "enstruman SWEEP_CORE_AVOID_MID_VWAP calisiyor (n=9, +0.804) ve "
-                "portfoyde kaldi."),
+                "enstruman SWEEP_CORE_AVOID_MID_VWAP ayri bir modul olarak "
+                "portfoyde kalir; guncel olcumu sistem durumu bolumundedir."),
     ),
     Elenen(
         id="donchian_xau",

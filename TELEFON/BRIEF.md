@@ -147,7 +147,7 @@ Tez kontrolu icin. Statuye bak: veto YALNIZ rejected/retired.
 - `fomc_oncesi_drift` — FOMC duyurusu oncesi long (15-30 dk pencere)
   - kapsam: 15-30 dakikalik pencere. Lucca-Moench 24 SAATLIK pencereyi olcer; o soru burada CURUTULMEDI, sorulmadi bile.
 - `sweep_cok_endeks` — SWEEP'i 7 endekse yayarak kari katlamak
-  - kapsam: Veto YALNIZCA 'ayni kurali 7 endekse yay' genislemesine. Tek- enstruman SWEEP_CORE_AVOID_MID_VWAP calisiyor (n=9, +0.804) ve portfoyde kaldi.
+  - kapsam: Veto YALNIZCA 'ayni kurali 7 endekse yay' genislemesine. Tek- enstruman SWEEP_CORE_AVOID_MID_VWAP ayri bir modul olarak portfoyde kalir; guncel olcumu sistem durumu bolumundedir.
 - `ic_bar_bazli` — Bar-bazli IC (Information Coefficient) ile bekleme suresini kisaltmak
 - `sunucu_kiralama` — Sunucu kiralayip daha cok strateji taramak
 

@@ -230,7 +230,7 @@ def brief_metni(semboller: list[tuple[str, str]] | None = None,
     p += _katalog_satirlari()
 
     p += ["", "---", "",
-          "Bu dosyayi okuyan asistan icin kural seti: `TELEFON/SISTEM.md`."]
+          "Arsiv/denetim ciktisi. AI proje talimati degildir."]
     return "\n".join(p) + "\n"
 
 

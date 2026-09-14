@@ -79,6 +79,13 @@ def test_brief_KATALOG_statusunu_tasir():
     assert "VETO" in metin
 
 
+def test_brief_katalogda_eski_sweep_olcumu_tekrarlanmaz():
+    """Dinamik forward olcumu yalniz sistem durumu bolumunde kalmali."""
+    metin = "\n".join(telefon_brief._katalog_satirlari())
+    assert "n=9, +0.804" not in metin
+    assert "guncel olcumu sistem durumu bolumundedir" in metin
+
+
 def test_IKINCI_olgu_ureticisi_YOK():
     """Alan seti tek yerde: telefon_brief kendi gostergesini hesaplamamali.
 

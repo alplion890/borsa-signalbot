@@ -23,6 +23,6 @@ brokerdaki son karar ve emir kullanicidadir.
 - Challenge riski normal `%1.5`, onceki kapanan islem kazandiysa `%3`;
   PAPER moduller gercek para riski tasimaz.
 
-Telefon kullanim kurallari: [TELEFON/SISTEM.md](TELEFON/SISTEM.md).
+Telefon botu ve operator notlari: [TELEFON/SISTEM.md](TELEFON/SISTEM.md). ChatGPT/Claude proje talimati: [TELEFON/KISA_TALIMAT.md](TELEFON/KISA_TALIMAT.md).
 Signalbot kurulumu ve GitHub Actions ayrintilari:
 [signalbot README](strategy-lab/intraday/signalbot/README.md).
