@@ -241,8 +241,11 @@ def test_telefon_workflow_iki_onayli_saatte_iki_mesaj_gonderir():
 
     bildirim = metin.split("- name: Iki kisa mesaji Telegram'a yolla", 1)[1]
     bildirim = bildirim.split("- name: Hata bildirimi", 1)[0]
-    assert 'cron: "20 13 * * 1-5"' in metin
-    assert 'cron: "15 15 * * 1-5"' in metin
+    assert 'cron: "20-45/5 13 * * 1-5"' in metin
+    assert 'cron: "15-40/5 15 * * 1-5"' in metin
+    assert "actions/cache/restore@v4" in metin
+    assert "actions/cache/save@v4" in metin
+    assert "steps.delivery-cache.outputs.cache-hit != 'true'" in bildirim
     assert "/sendMessage" in bildirim
     assert "durum.txt /tmp/telegram-brief/brief.txt" in bildirim
     assert "github.event_name == 'schedule'" in bildirim

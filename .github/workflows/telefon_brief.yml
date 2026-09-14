@@ -9,8 +9,11 @@ on:
     # Turkiye UTC+3 ve yaz/kis saati uygulamiyor.
     # 13:20 UTC = 16:20 TR: ABD nakit acilisi oncesi hazirlik.
     # 15:15 UTC = 18:15 TR: kayitli diskresyoner pencere baslangici.
-    - cron: "20 13 * * 1-5"
-    - cron: "15 15 * * 1-5"
+    # GitHub schedule olaylarini geciktirebilir veya yogunlukta dusurebilir.
+    # Her pencereyi 5 dakikada bir yeniden deneriz; teslim cache'i ayni
+    # gun/pencere icin Telegram'a yalniz bir kez gonderilmesini saglar.
+    - cron: "20-45/5 13 * * 1-5"
+    - cron: "15-40/5 15 * * 1-5"
   workflow_dispatch:
     inputs:
       notify_telegram:
@@ -33,16 +36,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Teslim penceresini belirle
+        id: delivery
+        shell: bash
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          gun="$(TZ=Europe/Istanbul date +%F)"
+          case "$SCHEDULE" in
+            "20-45/5 13 * * 1-5") pencere="1620" ;;
+            "15-40/5 15 * * 1-5") pencere="1815" ;;
+            *) pencere="manual-${GITHUB_RUN_ID}" ;;
+          esac
+          echo "gun=$gun" >> "$GITHUB_OUTPUT"
+          echo "pencere=$pencere" >> "$GITHUB_OUTPUT"
+
+      - name: Onceki teslimi denetle
+        id: delivery-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/telegram-delivery-marker
+          key: telefon-brief-${{ steps.delivery.outputs.gun }}-${{ steps.delivery.outputs.pencere }}
+
       - uses: actions/setup-python@v5
+        if: ${{ steps.delivery-cache.outputs.cache-hit != 'true' }}
         with:
           python-version: "3.11"
 
       # Bulut kosucusuyla AYNI bagimlilik dosyasi: iki liste tutmak bu
       # projedeki tekrar eden hata sinifi.
       - name: Bagimliliklar
+        if: ${{ steps.delivery-cache.outputs.cache-hit != 'true' }}
         run: pip install -r strategy-lab/intraday/signalbot/requirements.txt
 
       - name: Brifingi uret
+        if: ${{ steps.delivery-cache.outputs.cache-hit != 'true' }}
         working-directory: strategy-lab
         env:
           # Signalbot ile AYNI repo degiskeni; funded'a geciste ayrisamaz.
@@ -52,6 +81,7 @@ jobs:
           python -m intraday.forward_ea.telegram_brief --cikti-dir /tmp/telegram-brief
 
       - name: Repoya isle
+        if: ${{ steps.delivery-cache.outputs.cache-hit != 'true' }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -78,7 +108,7 @@ jobs:
       # Manuel tetikleme ise notify_telegram=true ister. Mesaj emir vermez;
       # Maven/MT5 icrasi yalnizca kullanicinin telefonundan yapilir.
       - name: Iki kisa mesaji Telegram'a yolla
-        if: ${{ github.event_name == 'schedule' || inputs.notify_telegram }}
+        if: ${{ steps.delivery-cache.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || inputs.notify_telegram) }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
@@ -118,9 +148,22 @@ jobs:
           PY
           done
 
+      - name: Teslim kaydini hazirla
+        if: ${{ success() && github.event_name == 'schedule' && steps.delivery-cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p /tmp/telegram-delivery-marker
+          date -u +%FT%TZ > /tmp/telegram-delivery-marker/teslim.txt
+
+      - name: Teslim kaydini sakla
+        if: ${{ success() && github.event_name == 'schedule' && steps.delivery-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/telegram-delivery-marker
+          key: telefon-brief-${{ steps.delivery.outputs.gun }}-${{ steps.delivery.outputs.pencere }}
+
       # Sessiz basarisizlik = bayat brifing = telefonda eski fiyat. Haberi olsun.
       - name: Hata bildirimi (Telegram)
-        if: failure()
+        if: ${{ failure() && steps.delivery-cache.outputs.cache-hit != 'true' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # Secret bu adla kayitli (harf sirasi ters); diger workflow'lar da ayni.
