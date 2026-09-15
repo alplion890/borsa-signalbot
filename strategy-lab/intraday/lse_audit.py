@@ -118,6 +118,27 @@ def sweep_results(frame: pd.DataFrame) -> dict:
     return result
 
 
+def quality_summary(symbol: str, frame: pd.DataFrame) -> dict:
+    frame = _utc(frame)
+    gaps = frame.index.to_series().diff()
+    threshold = .05 if symbol == "BTCUSD" else .02
+    returns = frame["close"].pct_change()
+    return {
+        "bars": int(len(frame)),
+        "start": frame.index.min().isoformat(),
+        "end": frame.index.max().isoformat(),
+        "duplicate_timestamps": int(frame.index.duplicated().sum()),
+        "zero_or_negative_volume": int((frame["volume"] <= 0).sum()),
+        "largest_gap": str(gaps.max()),
+        "returns_over_threshold": int((returns.abs() > threshold).sum()),
+        "threshold_pct": threshold * 100,
+        "bars_by_year": {
+            str(int(year)): int(count)
+            for year, count in frame.groupby(frame.index.year).size().items()
+        },
+    }
+
+
 def run(download: bool, start_year: int, end_year: int) -> dict:
     symbols = ("NASDAQ100", "EURUSD", "GBPUSD")
     if download:
@@ -139,6 +160,14 @@ def run(download: bool, start_year: int, end_year: int) -> dict:
         "lse_nq_futures": sweep_results(lse_nq.loc[common_start:common_end]),
         "existing_nasdaq_index": sweep_results(old_nq.loc[common_start:common_end]),
     }
+    report["research_basket_quality"] = {}
+    for symbol in ("SP500", "GOLD", "BTCUSD"):
+        try:
+            report["research_basket_quality"][symbol] = quality_summary(
+                symbol, load_history(symbol, cache_dir=HISTORY_CACHE),
+            )
+        except FileNotFoundError:
+            report["research_basket_quality"][symbol] = {"status": "not_downloaded"}
     OUT.mkdir(parents=True, exist_ok=True)
     target = OUT / "report.json"
     target.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

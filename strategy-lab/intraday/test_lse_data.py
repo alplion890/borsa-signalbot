@@ -49,6 +49,28 @@ def test_remote_ohlcv_resmi_sdk_satirlarini_normalize_eder():
     assert out.index[0] == pd.Timestamp("2026-09-15 15:00", tz="UTC")
 
 
+def test_arastirma_sepeti_uzun_gecmisli_sembolleri_icerir():
+    assert lse_data.SYMBOLS["SP500"][:2] == ("ES.F", "futures")
+    assert lse_data.SYMBOLS["GOLD"][:2] == ("GC.F", "futures")
+    assert lse_data.SYMBOLS["BTCUSD"][:2] == ("BTC/USD", "crypto")
+
+
+def test_15dk_veriden_ust_zaman_dilimi_uretilir():
+    index = pd.date_range("2026-01-01", periods=16, freq="15min", tz="UTC")
+    close = pd.Series(range(16), index=index, dtype=float)
+    frame = pd.DataFrame({
+        "open": close, "high": close + 1, "low": close - 1,
+        "close": close + .5, "volume": 10.0,
+    })
+
+    hourly = lse_data.resample_ohlcv(frame, "1H")
+    four_hour = lse_data.resample_ohlcv(frame, "4H")
+
+    assert len(hourly) == 4
+    assert len(four_hour) == 1
+    assert four_hour.iloc[0]["volume"] == 160.0
+
+
 def test_bayat_birincilden_guncel_lse_yedege_gecer():
     now = datetime(2026, 9, 15, 16, 0, tzinfo=UTC)
     old = _frame("2026-09-15 13:00")
@@ -106,4 +128,22 @@ def test_fetch_range_sayfalarken_ayni_bari_tekrarlamaz():
 
     assert len(out) == 5004
     assert calls[1] == pd.Timestamp("2026-02-22 02:00", tz="UTC")
+
+
+def test_uzak_tarih_araligi_aylik_parcalanir():
+    calls = []
+
+    def page(symbol, tf, limit, start, end):
+        calls.append((pd.Timestamp(start), pd.Timestamp(end)))
+        return _frame(pd.Timestamp(end) - pd.Timedelta(minutes=15), rows=2)
+
+    out = lse_data.fetch_remote_range(
+        "BTCUSD", "15m", pd.Timestamp("2026-01-01", tz="UTC"),
+        pd.Timestamp("2026-03-15", tz="UTC"), fetch_page=page,
+        chunk_days=30, pause_seconds=0,
+    )
+
+    assert len(calls) == 3
+    assert calls[0][1] == pd.Timestamp("2026-01-31", tz="UTC")
+    assert not out.empty
 

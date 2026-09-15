@@ -28,8 +28,11 @@ HISTORY_CACHE = (
 
 SYMBOLS = {
     "NASDAQ100": ("NQ.F", "futures", 2016),
+    "SP500": ("ES.F", "futures", 2016),
+    "GOLD": ("GC.F", "futures", 2016),
     "EURUSD": ("EUR/USD", "fx", 2009),
     "GBPUSD": ("GBP/USD", "fx", 2009),
+    "BTCUSD": ("BTC/USD", "crypto", 2017),
 }
 
 _TF_DELTA = {
@@ -40,6 +43,8 @@ _TF_DELTA = {
     "4H": pd.Timedelta(hours=4),
     "1d": pd.Timedelta(days=1),
 }
+
+_RESAMPLE_RULES = {"30m": "30min", "1H": "1h", "4H": "4h"}
 
 
 class LSEDataError(RuntimeError):
@@ -133,9 +138,37 @@ def remote_ohlcv(
     try:
         client = client_factory()
         rows = client.candles(
-            SYMBOLS[symbol_key][0], tf.lower(), start=start.isoformat(),
-            end=end.isoformat(), limit=5000, order="asc",
+            SYMBOLS[symbol_key][0], tf.lower(), start=start.date().isoformat(),
+            end=end.date().isoformat(), limit=5000, order="asc",
         )
+    except Exception as exc:
+        raise LSEDataError(f"LSE uzak API basarisiz: {exc}") from exc
+    return _normalize_rows(rows)
+
+
+def remote_candles(
+    symbol_key: str,
+    tf: str = "15m",
+    *,
+    limit: int = 5000,
+    start: str | pd.Timestamp | None = None,
+    end: str | pd.Timestamp | None = None,
+) -> pd.DataFrame:
+    """Uzak vault'tan tek sayfa mum; fetch_range ile uzun tarih sayfalanir."""
+    if symbol_key not in SYMBOLS:
+        raise ValueError(f"LSE sembol eslemesi yok: {symbol_key}")
+    try:
+        from lse import LSE
+
+        params: dict[str, object] = {
+            "limit": min(max(int(limit), 1), 5000),
+            "order": "asc",
+        }
+        if start is not None:
+            params["start"] = pd.Timestamp(start).date().isoformat()
+        if end is not None:
+            params["end"] = pd.Timestamp(end).date().isoformat()
+        rows = LSE().candles(SYMBOLS[symbol_key][0], tf.lower(), **params)
     except Exception as exc:
         raise LSEDataError(f"LSE uzak API basarisiz: {exc}") from exc
     return _normalize_rows(rows)
@@ -241,6 +274,36 @@ def fetch_range(
     return out[~out.index.duplicated(keep="last")][COLUMNS].astype(float)
 
 
+def fetch_remote_range(
+    symbol_key: str,
+    tf: str,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    *,
+    chunk_days: int = 30,
+    fetch_page: Callable[..., pd.DataFrame] = remote_candles,
+    pause_seconds: float = 0.1,
+) -> pd.DataFrame:
+    """Tarih-only uzak API'yi 5000 satirin altinda aylik parcalar."""
+    cursor = pd.Timestamp(start).normalize()
+    end_ts = pd.Timestamp(end).normalize()
+    parts: list[pd.DataFrame] = []
+    while cursor < end_ts:
+        chunk_end = min(cursor + pd.Timedelta(days=chunk_days), end_ts)
+        page = fetch_page(
+            symbol_key, tf, limit=5000, start=cursor, end=chunk_end,
+        )
+        if not page.empty:
+            parts.append(page)
+        cursor = chunk_end
+        if pause_seconds:
+            time.sleep(pause_seconds)
+    if not parts:
+        return pd.DataFrame(columns=COLUMNS, dtype=float)
+    out = pd.concat(parts).sort_index()
+    return out[~out.index.duplicated(keep="last")][COLUMNS].astype(float)
+
+
 def download_history(
     symbol_key: str,
     tf: str,
@@ -301,4 +364,18 @@ def load_history(
     index = pd.DatetimeIndex(frame.index)
     frame.index = index.tz_localize("UTC") if index.tz is None else index.tz_convert("UTC")
     return frame[COLUMNS].astype(float)
+
+
+def resample_ohlcv(frame: pd.DataFrame, tf: str) -> pd.DataFrame:
+    """15dk tabani UTC sabit ankorda 30dk/1s/4s muma cevirir."""
+    if tf not in _RESAMPLE_RULES:
+        raise ValueError(f"Desteklenmeyen ust zaman dilimi: {tf}")
+    frame = frame.copy().sort_index()
+    index = pd.DatetimeIndex(frame.index)
+    frame.index = index.tz_localize("UTC") if index.tz is None else index.tz_convert("UTC")
+    out = frame.resample(_RESAMPLE_RULES[tf], label="left", closed="left").agg({
+        "open": "first", "high": "max", "low": "min", "close": "last",
+        "volume": "sum",
+    })
+    return out.dropna(subset=["open", "high", "low", "close"])[COLUMNS]
 
