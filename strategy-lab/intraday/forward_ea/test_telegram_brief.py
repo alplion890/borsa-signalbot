@@ -280,6 +280,31 @@ def test_sweep_setup_kanit_yokken_gercek_islem_adayi_olmaz(monkeypatch):
     assert "giriş" not in sonuc.firsat
 
 
+def test_lse_yedek_baglam_verir_ama_live_aday_uretmez(monkeypatch):
+    now = datetime(2026, 9, 10, 15, 20, tzinfo=UTC)
+    index = pd.date_range(end="2026-09-10 15:00:00+00:00", periods=540, freq="15min")
+    close = np.linspace(29_000.0, 29_500.0, len(index))
+    frame = pd.DataFrame({
+        "open": close - 1, "high": close + 3, "low": close - 3,
+        "close": close, "volume": np.full(len(index), 100.0),
+    }, index=index)
+    frame.attrs["fallback_role"] = "LSE yedek"
+    module = SimpleNamespace(
+        name="SWEEP_CORE_AVOID_MID_VWAP",
+        detect=lambda df: SimpleNamespace(direction=1, entry=1, sl=0, tp=2),
+    )
+    monkeypatch.setattr(telegram_brief, "default_modules", lambda: [module])
+
+    sonuc = telegram_brief._anlik_nasdaq(
+        now, fetch=lambda *a, **k: frame,
+        kanit=telegram_brief.SweepKaniti(10, .613, True, "pozitif"),
+    )
+
+    assert "LSE yedek veri yalnız trend ve hacim bağlamıdır" in sonuc.firsat
+    assert "Aday var" not in sonuc.firsat
+    assert "LSE NQ.F yedeğinin" in sonuc.veri
+
+
 def test_nyse_tatili_ve_erken_kapanisi_bilir():
     tatil = telegram_brief._seans_satiri(
         datetime(2026, 9, 7, 15, 0, tzinfo=UTC))

@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from .. import lse_data
 from ..indicators import adx, daily_vwap, ema
 from ..signalbot import free_data, market_context
 from ..signalbot.risk import Tier, profile_for, tier_of
@@ -219,12 +220,15 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
     """Son kapanmis NQ 15dk barindan yorum ve proxy Sweep adayi uret."""
     kanit = kanit or _sweep_kaniti()
     try:
-        getir = fetch or free_data.ohlcv
+        getir = fetch or (lambda symbol, tf, days: lse_data.ohlcv_with_backup(
+            symbol, tf, days, now=simdi, min_rows=520,
+        ))
         ham = getir("NASDAQ100", "15m", days=59)
         if ham is None or len(ham) < 520:
             raise ValueError("en az 520 bar gerekli")
 
         frame = ham.copy()
+        lse_yedek = frame.attrs.get("fallback_role") == "LSE yedek"
         simdi_ts = pd.Timestamp(simdi)
         if frame.index.tz is None:
             simdi_ts = simdi_ts.tz_localize(None) if simdi_ts.tzinfo else simdi_ts
@@ -293,13 +297,18 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
                 f"normal hacmin {oran:.1f} katı; {yorum}."
             )
 
-        live_modul = next(
+        live_modul = None if lse_yedek else next(
             (m for m in default_modules()
              if m.name == "SWEEP_CORE_AVOID_MID_VWAP"
              and tier_of(m.name) is Tier.LIVE),
             None,
         )
-        if live_modul is None:
+        if lse_yedek:
+            firsat = (
+                "Doğrulanamadı — LSE yedek veri yalnız trend ve hacim "
+                "bağlamıdır; LIVE aday için ana veri veya MT5 teyidi gerekir."
+            )
+        elif live_modul is None:
             firsat = "Yok — gerçek para için onaylı yöntem bulunamadı."
         else:
             sinyal = live_modul.detect(frame)
@@ -331,8 +340,9 @@ def _anlik_nasdaq(simdi: datetime, fetch=None,
         kapanis_dt = kapanis_zamani.to_pydatetime()
         if kapanis_dt.tzinfo is None:
             kapanis_dt = kapanis_dt.replace(tzinfo=UTC)
+        kaynak = "LSE NQ.F yedeğinin" if lse_yedek else "Nasdaq vadeli işlemlerinin"
         veri = (
-            "Veri zamanı: Nasdaq vadeli işlemlerinin son tamamlanmış 15 "
+            f"Veri zamanı: {kaynak} son tamamlanmış 15 "
             f"dakikalık mumu {kapanis_dt.astimezone(TR).strftime('%H:%M TR')}; "
             f"veri {yas_dk:.0f} dakika gecikmeli."
         )

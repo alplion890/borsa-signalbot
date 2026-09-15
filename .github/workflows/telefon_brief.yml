@@ -76,6 +76,9 @@ jobs:
         env:
           # Signalbot ile AYNI repo degiskeni; funded'a geciste ayrisamaz.
           MAVEN_PHASE: ${{ vars.ACCOUNT_PHASE || 'bnpl_challenge' }}
+          # Opsiyonel yedek: ana Yahoo verisi yok/bayatsa kullanilir. LSE de
+          # bayatsa fail-closed; LSE tek basina LIVE aday uretemez.
+          LSE_API_KEY: ${{ secrets.LSE_API_KEY }}
         run: |
           python -m intraday.forward_ea.telefon_brief
           python -m intraday.forward_ea.telegram_brief --cikti-dir /tmp/telegram-brief
