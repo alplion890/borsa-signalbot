@@ -4,5 +4,6 @@ yfinance>=0.2.40
 requests>=2.31
 websocket-client>=1.8
 python-dotenv>=1.0
+Pillow>=11.0
 lse-data==0.14.0
 pytest>=8.0

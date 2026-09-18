@@ -13,6 +13,7 @@ import pandas as pd
 
 from ..indicators import adx, atr, ema
 from . import free_data, telegram_notify
+from .mobile_chart import render_chart
 
 UTC = dt.timezone.utc
 NY = ZoneInfo("America/New_York")
@@ -142,6 +143,9 @@ def candidate(frame: pd.DataFrame, now: dt.datetime) -> dict | None:
         "distance_atr": distance / current_atr,
         "reason": reason,
         "trend": trend,
+        "ema20": fast,
+        "ema50": slow,
+        "vwap": vwap,
         "vwap_side": "ustunde" if vwap is not None and close >= vwap else "altinda" if vwap is not None else "bilinmiyor",
         "volume_ratio": volume_ratio,
         "adx": adx14 if math.isfinite(adx14) else None,
@@ -155,10 +159,11 @@ def format_watch(item: dict, now: dt.datetime) -> str:
               else "olculemedi")
     adx_text = f"{item['adx']:.0f}" if item["adx"] is not None else "yok"
     rsi_text = f"{item['rsi']:.0f}" if item["rsi"] is not None else "yok"
+    vwap_text = f"{item['vwap']:.1f}" if item["vwap"] is not None else "yok"
     return "\n".join([
         f"DISKRESYONER IZLEME | NQ/US100 | {now.astimezone(TR):%H:%M} TR",
         f"Neden: NQ {item['reason']}.",
-        f"Baglam: 15dk EMA20/50 trend {item['trend']}; NY nakit VWAP {item['vwap_side']}; ADX {adx_text}, RSI {rsi_text}, ayni saat hacim {volume}.",
+        f"15dk: EMA20 {item['ema20']:.1f}, EMA50 {item['ema50']:.1f}; NY VWAP {vwap_text} ({item['vwap_side']}); ADX {adx_text}, RSI {rsi_text}, hacim {volume}.",
         f"Capraz piyasa: {item.get('es_context', 'ES tepkisi olculemedi')}.",
         f"Veri: Yahoo NQ=F, kapanmis 15dk bar {bar_tr}, {item['age']:.0f} dk once. NQ seviyesi {item['level']:.1f}; Maven US100 emir fiyati DEGIL.",
         "Telefonda teyit: Investing takviminde beklenti/gerceklesen; 2Y/10Y, DXY, EUR/USD, altin ve ES tepkisi. MT5 US100'de seviye ve kapanmis mum, stop mesafesi, bakiyeyi kontrol et.",
@@ -193,8 +198,8 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
     if item["key"] in notified:
         print("Mobil izleme: bu gun/seviye daha once bildirildi.")
         return None
+    nq = closed
     try:
-        nq = _closed(frame, now)
         es = _closed((fetch or free_data.ohlcv)("SP500", "15m", days=2), now)
         if len(es) >= 5 and abs((es.index[-1] - nq.index[-1]).total_seconds()) <= 900:
             nq_move = (float(nq["close"].iloc[-1]) /
@@ -209,7 +214,15 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
     if dry_run:
         print(message)
         return message
-    (send or telegram_notify.send)(message)
+    if send is not None:
+        send(message)
+    else:
+        try:
+            png = render_chart(nq, level=item["level"])
+            telegram_notify.send_photo(png, message)
+        except Exception as exc:
+            print(f"Mobil izleme: grafik gonderilemedi ({type(exc).__name__}); metin deneniyor.")
+            telegram_notify.send(message)
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps({"notified": [
         key for key in notified if key.startswith(str(now.astimezone(TR).date()))
