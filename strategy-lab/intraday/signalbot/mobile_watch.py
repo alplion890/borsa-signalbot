@@ -162,7 +162,7 @@ def format_watch(item: dict, now: dt.datetime) -> str:
         f"Capraz piyasa: {item.get('es_context', 'ES tepkisi olculemedi')}.",
         f"Veri: Yahoo NQ=F, kapanmis 15dk bar {bar_tr}, {item['age']:.0f} dk once. NQ seviyesi {item['level']:.1f}; Maven US100 emir fiyati DEGIL.",
         "Telefonda teyit: Investing takviminde beklenti/gerceklesen; 2Y/10Y, DXY, EUR/USD, altin ve ES tepkisi. MT5 US100'de seviye ve kapanmis mum, stop mesafesi, bakiyeyi kontrol et.",
-        "Bu bir izleme adayi. En az 2/4 katman, tez ve curuten yaz; AL/PAS/BEKLE kararini sen ver. Mekanik LIVE sinyali degildir.",
+        "Bu bir izleme adayi. En az 2/4 katman, tez ve curuten yaz; AL/PAS/BEKLE kararini sen ver. Karar notunu emirden once Telegram Kaydedilen Mesajlar'a yaz. Mekanik LIVE sinyali degildir.",
     ])
 
 

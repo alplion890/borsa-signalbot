@@ -23,6 +23,8 @@ Güncelleme: 2026-09-18. TradingView açılmasa da kullanılacak düzen.
 4. **Tetik:** MT5 15dk trend/EMA20-50 ve 5dk kapanmış mumla kabul/ret ara. Telegram'daki VWAP yalnız NQ bağlamıdır. ADX hareketin gücünü, RSI aşırılığı, ATR stop genişliğini anlatır; bunlar ayrı ayrı oy vererek işlem açtırmaz.
 5. **Karar:** Mevcut kapıdan en az 2/4 (makro anlatı, hacim, trend, seviye) dolu olmalı; güçlü zıt tepkiyi ayrıca açıkla. Giriş, stop, hedef, tez, çürüten, güncel bakiye/hesap güvenliği yaz. **AL / PAS / BEKLE** kararını sen ver, emri yalnız MT5 Android'de elle aç. Adayı girişten önce diskresyoner deftere kaydet; kayıt yapılamıyorsa yapılmış gibi davranma.
 
+**PC olmadan ön kayıt:** Telegram **Kaydedilen Mesajlar**'a emirden önce `ADAY | tarih-saat TR | US100 | long/short | tetik | stop | hedef | tez | çürüten | hangi 2/4 katman | veri saati` satırını gönder. Ardından `AL`, `PAS` veya `BEKLE` kararını ve nedenini ayrı satıra yaz. Bu zaman damgalı kişisel not, mevcut CSV diskresyoner defterine **otomatik aktarılmaz**; eve dönünce veya deftere erişen bir yardımcıyla aktarılınca ölçüme girer. Botun Telegram sohbetine cevap yazmak da şu an CSV'ye kayıt yapmaz.
+
 Bu akışın kayıtlı NQ karar penceresi hafta içi **18:15–20:00 Türkiye saati**. Bu pencere dışındaki seanslar için ayrı ölçülmüş kural gerekir. Mevcut mekanik LIVE sinyali, yeni diskresyoner izleme mesajından ayrıdır.
 
 ## Telegram mesajları ne demek?
