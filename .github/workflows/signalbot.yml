@@ -130,6 +130,21 @@ jobs:
             python run_bot.py
           fi
 
+      # Ayrı gözlem katmanı: önceki gün NQ seviyesine yakınlık telefonu açtırır.
+      # Emir önermez ve mekanik modül/kayıt/risk durumunu değiştirmez.
+      - name: Diskresyoner mobil izleme adayi
+        if: ${{ github.event_name == 'schedule' && success() }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+          MOBILE_WATCH_STATE_PATH: .signalbot/mobile_watch.json
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; mobil izleme atlandi."
+            exit 1
+          fi
+          PYTHONPATH=strategy-lab python -m intraday.signalbot.mobile_watch
+
       # KAPALI (2026-08-01). Acmak icin repo variable: AI_SCOUT_ENABLED=true
       #
       # Neden kapatildi: DeepSeek API'si 402 Payment Required donuyordu (kredi
