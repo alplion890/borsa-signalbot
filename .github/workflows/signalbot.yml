@@ -174,7 +174,7 @@ jobs:
       # Finnhub anahtari yalniz GitHub ortaminda bulunur. Bu haber hatti yerel
       # RSS/takvim hattindan ayri; yerel tarama devri bu adimi susturmaz.
       - name: Finnhub bulut haberi (ayri kaynak)
-        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && success() }}
+        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && !cancelled() && !inputs.test_failure }}
         env:
           FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
