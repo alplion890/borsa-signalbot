@@ -171,6 +171,27 @@ jobs:
           fi
           PYTHONPATH=strategy-lab python -m intraday.signalbot.mobile_watch
 
+      # Bu, mevcut mekanik modullerin listesine katilmaz. Yerel tarayici
+      # saglikliyken bulut da PAPER kaydini tutar fakat ikinci alarmi yollamaz.
+      - name: NQ ilk 5dk EMA12 PAPER forward
+        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && !cancelled() && !inputs.test_failure }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+          EMA12_PAPER_STATE_PATH: .signalbot/ema12_paper_cloud.json
+          LOCAL_SCANNER_ACTIVE: ${{ steps.local_scanner.outputs.active }}
+        run: |
+          if [ "${{ inputs.dry_run || false }}" = "true" ]; then
+            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper --dry-run
+          elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secret yok; EMA12 PAPER atlandi."
+            exit 1
+          elif [ "$LOCAL_SCANNER_ACTIVE" = "true" ]; then
+            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper --suppress-alert
+          else
+            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper
+          fi
+
       # Finnhub anahtari yalniz GitHub ortaminda bulunur. Bu haber hatti yerel
       # RSS/takvim hattindan ayri; yerel tarama devri bu adimi susturmaz.
       - name: Finnhub bulut haberi (ayri kaynak)
