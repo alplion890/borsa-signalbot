@@ -104,6 +104,29 @@ jobs:
                   print(f"   {k}: {json.dumps(v, ensure_ascii=False)[:180]}")
           PY
 
+      - name: Yerel tarama devri
+        id: local_scanner
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LOCAL_SCANNER_UNTIL: ${{ vars.LOCAL_SCANNER_UNTIL }}
+        run: |
+          python - <<'PYCODE'
+          import datetime as dt
+          import os
+          raw = os.environ.get("LOCAL_SCANNER_UNTIL", "")
+          active = False
+          if os.environ.get("EVENT_NAME") == "schedule":
+              try:
+                  until = dt.datetime.fromisoformat(raw)
+                  remaining = (until - dt.datetime.now(dt.timezone.utc)).total_seconds()
+                  active = 0 < remaining <= 8 * 60
+              except (ValueError, TypeError):
+                  pass
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"active={str(active).lower()}\n")
+          print("Yerel tarama devri:", "aktif" if active else "bulut yedegi")
+          PYCODE
+
       # default_modules(): SWEEP_CORE, EUR_LONDON, GBP_LONDON.
       # Adaylar (CAND_*) ve BTC bilerek DISARIDA -- olcumleri forward EA yapar.
       - name: Canli modulleri tara
@@ -126,6 +149,9 @@ jobs:
             python run_bot.py --dry-run
           elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
             echo "Telegram Secrets henuz eklenmedi; tarama beklemede."
+          elif [ "${{ steps.local_scanner.outputs.active }}" = "true" ]; then
+            echo "Yerel tarayici saglik bildirimi guncel; bulut kuru tarama yapiyor."
+            python run_bot.py --dry-run
           else
             python run_bot.py
           fi
@@ -133,7 +159,7 @@ jobs:
       # Ayrı gözlem katmanı: önceki gün NQ seviyesine yakınlık telefonu açtırır.
       # Emir önermez ve mekanik modül/kayıt/risk durumunu değiştirmez.
       - name: Diskresyoner mobil izleme adayi
-        if: ${{ github.event_name == 'schedule' && success() }}
+        if: ${{ github.event_name == 'schedule' && success() && steps.local_scanner.outputs.active != 'true' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
