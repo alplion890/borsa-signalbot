@@ -171,6 +171,22 @@ jobs:
           fi
           PYTHONPATH=strategy-lab python -m intraday.signalbot.mobile_watch
 
+      # Finnhub anahtari yalniz GitHub ortaminda bulunur. Bu haber hatti yerel
+      # RSS/takvim hattindan ayri; yerel tarama devri bu adimi susturmaz.
+      - name: Finnhub bulut haberi (ayri kaynak)
+        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && success() }}
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+          FINNHUB_NEWS_STATE_PATH: .signalbot/finnhub_news.json
+        run: |
+          if [ "${{ inputs.dry_run || false }}" = "true" ]; then
+            PYTHONPATH=strategy-lab python -m intraday.signalbot.finnhub_news --dry-run
+          else
+            PYTHONPATH=strategy-lab python -m intraday.signalbot.finnhub_news
+          fi
+
       # KAPALI (2026-08-01). Acmak icin repo variable: AI_SCOUT_ENABLED=true
       #
       # Neden kapatildi: DeepSeek API'si 402 Payment Required donuyordu (kredi
