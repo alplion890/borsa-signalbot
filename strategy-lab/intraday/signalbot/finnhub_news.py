@@ -43,7 +43,9 @@ def collect(*, token: str, now: dt.datetime) -> tuple[list[dict], int | None]:
         print(f'Finnhub haber erişimi başarısız: {type(exc).__name__}; URL/token gizlendi.')
         return [], None
     if not isinstance(payload, list):
-        return [], 200
+        print('Finnhub haber API: beklenen haber listesi gelmedi; içerik gizlendi.')
+        return [], 502
+    print(f'Finnhub haber API: {len(payload)} ham başlık alındı.')
     result = []
     for item in payload:
         if not isinstance(item, dict):
