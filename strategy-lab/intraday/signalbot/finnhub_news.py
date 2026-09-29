@@ -21,6 +21,9 @@ STATE = Path(os.environ.get('FINNHUB_NEWS_STATE_PATH', '.signalbot/finnhub_news.
 
 def classify(headline: str) -> tuple[str, str] | None:
     title = headline.lower()
+    if re.search(r'\b(?:forecast|preview|could|might|may|if|potential|possible|'
+                 r'expect|expected|warning|fear|fears|ahead of|what to)\b', title):
+        return None
     if re.search(r'\b(?:stock market crash|market-wide trading halt|circuit breaker|'
                  r'nasdaq trading halt|s&p 500 trading halt)\b', title):
         return 'Piyasa genelinde işlem kesintisi / sert olay', 'US100/NQ'
