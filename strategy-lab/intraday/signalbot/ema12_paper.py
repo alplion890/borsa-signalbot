@@ -122,8 +122,9 @@ def format_signal(item: dict, source: str) -> str:
 
 
 def format_result(item: dict) -> str:
+    source = "BULUT" if os.environ.get("GITHUB_ACTIONS") else "PC"
     return "\n".join([
-        f"PAPER SONUC | NQ ilk 5dk EMA12 | {item['key']}",
+        f"PAPER SONUC | NQ ilk 5dk EMA12 | {source} | {item['key']}",
         f"Kural etiketi {item['direction']}; cikis nedeni {item['exit_reason']}; varsayimsal net {item['net_r']:+.3f}R.",
         "Yahoo NQ=F ve sabit maliyet varsayimiyla hesaplandi. Maven islemi veya hesap getirisi degildir.",
     ])
