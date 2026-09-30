@@ -25,3 +25,5 @@ Diskresyoner: 2/4 + tez + çürüten + ön-kayıt. [Mobil akış](MOBIL_KARAR_AK
 Eski modül listeleri/skorlar [tarihsel arşivdedir](../HANDOFF/archive/forward_ea_history_before_2026-09-27.md).
 
 30 Eylül kararı: EUR/GBP aktif yerel/bulut taramasından ve yeni PAPER ölçümünden çıkarıldı. Eski defterler ve araştırma raporları korundu. Gerekçe: [[Borsa - EUR GBP London Emeklilik Karari 2026-09-30]].
+
+Arka plandaki 9 CAND_ deneyi sessiz ölçümdür; aktif Telegram edge’i değildir. 30 Eylül kapsam boşluğu ve NQ-Mobile son hata kodu ayrıca çözülmelidir.
