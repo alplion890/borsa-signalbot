@@ -96,3 +96,14 @@ def test_NQ_ORB_artik_default_modules_de_DEGIL() -> None:
         "NQ ORB dusuruldu; default_modules'e geri eklenmeden once yeni ve "
         "pozitif forward kaniti gerekir."
     )
+
+
+def test_retired_london_cannot_generate_new_forward_signals():
+    from .modules import default_modules, forward_test_modules, retired_position_managers
+    retired = {"EUR_LONDON_FADE_EMA", "GBP_LONDON_STRONG_TREND"}
+    assert not retired & {m.name for m in default_modules()}
+    assert not retired & {m.name for m in forward_test_modules()}
+    managers = retired_position_managers(retired)
+    assert {m.name for m in managers} == retired
+    assert all(m.detect(None) is None for m in managers)
+    assert retired_position_managers(set()) == []

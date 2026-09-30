@@ -19,7 +19,7 @@ import pandas as pd
 from ..config import INSTRUMENTS, ATR_LEN
 from ..edge_lab import _adx
 from ..indicators import atr
-from ..internet_seed_strategies import ORBCase, LondonCase, _build_orb, _build_london
+from ..internet_seed_strategies import ORBCase, _build_orb
 
 
 @dataclass(frozen=True)
@@ -84,50 +84,6 @@ def _orb_detector(case: ORBCase, adx_min: float):
         le, se, lsl, ltp, ssl, stp = _build_orb(df, case)
         i = -1
         if adx_min > 0 and not (_adx(df, 14).iloc[i] > adx_min):
-            return None
-        if bool(le.iloc[i]):
-            return Signal(1, float(df["close"].iloc[i]), float(lsl.iloc[i]), float(ltp.iloc[i]))
-        if bool(se.iloc[i]):
-            return Signal(-1, float(df["close"].iloc[i]), float(ssl.iloc[i]), float(stp.iloc[i]))
-        return None
-    return detect
-
-
-def _london_detector(case: LondonCase, adx_min: float = 0.0,
-                     adx_max: float = 0.0, dow: int | None = None,
-                     range_regime: str | None = None):
-    """Genel London breakout dedektoru (EUR/GBP).
-
-    Filtreler final ledger'dan birebir geri cikarildi:
-      EUR: adx<20 (chop) + Persembe (dow=3)
-      GBP: Persembe (dow=3) + ema (case icinde)
-    """
-    def detect(df: pd.DataFrame) -> Signal | None:
-        if len(df) < 200:
-            return None
-        le, se, lsl, ltp, ssl, stp = _build_london(df, case)
-        i = -1
-        if dow is not None and df.index[i].dayofweek != dow:
-            return None
-        if range_regime is not None:
-            h = df.index.hour + df.index.minute / 60.0
-            in_range = (h >= case.range_start) & (h < case.range_end)
-            daily_hi = df["high"].where(in_range).groupby(df.index.date).transform("max")
-            daily_lo = df["low"].where(in_range).groupby(df.index.date).transform("min")
-            range_pct = (daily_hi - daily_lo) / df["close"]
-            daily_range = range_pct.groupby(df.index.date).last()
-            rank = daily_range.rolling(20, min_periods=10).rank(pct=True).iloc[-1]
-            current_regime = (
-                "tight_range" if rank <= 0.33
-                else "normal_range" if rank <= 0.67
-                else "wide_range"
-            )
-            if pd.isna(rank) or current_regime != range_regime:
-                return None
-        adx_val = _adx(df, 14).iloc[i]
-        if adx_min > 0 and not (adx_val > adx_min):
-            return None
-        if adx_max > 0 and not (adx_val < adx_max):
             return None
         if bool(le.iloc[i]):
             return Signal(1, float(df["close"].iloc[i]), float(lsl.iloc[i]), float(ltp.iloc[i]))
@@ -224,11 +180,11 @@ def default_modules() -> list[LiveModule]:
     Bu liste tier DEGILDIR: LIVE/PAPER ayrimi `signalbot/risk.py`'de tutulur,
     burasi yalnizca "hangi modul taranir ve bildirilir" sorusunu cevaplar.
 
-    GUNCEL (2026-09-11): SWEEP_CORE, EUR_LONDON, GBP_LONDON.
+    GUNCEL (2026-09-30): SWEEP_CORE only. EMA12 is a separate PAPER observer.
     Kume `test_module_parity.test_final_module_count_and_weights` ile kilitli;
     degistiren once gerekce yazar.
 
-    GOLD_NY_ORB_TREND ve NQ_ORB_STRONG_TREND emekli edildi. EUR/GBP
+    EUR/GBP London 2026-09-30 tarihinde emekli edildi. GOLD/NQ ORB de emekli. EUR/GBP
     2026-08-05'te devreye alindi; GOLD 2026-08-28'de, NQ_ORB ise negatif
     forward sonucu nedeniyle 2026-09-11'de bildirim listesinden cikti.
     """
@@ -250,28 +206,9 @@ def default_modules() -> list[LiveModule]:
         #   Kilit: test_live_whitelist.test_NQ_ORB_artik_default_modules_de_DEGIL
         LiveModule("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", "15m", 1.0, 480,
                    _sweep_core_detector()),
-        # PERSEMBE (dow=3) FILTRESI KALDIRILDI 2026-08-05.
-        # Gerekce: filtre bu dosyanin kendi yorumunda "final ledger'dan birebir
-        # geri cikarildi" diye yaziyordu -- yani sonuca bakilip secilmis, klasik
-        # post-hoc cherry-pick. Londra acilisinin Persembe gunu farkli calismasi
-        # icin mikroyapisal bir sebep yok.
-        # Olculdu (MT5, production penceresi 40g, 2026-08-05):
-        #   EUR canli (adx<18 + Persembe)  0 sinyal/hafta
-        #   EUR Persembe yok               1.75 sinyal/hafta
-        #   GBP canli (Persembe + rejim)   0 sinyal/hafta
-        #   GBP Persembe yok (rejim var)   1.75 sinyal/hafta
-        # Filtre modulleri fiilen KAPATMISTI: EUR'un 2 forward islemi de ayni
-        # gunde, GBP 6 haftadir sessizdi. Silinen veri yok (n=2 ve n=3 zaten
-        # hicbir sey kanitlamiyordu), o yuzden aday katmani yerine dogrudan
-        # kaldirildi. adx/rejim filtreleri KORUNDU -- onlarin rejim gerekcesi var.
-        LiveModule("EUR_LONDON_FADE_EMA", "EURUSD", "5m", 1.0, 48,
-                   _london_detector(
-                       LondonCase("EURUSD", 2.0, 7.0, 11.0, "none", 1.5, "other_side", 1.0, 48),
-                       adx_max=18.0)),
-        LiveModule("GBP_LONDON_STRONG_TREND", "GBPUSD", "5m", 0.25, 48,
-                   _london_detector(
-                       LondonCase("GBPUSD", 0.0, 7.0, 11.0, "ema", 1.5, "other_side", 1.0, 48),
-                       range_regime="normal_range")),
+        # EUR/GBP London retired by user on 2026-09-30: sparse signals,
+        # weak long-history evidence; EUR current-config forward was positive
+        # but only n=14. Historical data retained; no new signals.
         # SWEEP_ES_DIV (w=2.0) KALDIRILDI 2026-07-04: forward test edge'i cürüttü.
         # Backtest avg_loss -0.09R fiziksel olarak sahte (igne-ince stop = sweep dibi
         # -0.25*ATR, ~7-13 puan; temiz dukascopy verisinde hic tetiklenmemis, timeout'ta
@@ -384,28 +321,11 @@ def retired_position_managers(
     anda state'te acik kalan paper pozisyonun sonsuza kadar yetimlesmesini
     onler; SL/TP/timeout sonucu normal deftere yazilir.
     """
-    aciklar = set(open_module_names)
-    if "NQ_ORB_STRONG_TREND" not in aciklar:
-        return []
-    return [
-        LiveModule(
-            "NQ_ORB_STRONG_TREND", "NASDAQ100", "5m", 1.0, 48,
-            lambda _frame: None,
-        ),
-    ]
-
-
-def experimental_modules() -> list[LiveModule]:
-    """Henuz dogrulanmamis moduller — forward test esleme sorunu gosterdi.
-
-    Bunlari devreye almak icin backtest modulunun TAM config'i (filtre/rejim)
-    pinlenmeli. Su an canli portfoye DAHIL DEGIL.
-    """
-    eur_london = LondonCase("EURUSD", 2.0, 7.0, 11.0, "none", 1.5, "other_side", 1.0, 48)
-    gbp_london = LondonCase("GBPUSD", 0.0, 7.0, 11.0, "ema", 1.5, "other_side", 1.0, 48)
-    return [
-        LiveModule("EUR_LONDON_FADE_EMA", "EURUSD", "5m", 1.0, 48,
-                   _london_detector(eur_london, adx_min=0.0)),
-        LiveModule("GBP_LONDON_STRONG_TREND", "GBPUSD", "5m", 0.25, 48,
-                   _london_detector(gbp_london, adx_min=30.0)),
-    ]
+    open_names = set(open_module_names)
+    retired = (
+        ("NQ_ORB_STRONG_TREND", "NASDAQ100", 1.0),
+        ("EUR_LONDON_FADE_EMA", "EURUSD", 1.0),
+        ("GBP_LONDON_STRONG_TREND", "GBPUSD", 0.25),
+    )
+    return [LiveModule(name, symbol, "5m", weight, 48, lambda _frame: None)
+            for name, symbol, weight in retired if name in open_names]

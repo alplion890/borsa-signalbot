@@ -28,15 +28,6 @@ def test_sweep_is_disabled_on_wednesday(monkeypatch):
     assert called == []
 
 
-def test_default_gbp_has_normal_range_filter():
-    # Behavioral details are captured in the constructed detector closure;
-    # this guards the final module identity/weight while integration tests
-    # exercise scanner delivery.
-    gbp = next(m for m in modules.default_modules() if m.name == "GBP_LONDON_STRONG_TREND")
-    assert gbp.weight == 0.25
-    assert gbp.tf == "5m"
-
-
 def test_final_module_count_and_weights():
     """Modul kumesini KILITLER -- sessiz ekleme/cikarma burada patlar.
 
@@ -49,6 +40,4 @@ def test_final_module_count_and_weights():
     live = {m.name: m.weight for m in modules.default_modules()}
     assert live == {
         "SWEEP_CORE_AVOID_MID_VWAP": 1.0,
-        "EUR_LONDON_FADE_EMA": 1.0,
-        "GBP_LONDON_STRONG_TREND": 0.25,
     }

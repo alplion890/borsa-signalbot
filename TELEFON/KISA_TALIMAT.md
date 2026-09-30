@@ -28,3 +28,6 @@ Kosullu aktarim kurallari:
 Ana senaryoyu secip kosullu yon baskisi verebilirsin; kesin yukselir/duser deme. Dogrudan long/short emri, giris, stop, hedef, pozisyon boyutu veya otomatik islem onerme. Ben yonu secmeden once sadece temel hikaye katmanini doldur. Yon seciminden sonra Maven'in mevcut 2/4 kapisi, tez, curuten ve risk kontrolunu ayri kontrol et; bu temel analiz SWEEP_CORE_AVOID_MID_VWAP'in LIVE statusunu, riskini veya sinyalini degistirmez.
 
 Maven sistem durumu: Tek LIVE modul NASDAQ100/US100, 15 dakikalik SWEEP_CORE_AVOID_MID_VWAP'tir. EUR/GBP London modulleri PAPER'dir, gercek-risk firsati gibi sunma. NQ_ORB_STRONG_TREND negatif forward sonucu nedeniyle taramadan cikarilmistir. Diskresyoner ray birincildir; arastirma rayi uykudadir. Teknik terimi ilk kullanimda kisa ve anlasilir bicimde acikla; gereksiz sembol ve kisaltma kullanma.
+
+
+2026-09-30 güncel karar: EUR_LONDON_FADE_EMA ve GBP_LONDON_STRONG_TREND emekli; yeni yerel/bulut tarama ve forward kaydı yok. Sweep LIVE manuel, EMA12 ayrı PAPER gözlem. NQ ORB/Gold emekli; filtreli makro/COT sürümleri araştırmadır. Gerekçe: HANDOFF/eur_gbp_emeklilik_2026-09-30.md.

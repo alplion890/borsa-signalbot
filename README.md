@@ -26,3 +26,6 @@ brokerdaki son karar ve emir kullanicidadir.
 Telefon botu ve operator notlari: [TELEFON/SISTEM.md](TELEFON/SISTEM.md). ChatGPT/Claude proje talimati: [TELEFON/KISA_TALIMAT.md](TELEFON/KISA_TALIMAT.md).
 Signalbot kurulumu ve GitHub Actions ayrintilari:
 [signalbot README](strategy-lab/intraday/signalbot/README.md).
+
+
+2026-09-30 güncel karar: EUR_LONDON_FADE_EMA ve GBP_LONDON_STRONG_TREND emekli; yeni yerel/bulut tarama ve forward kaydı yok. Sweep LIVE manuel, EMA12 ayrı PAPER gözlem. NQ ORB/Gold emekli; filtreli makro/COT sürümleri araştırmadır. Gerekçe: HANDOFF/eur_gbp_emeklilik_2026-09-30.md.

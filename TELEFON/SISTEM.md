@@ -22,3 +22,6 @@ Bu belge insan/operator icindir. ChatGPT ve Claude icin calisma anindaki tek met
 `TELEFON/BRIEF.md` arsiv/denetim ciktisidir. AI projeleri onu veya GitHub uzerindeki herhangi bir kopyasini calisma aninda kaynak olarak kullanmaz. Guncel kamusal piyasa bilgisi `seans` aninda web aramasi ve kaynak linkleriyle kurulur. Son Telegram mesaji gorunuyorsa, yalnizca oradaki ozel sistem olcumu kullanilir; gorunmuyorsa dinamik forward sayilari tahmin edilmez.
 
 AI'nin kosullu temel analiz kurallari ve NQ/Turkiye iki-masa cikti formati KISA_TALIMAT'tadir. Bu analiz yalniz narrative katmanidir; otomatik emir, SWEEP sinyali veya risk degisikligi degildir.
+
+
+2026-09-30 güncel karar: EUR_LONDON_FADE_EMA ve GBP_LONDON_STRONG_TREND emekli; yeni yerel/bulut tarama ve forward kaydı yok. Sweep LIVE manuel, EMA12 ayrı PAPER gözlem. NQ ORB/Gold emekli; filtreli makro/COT sürümleri araştırmadır. Gerekçe: HANDOFF/eur_gbp_emeklilik_2026-09-30.md.

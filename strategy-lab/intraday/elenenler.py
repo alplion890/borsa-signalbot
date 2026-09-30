@@ -114,6 +114,19 @@ class Yapi:
 
 KATALOG: tuple[Elenen, ...] = (
     Elenen(
+        id="eur_gbp_london_retired", statu="retired",
+        baslik="EUR_LONDON_FADE_EMA / GBP_LONDON_STRONG_TREND",
+        iddia="Mevcut London kurallari aktif PAPER forward olcumune devam etsin.",
+        olcum="EUR 7 Agustos-24 Eylul mevcut config n=14, +3.812R; GBP "
+              "29 Eylul birlesik n=23, -8.379R. Uzun tarih EUR/GBP negatiftir.",
+        neden="Kullanici seyrek sinyal ve zayif uzun-donem kaniti nedeniyle "
+              "2026-09-30'da rafa kaldirdi. EUR forward negatif diye elenmedi.",
+        tarih="2026-09-30", kaynak="[[Borsa - EUR GBP London Emeklilik Karari 2026-09-30]]",
+        anahtarlar=("EUR_LONDON_FADE_EMA", "GBP_LONDON_STRONG_TREND", "london"),
+        kapsam="Yalniz bu iki mekanik London surumu; SWEEP_CORE ve EUR/GBP paritelerini veya "
+               "baska diskresyoner tezleri genel olarak veto etmez.",
+    ),
+    Elenen(
         id="fvg_doldurma",
         statu="standalone_rejected",
         baslik="FVG (fair value gap) doldurulur",
@@ -240,8 +253,8 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("sweep", "cok enstruman", "breadth", "genisleme", "portfoy",
                     "slot", "endeks"),
         kapsam=("Veto YALNIZCA 'ayni kurali 7 endekse yay' genislemesine. Tek- "
-                "enstruman SWEEP_CORE_AVOID_MID_VWAP ayri bir modul olarak "
-                "portfoyde kalir; guncel olcumu sistem durumu bolumundedir."),
+                "enstruman SWEEP_CORE_AVOID_MID_VWAP calisiyor (n=9, +0.804) ve "
+                "portfoyde kaldi."),
     ),
     Elenen(
         id="donchian_xau",
