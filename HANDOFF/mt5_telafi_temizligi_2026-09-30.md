@@ -17,3 +17,5 @@ Silinen notlara bağlantılar güncel karar kaynağına yönlendirildi. Ham CSV 
 Görev listesi düzeltmesi: üç Borsa-* görevinin yanında ayrı eski ForwardEA-5dk görevi de vardır; toplam dört ilgili görev. Önceki üç görev anlatımı yalnız Borsa-* adları için geçerliydi.
 
 İlgili: [[Borsa - Guncel Edge ve Filtre Kararlari 2026-09-27]], [[Borsa - EUR GBP London Emeklilik Karari 2026-09-30]], [[Borsa - Forward Kapsam Denetimi 2026-09-30]].
+
+Doğrulama tamamlandı: 558 passed, 3 skipped. GitHub kod commit 837761f4c8eb4cbfda559caa23d30c1dcaffa0ba; gerçek bulut defter koşusu 36775812711 başarılı (https://github.com/alplion890/borsa-signalbot/actions/runs/36775812711). Yerel ForwardEA görevi 23:52 TR’de çalıştı ve Sweep son işlenen barı 20:30 UTC’ye ilerledi. Silinen dört vault notuna wikilink veya silinen arşivlere Markdown bağlantısı kalmadığı scoped aramayla kontrol edildi. Graphify güncellendi. Gerçek emir verilmedi, eski defter satırları silinmedi.
