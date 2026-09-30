@@ -1,5 +1,8 @@
 # Android'de makro + çapraz piyasa + teknik karar akışı
 
+> Güncel durum — 2026-09-30: Sweep tek LIVE yetkili mekanik modül; EMA12 ayrı PAPER gözlem. EUR/GBP London, NQ ORB ve Gold ORB emekli. Makro/COT sürümleri araştırma; LIVE filtre değil. Yeni EUR/GBP taraması ve forward girişi yok. Güncel karar: [karar tablosu](GUNCEL_EDGE_KARARLARI.md).
+
+
 Güncelleme: 2026-09-18. TradingView açılmasa da kullanılacak düzen.
 
 ## Uygulamalar

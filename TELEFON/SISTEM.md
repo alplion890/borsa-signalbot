@@ -1,5 +1,8 @@
 # Maven telefon sistemi
 
+> Güncel durum — 2026-09-30: Sweep tek LIVE yetkili mekanik modül; EMA12 ayrı PAPER gözlem. EUR/GBP London, NQ ORB ve Gold ORB emekli. Makro/COT sürümleri araştırma; LIVE filtre değil. Yeni EUR/GBP taraması ve forward girişi yok. Güncel karar: [karar tablosu](GUNCEL_EDGE_KARARLARI.md).
+
+
 Bu belge insan/operator icindir. ChatGPT ve Claude icin calisma anindaki tek metin [KISA_TALIMAT.md](KISA_TALIMAT.md) icindeki **Kopyalanacak metin** bolumudur.
 
 ## Telegram brifingi

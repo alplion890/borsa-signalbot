@@ -1,4 +1,4 @@
-"""Seven-module Telegram signal scanner.
+"""Telegram scanner for the current registered modules; Sweep only since 2026-09-30.
 
 Every valid setup is sent. The scanner only suppresses an identical signal
 from the same closed bar, so GitHub's repeated cron runs do not spam Telegram.

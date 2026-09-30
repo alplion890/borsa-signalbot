@@ -1,5 +1,8 @@
 # borsa — proje talimatı
 
+> Güncel durum — 2026-09-30: Sweep tek LIVE yetkili mekanik modül; EMA12 ayrı PAPER gözlem. EUR/GBP London, NQ ORB ve Gold ORB emekli. Makro/COT sürümleri araştırma; LIVE filtre değil. Yeni EUR/GBP taraması ve forward girişi yok. Güncel karar: [karar tablosu](TELEFON/GUNCEL_EDGE_KARARLARI.md).
+
+
 Bu dosya Claude Code oturumlarında otomatik yüklenir. Claude telefon
 uygulamasında otomatik yüklenmez; telefon projesine `TELEFON/KISA_TALIMAT.md`
 içindeki metin yapıştırılmış olmalıdır.

@@ -4,8 +4,8 @@ Her LiveModule: en son KAPANMIS bar uzerinde sinyal var mi diye bakar; varsa
 (dir, entry, sl, tp) doner. Backtest sinyal mantigini birebir kullanir (ayni
 fonksiyonlar), sadece "son bar"a uygular.
 
-Ilk somut modul: Gold NY-ORB (temiz + MT5'te mevcut). Digerleri (NQ sweep, EUR
-London, ES div) ayni protokolle eklenir — README'ye bak.
+Current registered scanner: Sweep only. EMA12 is a separate PAPER observer.
+EUR/GBP London, Gold ORB and NQ ORB are retired; see the decision table.
 """
 from __future__ import annotations
 

@@ -1,5 +1,8 @@
 # ChatGPT ve Claude proje talimati
 
+> Güncel durum — 2026-09-30: Sweep tek LIVE yetkili mekanik modül; EMA12 ayrı PAPER gözlem. EUR/GBP London, NQ ORB ve Gold ORB emekli. Makro/COT sürümleri araştırma; LIVE filtre değil. Yeni EUR/GBP taraması ve forward girişi yok. Güncel karar: [karar tablosu](GUNCEL_EDGE_KARARLARI.md).
+
+
 Asagidaki **Kopyalanacak metin** bolumunu aynen iki projeye de yapistir. Bu, calisma anindaki tek AI talimatidir; `SISTEM.md` operator dokumanidir.
 
 ## Kopyalanacak metin
