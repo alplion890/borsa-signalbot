@@ -13,8 +13,8 @@ brokerdaki son karar ve emir kullanicidadir.
   yorumlar, tez ve curuteni onceden kaydeder; emir MT5/Maven'da elle girilir.
 - **Arastirma rayi uykuda:** yeni strateji/parametre canliya eklenmez. Adaylar
   ayri PAPER defterinde ve sifir portfoy agirligiyla olculur.
-- `default_modules()` tarama listesinde SWEEP_CORE ile PAPER EUR/GBP London
-  modulleri vardir; LIVE/PAPER yetkisinin tek kaynagi `signalbot/risk.py`dir.
+- `default_modules()` tarama listesinde yalnız SWEEP_CORE
+  modulu vardir; LIVE/PAPER yetkisinin tek kaynagi `signalbot/risk.py`dir.
 - Hafta ici 16:20 ve 18:15 TR hedeflerinde iki kisa Telegram mesaji uretilir.
   GitHub Actions cron yogunlugunda gecikebilir.
 - Telegram NQ hacmi, onceki 20 ardil bar yerine onceki 20 islem gununun ayni
