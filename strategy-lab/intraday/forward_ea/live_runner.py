@@ -117,14 +117,9 @@ def _cycle(modules: list[LiveModule], book: Book, last_bar: dict,
     def _skip(name: str, exc: Exception) -> None:
         print(f"  [ATLA] {name}: {exc}")
 
-    onceki = len(book.closed)
     opened = _engine_cycle(modules, book, last_bar, _fetch_ohlcv,
                            warmup_days=warmup_days, on_skip=_skip)
-    # Warmup gecmis barlari isler: o satirlar BACKTEST'tir, forward kaniti
-    # degil. Kolon yoktu, bu yuzden defterin basindaki warmup islemleri
-    # yillarca "canli olculdu" diye okundu (2026-08-21'de fark edildi).
-    for row in book.closed[onceki:]:
-        row["backfill"] = 1 if warmup_days > 0 else 0
+    # Entry provenance is carried by PaperPosition, not the exit-cycle mode.
     return opened
 
 

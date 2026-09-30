@@ -298,3 +298,5 @@ python -m intraday.forward_ea.cloud_parity
   bu işin varlık sebebi tam olarak delikti.
 - Defter satırı `(modül, sembol, giriş zamanı)` ile tekilleştirilir; state
   kaybolsa bile aynı işlem ikinci kez yazılmaz.
+
+Ayrı ForwardEA-5dk görevi de kayıtlıdır: MT5 açılınca son işlenmiş mumdan sonraki broker barlarını sanal deftere işler. Üç Borsa-* + ayrı ForwardEA görevi vardır. Emir vermez; kapanmış veya backfill gözlemleri güncel Telegram fırsatı yapmaz. Ayrıntı: HANDOFF/mt5_telafi_temizligi_2026-09-30.md.

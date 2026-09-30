@@ -43,6 +43,7 @@ def pos_to_json(p: PaperPosition) -> dict:
         "entry_time": str(p.entry_time), "entry": p.entry, "sl": p.sl, "tp": p.tp,
         "weight": p.weight, "max_hold_bars": p.max_hold_bars,
         "cost_per_side": p.cost_per_side, "bars_held": p.bars_held,
+        "backfill": p.backfill,
     }
 
 
@@ -54,6 +55,7 @@ def book_from_state(state: dict) -> Book:
             entry_time=naive(d["entry_time"]), entry=d["entry"], sl=d["sl"],
             tp=d["tp"], weight=d["weight"], max_hold_bars=d["max_hold_bars"],
             cost_per_side=d["cost_per_side"], bars_held=d.get("bars_held", 0),
+            backfill=int(d.get("backfill", 0)),
         ))
     return book
 
@@ -110,6 +112,7 @@ def cycle(modules: list[LiveModule], book: Book, last_bar: dict, fetch: Fetch,
                         entry_time=bt, entry=sig.entry, sl=sig.sl, tp=sig.tp,
                         weight=mod.weight, max_hold_bars=mod.max_hold_bars,
                         cost_per_side=mod.cost_per_side,
+                        backfill=int(warmup_days > 0),
                     )
                     book.add(pos)
                     opened.append(pos)

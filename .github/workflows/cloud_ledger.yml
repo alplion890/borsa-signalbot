@@ -7,7 +7,7 @@ name: bulut-forward-defteri
 # SAATLIK KOSMASI YETER: kosucu son islenen bardan itibaren TUM yeni barlari
 # sirayla isler (engine.cycle). Yani 5 dakikada bir kosmakla saatte bir
 # kosmak ayni defteri uretir; tek fark kaydin gec dusmesi. Gecikmis cron da
-# bu yuzden veri kaybettirmez.
+# eksik barlari veri kaynagi ve indirme penceresi elverdigi kadar telafi eder.
 
 on:
   schedule:

@@ -28,6 +28,7 @@ class PaperPosition:
     exit_time: pd.Timestamp | None = None
     exit: float | None = None
     r: float | None = None
+    backfill: int = 0  # Entry provenance persists across restarts and later exits.
 
     @property
     def risk(self) -> float:
@@ -94,6 +95,7 @@ class PaperPosition:
             "r": self.r,
             "weight": self.weight,
             "weighted_r": (self.r * self.weight) if self.r is not None else None,
+            "backfill": self.backfill,
         }
 
 

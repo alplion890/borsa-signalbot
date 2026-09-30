@@ -109,6 +109,16 @@ def test_stale_backfill_position_is_skipped():
     assert sent == [] and outbox == []
 
 
+def test_closed_or_warmup_position_is_never_a_new_alert():
+    warmup = _pos("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", minutes_ago=5)
+    warmup.backfill = 1
+    closed = _pos("SWEEP_CORE_AVOID_MID_VWAP", "NASDAQ100", minutes_ago=5)
+    closed.status = "sl"
+    outbox = []
+    assert notify_new_positions([warmup, closed], send_fn=outbox.append) == []
+    assert outbox == []
+
+
 def test_paper_module_message_has_no_card():
     now = dt.datetime.now(dt.timezone.utc)
     msg = build_message(

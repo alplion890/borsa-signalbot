@@ -22,8 +22,10 @@ Kanıt: [geniş makro/COT A/B raporu](../strategy-lab/outputs/intraday/cross_ass
 
 Diskresyoner: 2/4 + tez + çürüten + ön-kayıt. [Mobil akış](MOBIL_KARAR_AKISI.md). Telegram sessizliği fırsat yokluğu değildir; yerel 20:10 kapsam alarmı PC/oturum açıkken çalışır.
 
-Eski modül listeleri/skorlar [tarihsel arşivdedir](../HANDOFF/archive/forward_ea_history_before_2026-09-27.md).
+Eski durum kopyaları silindi; [güncel emeklilik gerekçesi](../HANDOFF/eur_gbp_emeklilik_2026-09-30.md).
 
 30 Eylül kararı: EUR/GBP aktif yerel/bulut taramasından ve yeni PAPER ölçümünden çıkarıldı. Eski defterler ve araştırma raporları korundu. Gerekçe: [[Borsa - EUR GBP London Emeklilik Karari 2026-09-30]].
 
 Arka plandaki 9 CAND_ deneyi sessiz ölçümdür; aktif Telegram edge’i değildir. 30 Eylül kapsam boşluğu ve NQ-Mobile son hata kodu ayrıca çözülmelidir.
+
+Ayrı ForwardEA-5dk görevi de kayıtlıdır: MT5 açılınca son işlenmiş mumdan sonraki broker barlarını sanal deftere işler. Üç Borsa-* + ayrı ForwardEA görevi vardır. Emir vermez; kapanmış veya backfill gözlemleri güncel Telegram fırsatı yapmaz. Ayrıntı: HANDOFF/mt5_telafi_temizligi_2026-09-30.md.

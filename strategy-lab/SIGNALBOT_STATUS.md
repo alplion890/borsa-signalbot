@@ -13,4 +13,6 @@ Karar kaynağı: [güncel tablo](../TELEFON/GUNCEL_EDGE_KARARLARI.md).
 - Açık operasyon eksikleri: 30 Eylül mobil kapsam 3/21; NQ-Mobile son Windows hata kodu 1'in nedeni ayrıca incelenmeli. Bu belge strateji emekliliğini tamamlar; kapsam sorununu çözülmüş göstermez.
 
 Gerekçe: [EUR/GBP emekliliği](../HANDOFF/eur_gbp_emeklilik_2026-09-30.md).
-[Eski teknik durum ve modül skorları tarihsel arşivdedir](../HANDOFF/archive/signalbot_status_before_2026-09-30.md).
+Eski teknik durum kopyası silindi; [emeklilik gerekçesi](../HANDOFF/eur_gbp_emeklilik_2026-09-30.md).
+
+Ayrı ForwardEA-5dk görevi de kayıtlıdır: MT5 açılınca son işlenmiş mumdan sonraki broker barlarını sanal deftere işler. Üç Borsa-* + ayrı ForwardEA görevi vardır. Emir vermez; kapanmış veya backfill gözlemleri güncel Telegram fırsatı yapmaz. Ayrıntı: HANDOFF/mt5_telafi_temizligi_2026-09-30.md.

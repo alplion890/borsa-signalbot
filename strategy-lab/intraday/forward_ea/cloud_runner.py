@@ -95,7 +95,7 @@ def _append_ledger(ledger_path: Path, rows: list[dict], backfill: bool = False) 
     # Warmup kosumu gecmis barlari isler: bu satirlar BACKTEST'tir, forward
     # kaniti degil. Isaretlenmezse aylar sonra "bulutta canli olculdu" diye
     # okunur ve defteri kirletir.
-    frame["backfill"] = 1 if backfill else 0
+    frame["backfill"] = [int(r.get("backfill", int(backfill))) for r in fresh]
     frame = frame[_LEDGER_COLUMNS]
     header = not ledger_path.exists()
     frame.to_csv(ledger_path, mode="a", header=header, index=False)

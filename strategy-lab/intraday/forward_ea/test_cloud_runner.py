@@ -221,3 +221,41 @@ def test_normal_kosumun_satirlari_backfill_DEGILDIR(tmp_path):
     led = pd.read_csv(tmp_path / "cloud_ledger.csv")
     assert len(led) > 0
     assert set(led["backfill"]) == {0}
+
+
+def test_warmup_open_position_stays_backfill_after_restart(tmp_path):
+    frame = _bars(260)
+    # Last warmup entry remains open, then times out in the next normal run.
+    mod = LiveModule("TEST_WARMUP", "NASDAQ100", "15m", 0.0, 5000, _always_long)
+    cloud_runner.run_once(modules=[mod], fetch=_fetch(frame), state_dir=tmp_path,
+                          warmup_days=3)
+    before = len(pd.read_csv(tmp_path / "cloud_ledger.csv"))
+    state = json.loads((tmp_path / "cloud_state.json").read_text(encoding="utf-8"))
+    state["open_positions"][0]["max_hold_bars"] = 1
+    (tmp_path / "cloud_state.json").write_text(json.dumps(state), encoding="utf-8")
+    grown = pd.concat([frame, _bars(4, str(frame.index[-1] + pd.Timedelta(minutes=15)))])
+    cloud_runner.run_once(modules=[LiveModule(mod.name, mod.symbol_key, mod.tf,
+                                            0.0, 5000, _never)],
+                          fetch=_fetch(grown), state_dir=tmp_path)
+    ledger = pd.read_csv(tmp_path / "cloud_ledger.csv")
+    assert len(ledger) == before + 1
+    assert set(ledger["backfill"]) == {1}
+
+
+def test_gap_replays_missed_signal_once(tmp_path):
+    frame = _bars(260)
+    cloud_runner.run_once(modules=[_module(_never)], fetch=_fetch(frame),
+                          state_dir=tmp_path)
+    signal_time = frame.index[-1] + pd.Timedelta(minutes=15)
+    grown = pd.concat([frame, _bars(20, str(frame.index[-1] + pd.Timedelta(minutes=15)))])
+    def one_signal(sub):
+        return _always_long(sub) if sub.index[-1] == signal_time else None
+    mod = _module(one_signal)
+    out = cloud_runner.run_once(modules=[mod], fetch=_fetch(grown), state_dir=tmp_path)
+    assert out["opened"] == 1 and out["written"] == 1
+    ledger = pd.read_csv(tmp_path / "cloud_ledger.csv")
+    assert pd.Timestamp(ledger.iloc[0]["entry_time"]) == signal_time
+    assert ledger.iloc[0]["backfill"] == 0
+    again = cloud_runner.run_once(modules=[mod], fetch=_fetch(grown), state_dir=tmp_path)
+    assert again["written"] == 0
+    assert len(pd.read_csv(tmp_path / "cloud_ledger.csv")) == 1

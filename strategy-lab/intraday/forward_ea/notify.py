@@ -74,6 +74,8 @@ def notify_new_positions(new_positions: list[PaperPosition],
     sender = send_fn or telegram_notify.send
     sent: list[str] = []
     for pos in new_positions:
+        if pos.status != "open" or pos.backfill:
+            continue  # A reconstructed/finished observation is not a live setup.
         age = _age_minutes(pos.entry_time, now)
         if age > MAX_AGE_MIN:
             continue  # backfill kalintisi, bildirme

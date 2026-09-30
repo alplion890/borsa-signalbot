@@ -40,3 +40,5 @@ Bu akışın kayıtlı NQ karar penceresi hafta içi **18:15–20:00 Türkiye sa
 - **İkinci aşama:** Investing'de olay/çapraz piyasa, MT5'te broker grafiği, 2/4 kapısı ve risk insan tarafından doğrulanır. Bildirimde AL yazmaması bilinçlidir; izleme fırsatının kârlılığı henüz ölçülmemiştir.
 
 Tarayıcı Yahoo `NQ=F` verisini kullanır; NQ vadeli ile Maven US100 farklı fiyat akışlarıdır. Watch mesajı, 35 dakikadan eski kapanmış barı veya pencere dışını göndermez. GitHub'ın [zamanlanmış işlerindeki gecikme/atlama olasılığı](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows) nedeniyle mesaj gelmemesi otomatik olarak “piyasada fırsat yok” anlamına gelmez. Mekanik tarayıcının logu ile ayrı izleme adayı logu kontrol edilmelidir.
+
+Ayrı ForwardEA-5dk görevi de kayıtlıdır: MT5 açılınca son işlenmiş mumdan sonraki broker barlarını sanal deftere işler. Üç Borsa-* + ayrı ForwardEA görevi vardır. Emir vermez; kapanmış veya backfill gözlemleri güncel Telegram fırsatı yapmaz. Ayrıntı: HANDOFF/mt5_telafi_temizligi_2026-09-30.md.
