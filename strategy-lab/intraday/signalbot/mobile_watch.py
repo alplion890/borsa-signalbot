@@ -35,8 +35,8 @@ def _ny_dates(index: pd.DatetimeIndex) -> pd.Index:
 
 
 def _in_window(now: dt.datetime) -> bool:
-    tr = now.astimezone(TR)
-    return tr.weekday() < 5 and dt.time(18, 15) <= tr.time() < dt.time(20)
+    from .scan_schedule import is_open
+    return is_open(now)
 
 
 def _previous_day_levels(frame: pd.DataFrame) -> tuple[float, float] | None:
@@ -126,15 +126,26 @@ def candidate(frame: pd.DataFrame, now: dt.datetime) -> dict | None:
                     volume_ratio is not None and volume_ratio >= 1.3 and
                     ((previous_close <= previous_vwap and close > vwap and trend == "yukari") or
                      (previous_close >= previous_vwap and close < vwap and trend == "asagi")))
-    if not level_watch and not vwap_reclaim:
+    # Notification thresholds only; never change mechanical entry/risk rules.
+    move_1h = (close / float(bars['close'].iloc[-5]) - 1) * 100
+    adx14 = float(adx(bars, 14, shift=0).iloc[-1])
+    trend_watch = (trend != 'karisik' and math.isfinite(adx14) and adx14 >= 25
+                   and abs(move_1h) >= 0.5 and volume_ratio is not None
+                   and volume_ratio >= 1.3)
+    move_watch = abs(move_1h) >= 1.0
+    if not level_watch and not vwap_reclaim and not trend_watch and not move_watch:
         return None
     reason = (f"onceki NY {name} yakininda ({distance / current_atr:.2f} ATR)"
               if level_watch else
-              f"NY nakit VWAP {'ustune' if trend == 'yukari' else 'altina'} geri gecis; hacim {volume_ratio:.1f}x")
-    adx14 = float(adx(bars, 14, shift=0).iloc[-1])
+              f"NY nakit VWAP {'ustune' if trend == 'yukari' else 'altina'} geri gecis; hacim {volume_ratio:.1f}x"
+              if vwap_reclaim else
+              f"son 1 saat {move_1h:+.2f}%; ADX {adx14:.1f}; hacim {volume_ratio:.1f}x"
+              if trend_watch else f"son 1 saat {move_1h:+.2f}%")
+    event = (name if level_watch else 'vwap_' + trend if vwap_reclaim else
+             'trend_' + trend if trend_watch else 'move_' + ('up' if move_1h > 0 else 'down'))
     rsi14 = _rsi14(bars["close"])
     return {
-        "key": f"{tr.date()}:{name if level_watch else 'vwap_' + trend}",
+        "key": f"{tr.date()}:{event}",
         "bar_close": bar_close,
         "age": age,
         "level_name": name,
@@ -166,8 +177,7 @@ def format_watch(item: dict, now: dt.datetime) -> str:
         f"15dk: EMA20 {item['ema20']:.1f}, EMA50 {item['ema50']:.1f}; NY VWAP {vwap_text} ({item['vwap_side']}); ADX {adx_text}, RSI {rsi_text}, hacim {volume}.",
         f"Capraz piyasa: {item.get('es_context', 'ES tepkisi olculemedi')}.",
         f"Veri: Yahoo NQ=F, kapanmis 15dk bar {bar_tr}, {item['age']:.0f} dk once. NQ seviyesi {item['level']:.1f}; Maven US100 emir fiyati DEGIL.",
-        "Telefonda teyit: Investing takviminde beklenti/gerceklesen; 2Y/10Y, DXY, EUR/USD, altin ve ES tepkisi. MT5 US100'de seviye ve kapanmis mum, stop mesafesi, bakiyeyi kontrol et.",
-        "Bu bir izleme adayi. En az 2/4 katman, tez ve curuten yaz; AL/PAS/BEKLE kararini sen ver. Karar notunu emirden once Telegram Kaydedilen Mesajlar'a yaz. Mekanik LIVE sinyali degildir.",
+        "MT5 US100'de mum/seviye teyidi gerekir. 2/4 + tez + curuten + on-kayit; karar ve emir sende. Mekanik LIVE sinyali degildir. Gercek yeni giris kapisi 18:15-20:00 TR; bu kart gun boyu izleme icindir.",
     ])
 
 
@@ -184,6 +194,14 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
                       dt.timedelta(minutes=15))).total_seconds() / 60
         print(f"Mobil izleme: son kapanmis NQ bar {closed.index[-1].isoformat()}, "
               f"kapanistan beri {age:.0f} dk.")
+        health_path = os.environ.get('MOBILE_WATCH_HEALTH_PATH')
+        if health_path and not dry_run and len(closed) >= 60 and 0 <= age <= MAX_BAR_AGE_MINUTES:
+            path = Path(health_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open('a', encoding='utf-8') as stream:
+                stream.write(json.dumps({'evaluated_at': now.isoformat(),
+                                         'bar_time': closed.index[-1].isoformat(),
+                                         'age_minutes': age}) + '\n')
     item = candidate(frame, now)
     if item is None:
         print("Mobil izleme: guncel seviye adayi yok.")
@@ -211,6 +229,10 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
     except (OSError, ValueError, KeyError, TypeError, ZeroDivisionError) as exc:
         print(f"Mobil izleme: ES baglami alinamadi ({type(exc).__name__}).")
     message = format_watch(item, now)
+    from .mt5_context import describe
+    broker_context = describe('NASDAQ100', now=now)
+    if broker_context:
+        message += '\n' + broker_context
     if dry_run:
         print(message)
         return message
@@ -219,7 +241,10 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
     else:
         try:
             png = render_chart(nq, level=item["level"])
-            telegram_notify.send_photo(png, message)
+            telegram_notify.send_photo(png, message[:1024])
+            if len(message) > 1024:
+                telegram_notify.send(message)
+            print('Mobil izleme: PNG Telegram API tarafindan kabul edildi.')
         except Exception as exc:
             print(f"Mobil izleme: grafik gonderilemedi ({type(exc).__name__}); metin deneniyor.")
             telegram_notify.send(message)

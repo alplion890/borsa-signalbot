@@ -85,10 +85,8 @@ def format_message(item: dict) -> str:
 def run(*, now: dt.datetime | None = None, state_path: Path = STATE,
         fetch=None, send=None, dry_run: bool = False) -> list[str]:
     now = now or dt.datetime.now(UTC)
-    local = now.astimezone(TR)
-    in_window = local.weekday() < 5 and (
-            dt.time(10) <= local.time() < dt.time(14)
-            or dt.time(16) <= local.time() < dt.time(20))
+    from .scan_schedule import is_open
+    in_window = is_open(now)
     if not in_window and not dry_run:
         print('Finnhub bulut haberi: seans penceresi dışında.')
         return []

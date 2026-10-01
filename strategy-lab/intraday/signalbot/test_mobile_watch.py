@@ -36,7 +36,7 @@ def test_watch_rejects_stale_bar_and_closed_window(tmp_path):
     stale = _bars().iloc[:-4]
     assert mobile_watch.run(now=NOW, state_path=tmp_path / "a.json",
                             fetch=lambda *a, **kw: stale, send=sent.append) is None
-    before = NOW - dt.timedelta(hours=1)
+    before = NOW - dt.timedelta(hours=10)
     assert mobile_watch.run(now=before, state_path=tmp_path / "b.json",
                             fetch=lambda *a, **kw: _bars(), send=sent.append) is None
     assert sent == []
@@ -73,3 +73,15 @@ def test_failed_delivery_does_not_dedupe_future_attempt(tmp_path):
         raise AssertionError("delivery failure should propagate")
 
     assert not state.exists()
+
+
+def test_large_hourly_move_without_level_or_vwap_reclaim():
+    frame = _bars()
+    previous = frame.index.tz_convert(mobile_watch.NY).date == dt.date(2026, 9, 17)
+    frame.loc[previous, 'high'] = 130.0
+    frame.loc[previous, 'low'] = 70.0
+    frame.loc[frame.index[-1], ['close', 'high']] = [102.0, 103.0]
+    item = mobile_watch.candidate(frame, NOW)
+    assert item is not None
+    assert 'move_up' in item['key']
+    assert 'son 1 saat +2.00%' in item['reason']
