@@ -8,7 +8,6 @@ import os
 import time
 from pathlib import Path
 
-import requests
 
 from . import ema12_paper, finnhub_news, mobile_watch, signal_scan, telegram_notify
 from .scan_schedule import is_open
@@ -18,20 +17,9 @@ _last_error_notice = 0.0
 
 
 def local_active(now: dt.datetime) -> bool:
-    token = os.environ.get('GH_TOKEN')
-    repo = os.environ.get('GITHUB_REPOSITORY')
-    if not token or not repo:
-        return False
-    try:
-        response = requests.get(
-            f'https://api.github.com/repos/{repo}/actions/variables/LOCAL_SCANNER_UNTIL',
-            headers={'Authorization': f'Bearer {token}'}, timeout=10)
-        response.raise_for_status()
-        until = dt.datetime.fromisoformat(response.json()['value'])
-        return 0 < (until - now).total_seconds() <= 480
-    except (requests.RequestException, ValueError, KeyError, TypeError):
-        print('Yerel devir okunamadi; bulut bildirimi aktif.', flush=True)
-        return False
+    # Cloud owns notifications while this worker is running. Local tasks inspect
+    # the running Actions job and suppress their duplicate alerts.
+    return False
 
 
 def scan_once(now: dt.datetime, *, dry_run: bool = False) -> dict:

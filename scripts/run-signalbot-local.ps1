@@ -68,16 +68,20 @@ try {
     if ($brokerContext.status -eq 'ok') {
         $env:ACCOUNT_BALANCE = ([double]$brokerContext.balance).ToString([System.Globalization.CultureInfo]::InvariantCulture)
     }
+    $cloudPrimary = (& $python -c "from intraday.signalbot.local_lease import cloud_active; print('true' if cloud_active() else 'false')").Trim() -eq 'true'
+    $scanArgs = @()
+    $alertArgs = @()
+    if ($cloudPrimary) { $scanArgs = @('--dry-run'); $alertArgs = @('--suppress-alert') }
     if ($Mode -in 'scan', 'both') {
         "$(Get-Date -Format o) scan basladi" | Add-Content -LiteralPath $log -Encoding UTF8
-        $scanOutput = @(& $python (Join-Path $root 'run_bot.py') 2>&1)
+        $scanOutput = @(& $python (Join-Path $root 'run_bot.py') @scanArgs 2>&1)
         $scanExit = $LASTEXITCODE
         $scanOutput | Out-File -LiteralPath $log -Encoding UTF8 -Append
     }
     if ($Mode -in 'mobile', 'both') {
-        & $python -m intraday.signalbot.mobile_watch 2>&1 | Out-File -LiteralPath $log -Encoding UTF8 -Append
+        & $python -m intraday.signalbot.mobile_watch @alertArgs 2>&1 | Out-File -LiteralPath $log -Encoding UTF8 -Append
         $mobileExit = $LASTEXITCODE
-        & $python -m intraday.signalbot.ema12_paper --suppress-result 2>&1 | Out-File -LiteralPath $log -Encoding UTF8 -Append
+        & $python -m intraday.signalbot.ema12_paper --suppress-result @alertArgs 2>&1 | Out-File -LiteralPath $log -Encoding UTF8 -Append
         $paperExit = $LASTEXITCODE
     }
     if ($Mode -in 'scan', 'both') {

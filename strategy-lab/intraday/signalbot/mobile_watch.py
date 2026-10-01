@@ -182,7 +182,7 @@ def format_watch(item: dict, now: dt.datetime) -> str:
 
 
 def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
-        fetch=None, send=None, dry_run: bool = False) -> str | None:
+        fetch=None, send=None, dry_run: bool = False, suppress_alert: bool = False) -> str | None:
     now = now or dt.datetime.now(UTC)
     if not _in_window(now):
         print("Mobil izleme: karar penceresi disinda.")
@@ -233,6 +233,9 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
     broker_context = describe('NASDAQ100', now=now)
     if broker_context:
         message += '\n' + broker_context
+    if suppress_alert:
+        print("Mobil izleme: bulut isçisi aktif; yerel tekrar susturuldu.")
+        return message
     if dry_run:
         print(message)
         return message
@@ -259,8 +262,9 @@ def run(*, now: dt.datetime | None = None, state_path: Path = STATE_PATH,
 def main() -> None:
     parser = argparse.ArgumentParser(description="Diskresyoner mobil izleme adayi")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--suppress-alert", action="store_true")
     args = parser.parse_args()
-    run(dry_run=args.dry_run)
+    run(dry_run=args.dry_run, suppress_alert=args.suppress_alert)
 
 
 if __name__ == "__main__":
