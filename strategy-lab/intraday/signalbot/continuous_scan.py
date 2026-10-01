@@ -10,10 +10,11 @@ from pathlib import Path
 
 import requests
 
-from . import ema12_paper, finnhub_news, mobile_watch, signal_scan
+from . import ema12_paper, finnhub_news, mobile_watch, signal_scan, telegram_notify
 from .scan_schedule import is_open
 
 UTC = dt.timezone.utc
+_last_error_notice = 0.0
 
 
 def local_active(now: dt.datetime) -> bool:
@@ -34,6 +35,7 @@ def local_active(now: dt.datetime) -> bool:
 
 
 def scan_once(now: dt.datetime, *, dry_run: bool = False) -> dict:
+    global _last_error_notice
     if not is_open(now):
         return {}
     lease = local_active(now)
@@ -57,6 +59,15 @@ def scan_once(now: dt.datetime, *, dry_run: bool = False) -> dict:
             print(f'CLOUD_STAGE_ERROR {name} {type(exc).__name__}', flush=True)
     record = {'at': now.isoformat(), 'local_active': lease, 'stages': outcomes}
     print('CLOUD_TICK ' + json.dumps(record), flush=True)
+    errors = {name: status for name, status in outcomes.items()
+              if status not in {'ok', 'local'}}
+    if errors and not dry_run and time.monotonic() - _last_error_notice >= 1800:
+        try:
+            telegram_notify.send('BULUT TARAMA HATASI\n' + json.dumps(errors)
+                                 + '\nDiger moduller taranmaya devam ediyor.')
+            _last_error_notice = time.monotonic()
+        except Exception as exc:
+            print(f'CLOUD_ERROR_NOTICE {type(exc).__name__}', flush=True)
     if not dry_run:
         path = Path('.signalbot/cloud_scan_health.jsonl')
         path.parent.mkdir(parents=True, exist_ok=True)
