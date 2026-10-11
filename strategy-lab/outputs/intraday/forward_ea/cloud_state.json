@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-10-11T01:56:55+00:00",
+  "updated_at": "2026-10-11T08:57:16+00:00",
   "last_bar": {
     "GOLD_NY_ORB_TREND:XAUUSD": "2026-08-28 12:30:00",
     "NQ_ORB_STRONG_TREND:NASDAQ100": "2026-09-10 20:50:00",
@@ -15,7 +15,22 @@
     "CAND_SWEEP_UK100:UK100": "2026-10-09 15:00:00",
     "CAND_SWEEP_FRA40:FRA40": "2026-10-09 15:00:00",
     "CAND_SWEEP_JAP225:JAP225": "2026-10-09 20:30:00",
-    "CAND_BTC_ABSORPTION:BTCUSDT": "2026-10-11 00:00:00"
+    "CAND_BTC_ABSORPTION:BTCUSDT": "2026-10-11 07:00:00"
   },
-  "open_positions": []
+  "open_positions": [
+    {
+      "module": "CAND_BTC_ABSORPTION",
+      "symbol": "BTCUSDT",
+      "direction": -1,
+      "entry_time": "2026-10-11 07:00:00",
+      "entry": 83025.02,
+      "sl": 83401.93584493728,
+      "tp": 82271.18831012545,
+      "weight": 0.0,
+      "max_hold_bars": 96,
+      "cost_per_side": 0.0006,
+      "bars_held": 0,
+      "backfill": 0
+    }
+  ]
 }
