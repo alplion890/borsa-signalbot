@@ -260,3 +260,26 @@ def test_telefon_workflow_iki_onayli_saatte_iki_mesaj_gonderir():
     assert "vars.ACCOUNT_PHASE" in metin
     assert "vars.MAVEN_PHASE" not in metin
     assert "order_send" not in metin
+
+
+def test_mekanik_durum_maven_olcumu_ve_taahhut_sayimini_ayri_yazar(monkeypatch):
+    """2026-11-05: measurement is Maven-only; the demotion commitment still
+    finishes on the frozen union count. Both must be visible, never mixed."""
+    import pandas as pd
+
+    def _rows(rs):
+        return pd.DataFrame({"module": ["SWEEP_CORE_AVOID_MID_VWAP"] * len(rs),
+                             "r": rs})
+
+    monkeypatch.setattr(telefon_brief, "live_module_names",
+                        lambda: {"SWEEP_CORE_AVOID_MID_VWAP"})
+    monkeypatch.setattr(telefon_brief, "load_forward",
+                        lambda include_candidates=False: _rows([1.0, -0.5]))
+    monkeypatch.setattr(telefon_brief, "birlesik_forward",
+                        lambda include_candidates=False: _rows([1.0, -0.5, -1.0]))
+
+    metin = "\n".join(telefon_brief._mekanik_durum())
+
+    assert "Maven n=2, exp_R=+0.250" in metin
+    assert "taahhut sayimi (birlesik, bulut 2026-11-05'te dondu) n=3" in metin
+    assert "exp_R=-0.167" in metin

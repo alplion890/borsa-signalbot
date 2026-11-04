@@ -218,48 +218,8 @@ jobs:
             PYTHONPATH=strategy-lab python -m intraday.signalbot.finnhub_news
           fi
 
-      # KAPALI (2026-08-01). Acmak icin repo variable: AI_SCOUT_ENABLED=true
-      #
-      # Neden kapatildi: DeepSeek API'si 402 Payment Required donuyordu (kredi
-      # bitmis/hic yuklenmemis). AI scout defteri bu yuzden bugune kadar TAMAMEN
-      # BOS kaldi -- tek bir kayit bile uretmedi. continue-on-error: true bu
-      # hatayi yutuyordu, adim "success" gorunuyordu.
-      #
-      # Ikinci gerekce: LLM'in "firsat gordum" demesinin backtest'i, DSR'si,
-      # forward kaydi yok. Mekanik modullerin edge'i henuz kanitlanmamisken
-      # (bkz overfit_audit.py) olculmemis bir sinyal kaynagi eklemek olcumu
-      # zorlastirir. Once mevcut moduller cevap versin.
-      - name: DeepSeek AI scout
-        if: ${{ vars.AI_SCOUT_ENABLED == 'true' && !inputs.test_finnhub && !inputs.test_telegram && !inputs.dry_run }}
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
-          FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          AI_SCOUT_STATE_PATH: .signalbot/ai_state.json
-          AI_MONTHLY_BUDGET_USD: "2.0"
-          AI_MIN_RUN_INTERVAL_MINUTES: "9"
-          AI_MIN_REWARD_RISK: "2.0"
-          AI_MIN_CONFIDENCE: "80"
-        run: |
-          if [ -z "$DEEPSEEK_API_KEY" ]; then
-            echo "DeepSeek API secret henuz eklenmedi; AI scout beklemede."
-          elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Telegram Secrets eksik; AI scout beklemede."
-          else
-            python run_bot.py --ai-scout
-          fi
-
-      - name: AI performans raporu
-        if: ${{ always() && vars.AI_SCOUT_ENABLED == 'true' }}
-        run: |
-          report="$(python run_bot.py --ai-report)"
-          echo "$report"
-          echo "$report" >> "$GITHUB_STEP_SUMMARY"
-          while IFS= read -r line; do
-            echo "::notice title=AI Performance::$line"
-          done <<< "$report"
-
+      # AI scout KALDIRILDI 2026-11-05 (kullanici karari; LLM yon tahmini
+      # 2026-09-04 arastirmasinda kanitsiz/negatif). Gecmis: git log.
       - name: Continuous five-minute cloud scan
         id: worker
         if: ${{ (github.event_name == 'schedule' || inputs.continuous) && steps.scan_window.outputs.active == 'true' && !inputs.test_failure }}

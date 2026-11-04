@@ -35,7 +35,7 @@ from ..elenenler import KATALOG, STATULER, veto_mu
 from ..signalbot.risk import DEMOTION_MIN_N as MIN_N
 from ..signalbot.risk import live_module_names
 from . import diskresyoner, trend_katmani
-from .ledger import birlesik_forward
+from .ledger import birlesik_forward, load_forward
 from .seans_brief import (
     ATR_PENCERE,
     HACIM_PENCERE,
@@ -67,23 +67,37 @@ def _bulut_gunluk(sembol: str) -> pd.DataFrame:
     return ohlcv(sembol, "1d", days=500)
 
 
+def _ozet(d: pd.DataFrame, modul: str) -> tuple[int, float]:
+    alt = d[d["module"] == modul]
+    return len(alt), (float(alt["r"].mean()) if len(alt) else float("nan"))
+
+
 def _mekanik_durum() -> list[str]:
-    """Canli modullerin forward durumu + dusurme esigine kalan islem."""
+    """Canli modullerin forward durumu + dusurme esigine kalan islem.
+
+    2026-11-05: olcum yalniz Maven (MT5) defteri. Dusurme taahhudu ise
+    2026-08-28 kuraliyla birlesik sayimla biter (bulut kismi dondu); iki sayi
+    ayri satirda yazilir, karistirilmaz.
+    """
     satirlar = []
     try:
-        d = birlesik_forward(include_candidates=False)
+        maven = load_forward(include_candidates=False)
+        taahhut = birlesik_forward(include_candidates=False)
     except Exception as e:  # kanit kapisi fail-closed: sebebi yaz, uydurma
         return [f"- DEFTER OKUNAMADI: {type(e).__name__}: {e}"]
     for modul in sorted(live_module_names()):
-        alt = d[d["module"] == modul]
-        n = len(alt)
-        if n == 0:
+        n_m, exp_m = _ozet(maven, modul)
+        n_t, exp_t = _ozet(taahhut, modul)
+        if n_m == 0 and n_t == 0:
             satirlar.append(f"- **{modul}**: forward islem yok")
             continue
-        exp_r = float(alt["r"].mean())
-        kalan = max(0, MIN_N - n)
+        olcum = (f"Maven n={n_m}, exp_R={exp_m:+.3f}" if n_m
+                 else "Maven forward islem yok")
+        kalan = max(0, MIN_N - n_t)
         esik = "esikte" if kalan == 0 else f"esige {kalan} islem"
-        satirlar.append(f"- **{modul}**: n={n}, exp_R={exp_r:+.3f}, {esik}")
+        satirlar.append(
+            f"- **{modul}**: {olcum}; taahhut sayimi (birlesik, bulut "
+            f"2026-11-05'te dondu) n={n_t}, exp_R={exp_t:+.3f}, {esik}")
     return satirlar
 
 

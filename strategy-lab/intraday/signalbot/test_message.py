@@ -323,3 +323,14 @@ def test_zero_lot_live_message_has_no_order_card():
         lot=0.0, risk_usd=75.0, trt_time="16 45",
     )
     assert "MAVEN EMIR KARTI" not in msg
+
+
+def test_yahoo_alert_asks_to_verify_on_maven_chart():
+    """2026-11-05: single measurement source is Maven MT5. A cloud alert built
+    from Yahoo bars is a notification only; it must say so."""
+    msg = format_signal(
+        tier=Tier.LIVE, module="SWEEP_CORE_AVOID_MID_VWAP", symbol_key="NASDAQ100",
+        direction=1, entry=25000, sl=24950, tp=25200, lot=0.1, risk_usd=50.0,
+        trt_time="17:15", data_source="yfinance",
+    )
+    assert "Maven MT5 grafiginde dogrula" in msg

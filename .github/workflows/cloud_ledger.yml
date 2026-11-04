@@ -9,9 +9,10 @@ name: bulut-forward-defteri
 # kosmak ayni defteri uretir; tek fark kaydin gec dusmesi. Gecikmis cron da
 # eksik barlari veri kaynagi ve indirme penceresi elverdigi kadar telafi eder.
 
+# DONDURULDU 2026-11-05 (kullanici karari): tek olcum kaynagi Maven MT5
+# (forward_ledger.csv). cloud_ledger.csv arsivdir; bu is artik kosmaz.
+# Bkz [[Borsa - Tek Kaynak ve Bulut Rolu Karari 2026-11-05]].
 on:
-  schedule:
-    - cron: "20 * * * *"
   workflow_dispatch:
     inputs:
       warmup_days:
@@ -29,6 +30,8 @@ concurrency:
 
 jobs:
   measure:
+    # Frozen archive: a manual dispatch must not append to cloud_ledger.csv.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment: telegram bot token
     timeout-minutes: 20

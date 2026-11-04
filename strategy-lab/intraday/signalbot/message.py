@@ -212,7 +212,10 @@ def format_signal(*, tier: Tier, module: str, symbol_key: str, direction: int,
             f" Setup verisi yaklasik {age:.0f} dakika onceki kapanmis mumdan."
         )
     if data_source == "yfinance":
-        common_tail += " Mum verisi Yahoo Finance feed'inden."
+        common_tail += (
+            " Mum verisi Yahoo Finance feed'inden. Olcum kaynagi Maven: "
+            "girmeden once setupi Maven MT5 grafiginde dogrula."
+        )
     elif data_source == "binance":
         common_tail += " Mum verisi Binance public feed'inden."
     if live_quote is not None:
