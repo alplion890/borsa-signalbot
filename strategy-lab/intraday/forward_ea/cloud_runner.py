@@ -98,7 +98,9 @@ def _append_ledger(ledger_path: Path, rows: list[dict], backfill: bool = False) 
     frame["backfill"] = [int(r.get("backfill", int(backfill))) for r in fresh]
     frame = frame[_LEDGER_COLUMNS]
     header = not ledger_path.exists()
-    frame.to_csv(ledger_path, mode="a", header=header, index=False)
+    # Fixed format: pandas drops the time part when every value is midnight.
+    frame.to_csv(ledger_path, mode="a", header=header, index=False,
+                 date_format="%Y-%m-%d %H:%M:%S")
     return len(fresh)
 
 

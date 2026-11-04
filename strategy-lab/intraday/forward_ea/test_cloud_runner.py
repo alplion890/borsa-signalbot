@@ -259,3 +259,22 @@ def test_gap_replays_missed_signal_once(tmp_path):
     again = cloud_runner.run_once(modules=[mod], fetch=_fetch(grown), state_dir=tmp_path)
     assert again["written"] == 0
     assert len(pd.read_csv(tmp_path / "cloud_ledger.csv")) == 1
+
+
+def test_midnight_entry_keeps_time_in_ledger(tmp_path):
+    """A lone midnight row must not be written as a bare date.
+
+    pandas drops the time part when every timestamp in the frame is midnight;
+    the 2026-11-02 00:00 BTC row became '2026-11-02' and broke the evidence
+    reader (mixed formats), which fails the demotion tripwire closed.
+    """
+    path = tmp_path / "cloud_ledger.csv"
+    row = {c: 0 for c in cloud_runner._LEDGER_COLUMNS}
+    row.update(module="CAND_BTC_ABSORPTION", symbol="BTCUSDT",
+               entry_time=pd.Timestamp("2026-11-02 00:00"),
+               exit_time=pd.Timestamp("2026-11-02 03:00"), status="sl", r=-1.0)
+    assert cloud_runner._append_ledger(path, [row]) == 1
+    text = path.read_text(encoding="utf-8")
+    assert "2026-11-02 00:00:00," in text
+    # Re-appending the same trade must be deduplicated, not written twice.
+    assert cloud_runner._append_ledger(path, [row]) == 0
