@@ -1,4 +1,4 @@
-"""Telefon proje talimatinin tek-kaynak ve senaryo sozlesmesi."""
+"""Telefon talimatinin guncel olgu ve manuel karar sozlesmesi."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,25 +14,26 @@ def _kopyalanacak_metin() -> str:
     return metin.split("## Kopyalanacak metin", maxsplit=1)[1].strip()
 
 
-def test_ai_talimati_8000_karakterin_altinda_ve_tek_kaynaktir():
+def test_ai_talimati_8000_karakterin_altinda_ve_veri_zamanini_korur():
     metin = _kopyalanacak_metin()
     assert len(metin) < 8000
     assert len(metin.replace("\n", "\r\n")) < 8000
-    for yasak in ("BRIEF.md", "raw.githubusercontent.com", "api.github.com"):
-        assert yasak not in metin
+    assert "BRIEF canlı feed değil" in metin
+    assert "Güncel olduğunu varsayma" in metin
+    assert "2026-09-28'de durduruldu" in metin
 
 
-def test_ai_talimati_nq_turkiye_ve_kosullu_yon_sozlesmesini_tasir():
+def test_ai_talimati_olgu_ve_manuel_karar_sozlesmesini_tasir():
     metin = _kopyalanacak_metin().lower()
     for gerekli in (
-        "nq masasi", "turkiye masasi", "konsensus", "yon sonucu",
-        "teyit edilmedi", "tcmb", "petrol", "2/4 kapisi",
+        "yalnız olgu getir", "yorumu ben yaparım", "yön önerme",
+        "haberden tez üretme", "sayı", "2/4", "çürüten",
     ):
         assert gerekli in metin
-    assert "dogrudan long/short emri" in metin
+    assert "asla emir açma/kapatma/değiştirme" in metin
 
 
-def test_operator_belgesi_aiyi_brief_okumaya_yonlendirmez():
+def test_operator_belgesi_planli_briefi_guncel_varsaymaz():
     metin = SISTEM.read_text(encoding="utf-8")
-    assert "raw.githubusercontent.com" not in metin
-    assert "calisma aninda kaynak olarak kullanmaz" in metin
+    assert "2026-09-28'de durduruldu" in metin
+    assert "BRIEF kendiliginden guncelleniyor varsayma" in metin

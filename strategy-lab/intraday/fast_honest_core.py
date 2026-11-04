@@ -21,6 +21,7 @@ if FAST_CORE_AVAILABLE:
 
     @njit(cache=True)
     def simulate_trades_core(
+        opn,
         price,
         high,
         low,
@@ -85,6 +86,14 @@ if FAST_CORE_AVAILABLE:
                 end_j = n
 
             for j in range(i + 1, end_j):
+                if (is_long and opn[j] <= sl_px) or (not is_long and opn[j] >= sl_px):
+                    outcome = (opn[j] - entry) / risk if is_long else (entry - opn[j]) / risk
+                    last_exit = j
+                    break
+                if (is_long and opn[j] >= tp_px) or (not is_long and opn[j] <= tp_px):
+                    outcome = rr
+                    last_exit = j
+                    break
                 if is_long:
                     if low[j] <= sl_px:
                         outcome = -1.0

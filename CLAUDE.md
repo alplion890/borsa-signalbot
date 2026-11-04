@@ -30,13 +30,17 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 
 ## Üç raylı düzen (bağlayıcı, 2026-08-28)
 
-- **Mekanik ray — DONDURULMUŞ.** SWEEP_CORE tek LIVE modül (NQ_ORB
-  2026-09-04'te düşürme taahhüdü tetiklendi, n=25 exp_R=−0.106 → PAPER'a
-  düştü). Tripwire kararı otomatik veriyor. Yeni modül, yeni parametre, yeni
-  araştırma YOK.
+- **Mekanik ray:** yalnız SWEEP_CORE LIVE yetkili, emir kullanıcıda. EUR/GBP
+  London 2026-09-30, NQ ORB 2026-09-11 ve Gold ORB daha önce emekli edildi.
+  Yeni modül/parametre kendiliğinden eklenmez. Kullanıcının 2026-09-29 kararıyla
+  EMA12 ayrı PAPER gözlemindedir; mevcut LIVE kural ve riski değiştirmez.
+  Önceden kurulmuş 9 CAND_ deneyi sessiz ölçümdür; aktif Telegram edge'i değildir.
 - **Diskresyoner ray — BİRİNCİL.** İşlem burada açılıyor. Protokol aşağıda.
-- **Araştırma rayı — UYKUDA.** Ölçüldü: 14 yıllık veri 1-3 hipotez finanse
-  ediyor, darboğaz VERİ. Yeni strateji fikri gelirse: bütçe yok.
+- **Araştırma rayı — SINIRLI ve AKTİF (birincil değil).** Önce LSE futures
+  verisindeki roll/aykırı bar/gap temizliği yapılır. Ardından tek ön-kayıtlı
+  çalışma, SWEEP_CORE'un NQ-ES göreceli güç filtresiyle kaynak-dayanıklılığıdır.
+  Sonuç LIVE kuralını veya riski değiştirmez; sıfırdan edge araması bundan sonra
+  tek hipotez ailesiyle açılabilir.
 
 ## Diskresyoner protokol
 
@@ -44,7 +48,9 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 2. Katman kapısı ≥2/4: narrative / hacim / trend / destek (2026-09-03'te 3/4'ten
    indirildi — giriş filtresi kararı, kayıt kuralı değil). Kullanıcı eksik
    bırakırsa doldurulmamış katmanları SEN sorarsın ("hacme baktın mı?");
-   "bakmadım" derse boş kalır, uydurulmaz.
+   "bakmadım" derse boş kalır, uydurulmaz. Kalan katmanlar aynı anda güçlü
+   ters haber/tepki anlatmıyorsa çelişki sayılmaz; güçlü çelişkide daha güçlü
+   kanıt aranır ya da işlem alınmaz.
 3. Tez **ve** çürüten zorunlu. Çürüteni olmayan tez sonradan her sonuca
    uydurulabilir; defter hiçbir şey öğretmez.
 4. Tez kurulunca katalogdan geçir: `python -m intraday.elenenler --kontrol <kelime>`
@@ -81,8 +87,9 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 ## Rejim/makro okuma (2026-09-04, kullanıcı kararı)
 
 Sabit kural araması yavaş (kanıta ~56 ay). Claude/Hermes artık seansta **sadece
-sayı** verir — makro olay + tarih, sembollerde kırılım/yeni high-low/trend
-metriği, sıfat ve yön yok. Yorum/karar/ACİ/fibonacci doğrulaması kullanıcıda.
+sayı** verir — açıklama öncesi beklenti, gerçekleşen/revizyon, piyasa tepkisi,
+makro olay + tarih ve sembollerde kırılım/yeni high-low/trend metriği. Yorum,
+karar ve ACİ/fibonacci doğrulaması kullanıcıda.
 Araştırıldı ve ölçüldü: trend-günü ön-sınıflandırma ve AI'nin yön tahmini
 kanıtsız/negatif kanıtlı; makro release sadece **oynaklık zamanlaması** verir,
 yön vermez. Detay: [[Borsa - Rejim Okuma Donusu 2026-09-04]],

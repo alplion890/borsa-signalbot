@@ -1,0 +1,1 @@
+{"name":"borsa-research-panel","private":true,"version":"2.0.0","scripts":{"build":"esbuild app.jsx --bundle --minify --outfile=../static/app.js --define:process.env.NODE_ENV=\"'production'\""},"dependencies":{"react":"^19.2.0","react-dom":"^19.2.0"},"devDependencies":{"esbuild":"^0.25.0"}}

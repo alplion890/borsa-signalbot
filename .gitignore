@@ -1,6 +1,9 @@
 .env
 strategy-lab/intraday/signalbot/.env
 .signalbot/
+!.signalbot/
+.signalbot/*
+!.signalbot/local.env.example
 __pycache__/
 *.pyc
 .pytest_tmp/
@@ -37,3 +40,11 @@ strategy-lab/outputs/intraday/forward_ea/*
 # giris ONCESI yazilmis tezlerin tek kaydi. Backtest'i yok, bu dosya yoksa
 # "yorum yetenegi ise yariyor mu" sorusunun cevabi da yok.
 !strategy-lab/outputs/intraday/forward_ea/diskresyoner_defter.csv
+
+# Yerel oturum, Telegram offsetleri ve MT5 hesap snapshot'lari repoya girmez.
+.signalbot/
+
+# local-only heavy/scratch dirs
+.tmp/
+borsa-backups/
+video-research/

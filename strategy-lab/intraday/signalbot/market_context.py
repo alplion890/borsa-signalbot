@@ -98,6 +98,7 @@ def _finnhub_news(now: dt.datetime, api_key: str) -> list[dict[str, Any]]:
             "published_utc": published.isoformat(),
             "headline": headline[:180],
             "source": str(item.get("source", "Finnhub"))[:50],
+            "url": str(item.get("url", "")),
         })
     return sorted(result, key=lambda x: x["published_utc"], reverse=True)[:8]
 
@@ -150,6 +151,7 @@ def _rss_items(url: str, now: dt.datetime) -> list[dict[str, Any]]:
             "published_utc": published.isoformat(),
             "headline": title[:180],
             "source": "Federal Reserve" if "federalreserve" in url else "BEA",
+            "url": item.findtext("link") or "",
         })
     return result
 

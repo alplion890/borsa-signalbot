@@ -12,23 +12,10 @@ from . import telegram_brief
 UTC = timezone.utc
 
 _PIYASA = telegram_brief.PiyasaOzeti(
-    teknik=(
-        "Nasdaq vadeli, 15 dakikalık görünüm: kısa vadeli hareket yukarı ve "
-        "belirgin. Fiyat bugünkü ortalama işlem fiyatının üzerinde; son 1 "
-        "saat değişimi +0.42%."
-    ),
-    hacim=(
-        "İşlem hacmi: Önceki işlem günlerinde aynı saatte görülen normal "
-        "hacmin 1.6 katı; alışılmadık yüksek ve fiyat hareketini destekliyor."
-    ),
-    firsat=(
-        "Yok — Nasdaq vadeli grafiğinde ölçülmüş kısa taşma ve geri dönüş "
-        "koşulu oluşmadı."
-    ),
-    veri=(
-        "Veri zamanı: Nasdaq vadeli işlemlerinin son tamamlanmış 15 dakikalık "
-        "mumu 18:00 TR; veri 5 dakika gecikmeli."
-    ),
+    teknik="NQ 15dk: yukari trend, guclu (ADX 31.2); VWAP ustunde; son 1 saat %+0.42",
+    hacim="Hacim: 1.6x, artiyor ve trendi destekliyor",
+    firsat="YOK - NQ proxy Sweep tetiklenmedi",
+    veri="Veri: NQ=F kapanmis 15dk bar 18:00 TR, 5 dk gecikme",
 )
 
 
@@ -58,11 +45,12 @@ def test_durum_mesaji_live_paper_fon_ve_setuplari_ayirir(monkeypatch, tmp_path):
         datetime(2026, 9, 9, 13, 20, tzinfo=UTC), state)
 
     assert "16:20 TR" in metin
-    assert "Hesap aşaması: Maven 5K değerlendirme hesabı" in metin
-    assert "Gerçek para bölümü (LIVE): Yok" in metin
-    assert "Deneme bölümü (PAPER — gerçek para değil): bulut kaydı güncel değil" in metin
-    assert "mumu 18:00 TR; veri 5 dakika gecikmeli" in metin
-    assert "Hesap bakiyesi: Sistem uzaktan göremiyor" in metin
+    assert "Hesap: Maven BNPL challenge" in metin
+    assert "LIVE firsat adayi: YOK - NQ proxy Sweep tetiklenmedi" in metin
+    assert "Paper test: kayit guncel degil" in metin
+    assert "Veri: NQ=F kapanmis 15dk bar 18:00 TR, 5 dk gecikme" in metin
+    assert "Bakiye: buluta bagli degil" in metin
+    assert "Makro tez:" in metin
     assert "NQ_ORB_STRONG_TREND" not in metin
     assert "exit<entry" not in metin
     assert len(metin) < 4096
@@ -81,8 +69,8 @@ def test_bayat_paper_state_anlik_piyasa_yorumunu_engellemez(monkeypatch, tmp_pat
     metin = telegram_brief.edge_mesaji(
         datetime(2026, 9, 10, 15, 15, tzinfo=UTC), state)
 
-    assert "kısa vadeli hareket yukarı ve belirgin" in metin
-    assert "Şu anki fırsat: Yok" in metin
+    assert "NQ 15dk: yukari trend, guclu" in metin
+    assert "Fırsat: YOK - NQ proxy Sweep tetiklenmedi" in metin
     assert "tarama güncel değil" not in metin
 
 
@@ -101,18 +89,16 @@ def test_edge_mesaji_pozitif_yontemleri_guncel_durumla_yazar(monkeypatch, tmp_pa
     metin = telegram_brief.edge_mesaji(
         datetime(2026, 9, 10, 15, 15, tzinfo=UTC), tmp_path / "state.json")
 
-    assert "kısa vadeli hareket yukarı ve belirgin" in metin
-    assert "normal hacmin 1.6 katı" in metin
-    assert "Şu anki fırsat: Yok" in metin
-    assert "bağımsız ileri testte 10 işlem" in metin
-    assert "başlangıçta göze alınan tutarın +0.613 katı" in metin
+    assert "NQ 15dk: yukari trend, guclu (ADX 31.2)" in metin
+    assert "Hacim: 1.6x, artiyor ve trendi destekliyor" in metin
+    assert "Fırsat: YOK - NQ proxy Sweep tetiklenmedi" in metin
+    assert "Kanıt: NASDAQ100 Sweep: 10 forward islem, ort. +0.613R" in metin
     assert "NASDAQ100 Açılış Kırılımı" not in metin
     assert "GBPUSD London Trend" not in metin
-    assert "2026-09-11 ABD tüketici enflasyonu: 15:30 TR" in metin
-    assert "BUGÜN ABD üretici enflasyonu: 15:30 TR" in metin
-    assert "Federal Reserve publishes policy statement" not in metin
-    for teknik_kisaltma in ("NQ", "ADX", "VWAP", "exp_R", "proxy", "2Y", "DXY", "VIX"):
-        assert teknik_kisaltma not in metin
+    assert "CPI: 15:30 TR (08:30 ET)" in metin
+    assert "BUGUN Producer Price Index: 15:30 TR" in metin
+    assert "Resmî başlık: Federal Reserve publishes policy statement" in metin
+    assert "beklenti > gerceklesen/revizyon" in metin
     assert "FVG" not in metin
     assert len(metin) < 4096
 
@@ -128,7 +114,7 @@ def test_edge_negatifse_teknigi_edge_diye_sunmaz(monkeypatch):
 
     metin = telegram_brief.edge_mesaji(datetime(2026, 9, 10, 15, 15, tzinfo=UTC))
 
-    assert "Olumlu sonucu doğrulanmış bir gerçek para yöntemi yok" in metin
+    assert "Kanıt: dogrulanmis pozitif LIVE yontem yok" in metin
 
 
 def test_iki_mesaj_ayni_forward_kanitini_bir_kez_kullanir(monkeypatch, tmp_path):
@@ -154,8 +140,8 @@ def test_iki_mesaj_ayni_forward_kanitini_bir_kez_kullanir(monkeypatch, tmp_path)
         datetime(2026, 9, 10, 15, 15, tzinfo=UTC), tmp_path / "yok.json")
 
     assert sayac["stats"] == 1
-    assert "Gerçek para bölümü (LIVE): Yok" in durum
-    assert "bağımsız ileri testte 10 işlem" in edge
+    assert "LIVE firsat adayi: YOK - NQ proxy Sweep tetiklenmedi" in durum
+    assert "Kanıt: NASDAQ100 Sweep: 10 forward islem, ort. +0.613R" in edge
 
 
 def test_canli_ve_yerel_CPI_iki_kere_yazilmaz(monkeypatch):
@@ -172,8 +158,8 @@ def test_canli_ve_yerel_CPI_iki_kere_yazilmaz(monkeypatch):
 
     metin = telegram_brief.edge_mesaji(datetime(2026, 9, 10, 15, 15, tzinfo=UTC))
 
-    assert metin.count("ABD tüketici enflasyonu") == 1
-    assert "Consumer Price Index" not in metin
+    assert metin.count("Consumer Price Index") == 1
+    assert "2026-09-11 CPI:" not in metin
 
 
 def test_anlik_nasdaq_trend_hacim_ve_sweep_setupini_hesaplar(monkeypatch):
@@ -198,15 +184,15 @@ def test_anlik_nasdaq_trend_hacim_ve_sweep_setupini_hesaplar(monkeypatch):
     sonuc = telegram_brief._anlik_nasdaq(
         now, fetch=lambda *a, **k: frame, kanit=kanit)
 
-    assert "kısa vadeli hareket yukarı" in sonuc.teknik
+    assert "yukari trend" in sonuc.teknik
     assert sonuc.hacim == (
-        "İşlem hacmi: Önceki işlem günlerinde aynı saatte görülen normal "
-        "hacmin 2.0 katı; alışılmadık yüksek ve fiyat hareketini destekliyor."
+        "Hacim: ayni 15dk saat dilimi normalinin 2.0x'i; "
+        "olagandisi ve trendi destekliyor"
     )
-    assert "Aday var" in sonuc.firsat
-    assert "Maven US100 15 dakikalık grafikte aynı hareketi doğrula" in sonuc.firsat
-    assert "giriş +1.0 puan, zarar durdur -4.0 puan, hedef +11.0 puan" in sonuc.firsat
-    assert "veri 5 dakika gecikmeli" in sonuc.veri
+    assert "ADAY - NQ proxy Sweep LONG" in sonuc.firsat
+    assert "MT5 US100 15dk grafikte ayni sweep ve yonu dogrula" in sonuc.firsat
+    assert "giris P+1.0, stop P-4.0, hedef P+11.0" in sonuc.firsat
+    assert "5 dk gecikme" in sonuc.veri
 
 
 def test_hacim_acilis_periyodunu_anormal_sanmaz():
@@ -275,9 +261,9 @@ def test_sweep_setup_kanit_yokken_gercek_islem_adayi_olmaz(monkeypatch):
     sonuc = telegram_brief._anlik_nasdaq(
         now, fetch=lambda *a, **k: frame, kanit=kanit)
 
-    assert "alış yönünde kısa taşma ve geri dönüş görüldü" in sonuc.firsat
-    assert "gerçek işlem adayı değildir" in sonuc.firsat
-    assert "giriş" not in sonuc.firsat
+    assert "GORULDU - NQ proxy Sweep LONG" in sonuc.firsat
+    assert "gercek islem adayi degildir" in sonuc.firsat
+    assert "giris P" not in sonuc.firsat
 
 
 def test_lse_yedek_baglam_verir_ama_live_aday_uretmez(monkeypatch):
@@ -300,9 +286,9 @@ def test_lse_yedek_baglam_verir_ama_live_aday_uretmez(monkeypatch):
         kanit=telegram_brief.SweepKaniti(10, .613, True, "pozitif"),
     )
 
-    assert "LSE yedek veri yalnız trend ve hacim bağlamıdır" in sonuc.firsat
-    assert "Aday var" not in sonuc.firsat
-    assert "LSE NQ.F yedeğinin" in sonuc.veri
+    assert "LSE yedek veri yalniz trend/hacim baglamidir" in sonuc.firsat
+    assert "ADAY" not in sonuc.firsat
+    assert "LSE NQ.F (yedek)" in sonuc.veri
 
 
 def test_nyse_tatili_ve_erken_kapanisi_bilir():
@@ -311,9 +297,9 @@ def test_nyse_tatili_ve_erken_kapanisi_bilir():
     erken = telegram_brief._seans_satiri(
         datetime(2026, 11, 27, 17, 30, tzinfo=UTC))
 
-    assert "ABD borsası tatil; normal seans kapalı" in tatil
-    assert "erken kapanış 13:00" in erken
-    assert "kapanışa 30 dakika" in erken
+    assert "NYSE tatili; nakit seans kapali" in tatil
+    assert "erken kapanis 13:00" in erken
+    assert "kapanisa 30 dk" in erken
 
 
 def test_cli_iki_ayri_dosya_yazar(monkeypatch, tmp_path):
@@ -325,5 +311,5 @@ def test_cli_iki_ayri_dosya_yazar(monkeypatch, tmp_path):
 
     telegram_brief.main()
 
-    assert (tmp_path / "durum.txt").read_text(encoding="utf-8").startswith("MAVEN KISA DURUM")
-    assert (tmp_path / "brief.txt").read_text(encoding="utf-8").startswith("BUGÜNÜN PİYASA ÖZETİ")
+    assert (tmp_path / "durum.txt").read_text(encoding="utf-8").startswith("MAVEN DURUMU")
+    assert (tmp_path / "brief.txt").read_text(encoding="utf-8").startswith("PİYASA ŞİMDİ")

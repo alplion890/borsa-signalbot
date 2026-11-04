@@ -378,4 +378,3 @@ def resample_ohlcv(frame: pd.DataFrame, tf: str) -> pd.DataFrame:
         "volume": "sum",
     })
     return out.dropna(subset=["open", "high", "low", "close"])[COLUMNS]
-

@@ -77,6 +77,7 @@ def test_clean_tp_gives_exact_rr() -> None:
 
 def test_clean_sl_gives_exact_minus_one() -> None:
     df = _frame([100, 99.5, 98.9], highs=[100, 99.5, 99.5], lows=[100, 99.5, 98.9])
+    df.iloc[-1, df.columns.get_loc("open")] = 99.5  # continuous touch, not a stop gap
     r = _run(df, 0, sl=99.0, tp=102.0)
     assert r.iloc[0] == pytest.approx(-1.0)
 

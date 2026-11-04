@@ -146,4 +146,3 @@ def test_uzak_tarih_araligi_aylik_parcalanir():
     assert len(calls) == 3
     assert calls[0][1] == pd.Timestamp("2026-01-31", tz="UTC")
     assert not out.empty
-
