@@ -12,9 +12,14 @@ def send(text: str) -> None:
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat_id:
         raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID env eksik")
-    resp = requests.post(_API.format(token=token),
-                         data={"chat_id": chat_id, "text": text}, timeout=15)
-    resp.raise_for_status()
+    try:
+        resp = requests.post(_API.format(token=token),
+                             data={"chat_id": chat_id, "text": text}, timeout=15)
+        resp.raise_for_status()
+    except requests.RequestException:
+        raise RuntimeError('Telegram metin HTTP hatasi; token iceren URL gizlendi') from None
+    if resp.json().get('ok') is not True:
+        raise RuntimeError('Telegram metin teslimatini reddetti')
 
 
 def send_photo(png: bytes, caption: str) -> None:
@@ -25,12 +30,15 @@ def send_photo(png: bytes, caption: str) -> None:
         raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID env eksik")
     if len(caption) > 1024:
         raise ValueError("Telegram fotograf aciklamasi 1024 karakteri asti")
-    resp = requests.post(
-        f"https://api.telegram.org/bot{token}/sendPhoto",
-        data={"chat_id": chat_id, "caption": caption},
-        files={"photo": ("nq-watch.png", BytesIO(png), "image/png")},
-        timeout=25,
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{token}/sendPhoto",
+            data={"chat_id": chat_id, "caption": caption},
+            files={"photo": ("nq-watch.png", BytesIO(png), "image/png")},
+            timeout=25,
+        )
+        resp.raise_for_status()
+    except requests.RequestException:
+        raise RuntimeError('Telegram PNG HTTP hatasi; token iceren URL gizlendi') from None
     if not resp.json().get("ok"):
         raise RuntimeError("Telegram fotograf teslimatini reddetti")

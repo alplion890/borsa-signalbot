@@ -11,3 +11,7 @@ Aktif yerel ve GitHub default/forward listelerinden iki modül çıkarıldı. Ye
 Aktif kullanıcıya görünen mekanik liste: Sweep LIVE manuel; EMA12 ayrı PAPER gözlem. NQ ORB/Gold emekli. Sweep makro+COT ve Gold makro+COT ayrı araştırma adaylarıdır; bu karar filtreleri canlıya eklemez. Arka plandaki önceden var olan CAND_ deneyleri bu kararla değiştirilmedi. EUR/GBP paritelerinin piyasa/haber bağlamı veya ayrı diskresyoner tezleri genel olarak yasaklanmadı.
 
 İlgili: [[Borsa - Guncel Edge ve Filtre Kararlari 2026-09-27]], [[Borsa - Edge Secim Sureci Denetimi 2026-09-30]], [[Borsa - Forward Kapsam Denetimi 2026-09-30]].
+
+Doğrulama: yerel intraday testleri 556 passed, 3 skipped. GitHub son düzeltme commit c4375444d04c29c48d00853107465b058816c269; kuru deneme 36772166782 başarılı (https://github.com/alplion890/borsa-signalbot/actions/runs/36772166782). EMA12 adımı çalıştı; pencere dışı kuru koşu gerçek aday/Telegram teslimini kanıtlamaz. Yerel London görevi kaldırıldı. Graphify yapı haritası güncellendi. Diğer kullanıcı değişiklikleri korunarak yalnız emeklilik dosyaları GitHub API üzerinden yayımlandı; dirty çalışma ağacı nedeniyle git pull birleştirmesi yapılamadı.
+
+Sonraki kullanıcı kararı: eski durum/arşiv kopyaları ve historical_london_detector.py silindi; ham deney raporları/CSV kanıtı korundu. Önceki arşivleme anlatımı artık dosyanın bulunduğu anlamına gelmez.

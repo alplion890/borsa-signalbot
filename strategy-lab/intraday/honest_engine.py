@@ -1,21 +1,25 @@
-"""Muhafazakâr R-bazlı backtest motoru (GERÇEK doldurma modeli).
+"""R-bazlı OHLC backtest motoru; gerçek broker dolumu garantisi vermez.
 
 vectorbt'nin iyimser doldurması edge'i şişiriyordu; bu motor her işlemi
 bar-bar, muhafazakâr simüle eder:
   - Aynı barda hem SL hem TP varsa SL önce sayılır (en kötü durum).
   - Maliyet (spread+komisyon+kayma) gidiş-dönüş, R cinsinden düşülür.
   - Zaman limiti (MAX_HOLD) sonunda işlem piyasada kapanır.
+  - Açık pozisyonun stopunu aşan açılışta stop-market açılıştan dolar.
+  - Açılışta zaten ulaşılmış limit hedef, bar içi stop kontrolünden önce dolar;
+    olumlu fiyat iyileşmesi varsayılmaz. Bid/ask ve kayma ayrı model sınırlarıdır.
 
 Çıktı: her işlemin (giriş_zamanı, R-katsayısı) serisi + özet metrikler.
 Tüm konfluens testleri bu motoru kullanır.
 
 İki doldurma modu vardır (`fill_mode`):
-  - `bar_sl_first` (VARSAYILAN, değişmedi): giriş sinyal mumunun kapanışı;
+  - `bar_sl_first` (VARSAYILAN): giriş sinyal mumunun kapanışı;
     aynı barda SL+TP görülürse SL yazılır.
   - `1m_then_sl_first` (opt-in): giriş sonraki barın open'ı; SL yapısal
     seviyede kalır, hedef R korunarak TP yeni girişe göre fiyatlanır. Yalnızca
     SL+TP'nin aynı barda görüldüğü belirsiz vakalarda o barın 1m OHLC'sine
-    inilir. Çözülemezse yine SL yazılır — asla iyimser sonuç üretilmez.
+    inilir. Çözülemezse SL seviyesi kullanılır; eksik veri gerçek kaybın
+    alt sınırını garanti etmez.
 
 Yeni mod yalnızca saf Python referans yolunda çalışır; numba çekirdeği
 `bar_sl_first` için kalır (bkz test_honest_engine_1m.py).
@@ -83,32 +87,47 @@ def _resolve_with_1m(
     sl_px: float,
     tp_px: float,
     stats: dict,
-) -> bool:
-    """Belirsiz 15m barı 1m ile çöz. TP önce ise True, aksi halde False (SL)."""
+) -> float:
+    """Belirsiz barın çıkış fiyatı; stop boşluğu varsa dakikanın açılışı.
+
+    İlk dokunuştan önceki dakikalar kesintisiz olmalı. Eksik geçmiş,
+    sonraki hedef dokunuşunun önce geldiğini kanıtlamaz.
+    """
     if df_1m is None:
         stats["fallback_missing_1m"] += 1
-        return False
+        return sl_px
     win = df_1m.loc[(df_1m.index >= bar_start) & (df_1m.index < bar_end)]
     if len(win) == 0:
         stats["fallback_missing_1m"] += 1
-        return False
+        return sl_px
+    opens = win["open"].to_numpy(dtype=float)
     highs = win["high"].to_numpy(dtype=float)
     lows = win["low"].to_numpy(dtype=float)
     for k in range(len(win)):
+        expected = pd.Timestamp(bar_start) + pd.Timedelta(minutes=k)
+        if win.index[k] != expected or not np.isfinite([opens[k], highs[k], lows[k]]).all():
+            stats["fallback_missing_1m"] += 1
+            return sl_px
+        if (opens[k] <= sl_px if is_long else opens[k] >= sl_px):
+            stats["resolved_1m_sl"] += 1
+            return float(opens[k])
+        if (opens[k] >= tp_px if is_long else opens[k] <= tp_px):
+            stats["resolved_1m_tp"] += 1
+            return tp_px
         hit_sl = lows[k] <= sl_px if is_long else highs[k] >= sl_px
         hit_tp = highs[k] >= tp_px if is_long else lows[k] <= tp_px
         if hit_sl and hit_tp:      # tek dakikada ikisi de -> sıra yine bilinmiyor
             stats["fallback_ambiguous_1m"] += 1
-            return False
+            return sl_px
         if hit_sl:
             stats["resolved_1m_sl"] += 1
-            return False
+            return sl_px
         if hit_tp:
             stats["resolved_1m_tp"] += 1
-            return True
+            return tp_px
     # 15m dokunduğunu söylüyor ama 1m hiçbirine değmiyor -> veri bütünlüğü bozuk
     stats["fallback_missing_1m"] += 1
-    return False
+    return sl_px
 
 
 def simulate_trades(
@@ -183,6 +202,7 @@ def _simulate_bar_sl_first(
 ) -> pd.Series:
     """Varsayılan mod: giriş sinyal kapanışı, aynı barda SL+TP -> SL."""
     price = df["close"].to_numpy()
+    opn = df["open"].to_numpy(dtype=float)
     high = df["high"].to_numpy()
     low = df["low"].to_numpy()
     idx = df.index
@@ -198,6 +218,7 @@ def _simulate_bar_sl_first(
 
     if FAST_CORE_AVAILABLE:
         trade_i, trade_r = simulate_trades_core(
+            opn.astype(np.float64),
             price.astype(np.float64),
             high.astype(np.float64),
             low.astype(np.float64),
@@ -247,6 +268,14 @@ def _simulate_bar_sl_first(
         slf = risk / entry
         outcome = None
         for j in range(i + 1, min(i + 1 + max_hold, n)):
+            if (opn[j] <= sl_px if is_long else opn[j] >= sl_px):
+                outcome = ((opn[j] - entry) if is_long else (entry - opn[j])) / risk
+                last_exit = j
+                break
+            if (opn[j] >= tp_px if is_long else opn[j] <= tp_px):
+                outcome = rr
+                last_exit = j
+                break
             if is_long:
                 if low[j] <= sl_px:
                     outcome = -1.0; last_exit = j; break
@@ -340,14 +369,22 @@ def _simulate_1m_then_sl_first(
 
         outcome = None
         for j in range(e, min(e + max_hold, n)):
+            if (opn[j] <= sl_px if is_long else opn[j] >= sl_px):
+                outcome = ((opn[j] - entry) if is_long else (entry - opn[j])) / risk
+                last_exit = j
+                break
+            if (opn[j] >= tp_new if is_long else opn[j] <= tp_new):
+                outcome = rr
+                last_exit = j
+                break
             hit_sl = low[j] <= sl_px if is_long else high[j] >= sl_px
             hit_tp = high[j] >= tp_new if is_long else low[j] <= tp_new
             if hit_sl and hit_tp:
                 stats["overlap_bars"] += 1
-                tp_first = _resolve_with_1m(
+                exit_px = _resolve_with_1m(
                     m1, idx[j], ends[j], is_long, sl_px, tp_new, stats,
                 )
-                outcome = rr if tp_first else -1.0
+                outcome = ((exit_px - entry) if is_long else (entry - exit_px)) / risk
                 last_exit = j
                 break
             if hit_sl:

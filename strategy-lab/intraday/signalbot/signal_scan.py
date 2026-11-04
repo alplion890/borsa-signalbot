@@ -155,6 +155,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
     pending: list[dict] = []
     active_modules = 0
     data_errors = 0
+    checked_modules = 0
 
     for mod in _load_modules():
         if not sessions.is_active(mod.name, now):
@@ -174,6 +175,7 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
             ]
             if not closed_positions:
                 continue
+            checked_modules += 1
             reference_price = float(df.iloc[-1]["close"])
             if previous_scan:
                 previous_ts = pd.Timestamp(previous_scan)
@@ -302,6 +304,10 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
         if dry_run:
             print(message)
         else:
+            from .mt5_context import describe
+            context = describe(mod.symbol_key, include_balance=True, now=now)
+            if context:
+                message += '\n' + context
             telegram_notify.send(message)
         messages.append(message)
         sent_state[mod.name] = item["fingerprint"]
@@ -311,7 +317,8 @@ def run(*, now: dt.datetime | None = None, phase: str | None = None,
         _save_state(state, path)
     print(
         f"Tarama tamamlandi. Aktif modul {active_modules}, "
-        f"yeni setup {len(messages)}, hata {data_errors}."
+        f"yeni setup {len(messages)}, hata {data_errors}, "
+        f"veri kontrolu {checked_modules}."
     )
     return messages
 

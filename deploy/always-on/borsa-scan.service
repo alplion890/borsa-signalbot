@@ -1,0 +1,25 @@
+[Unit]
+Description=Borsa daytime observation scan (no order execution)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=borsa
+Group=borsa
+WorkingDirectory=/var/lib/borsa
+Environment=PYTHONPATH=/opt/borsa/strategy-lab
+Environment=PYTHONUNBUFFERED=1
+Environment=SIGNALBOT_STATE_PATH=/var/lib/borsa/.signalbot/state.json
+Environment=MOBILE_WATCH_STATE_PATH=/var/lib/borsa/.signalbot/mobile_watch.json
+Environment=EMA12_PAPER_STATE_PATH=/var/lib/borsa/.signalbot/ema12_paper_cloud.json
+Environment=FINNHUB_NEWS_STATE_PATH=/var/lib/borsa/.signalbot/finnhub_news.json
+EnvironmentFile=/etc/borsa/secrets.env
+ExecStart=/opt/borsa/.venv/bin/python -m intraday.signalbot.production_cycle
+TimeoutStartSec=240
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/borsa
+PrivateTmp=true

@@ -1,0 +1,11 @@
+# MT5 telefon köprüsü — 2026-09-29
+
+Sadece salt okunur broker API: `mt5_context.py` hesap, US100/EURUSD/GBPUSD tick ve spread okur; hiçbir emir fonksiyonu çağırmaz. Yerel scanner kartına broker bağlamı eklenir; Yahoo bazlı LIVE giriş algoritması/filtre/risk yüzdesi değişmedi. Güncel MT5 hesap 20:08 TR 4966.37 USD, açık pozisyon0. Tick yaşları 19/34/18sn. 19:52 broker son kapanmış bar dedektör kontrolünde üç modülde yeni aday yok.
+
+Yerel MT5 ledger + en son origin/main cloud ledger, `birlesik_forward(include_candidates=False)` ve imkânsız iki zaman satırı dışlanarak: Sweep14/+0.085R/+1.186R LIVE; EUR16/+0.251R/+4.022R PAPER; GBP23/−0.364R/−8.379R PAPER. `TELEFON/GUNCEL_EDGE_KARARLARI.md` yetkileri değiştirilmedi.
+
+Bulut workflow'unun mevcut remote SHA'sı GitHub Contents API ile eşleştirilip yalnız `.github/workflows/signalbot.yml` güncellendi. Commit `d304345f4381811ec39f3bcb10572a3d15eca887`. `LOCAL_SCANNER_UNTIL` gelecekte sekiz dakika içindeyse schedule scan kuru çalışır, mobil adım atlanır; süresi dolarsa varsayılan bulut bildirimi devam eder. Manuel dry-run 36602416002 başarıyla tamamlandı. Inline GitHub output kodu aktif/bitmiş/manual durumlarında sınandı. PC tarafı sağlıklı tarama sonrasında kısa devir değerini repo variable olarak yeniler. Farklı kaynakların sınırda aynı mesajı bir kez daha göndermesi mümkündür.
+
+Telegram webhook boş doğrulandı. Özel sohbet ID ve gönderen ID eşleşir; grup ve başka kişi yok sayılır. `telegram_inbox.py` her dakika görev olarak çalışır; YARDIM/DURUM/ADAY/PAS/BEKLE/ACILDI. ADAY mevcut `diskresyoner.aday` fonksiyonuyla yazılır ve güncel MT5 bakiye arar. ACILDI mevcut `tetikle` fonksiyonu ile yalnız kullanıcı beyanı olarak kayda geçer; MT5 emri vermez. BEKLE için ayrı JSON notu. İşlenmiş Telegram update ID ve bekleyen yanıt diske atomik yazılır. Başarısız cevap sonrası aday tekrar yazılmaz. Gerçek kullanıcıdan komut gelmediği için canlı kayıt teslimi henüz kanıtlanmadı.
+
+29 Eylül 18:15–20:00 TR yerel mobil sağlıklı bar kapsamı 21/21; 20:10 alarmı başarıyla sustu. Full intraday test 542 passed, 3 skipped. Son kod düzeltmesi sonrası ilgili 15 test geçti. Git pull dirty/untracked çakışmasıyla yapılamadı; çalışma ağacındaki diğer değişiklikler korunmuştur. Yerel kodlar push edilmedi. Obsidian: [[Borsa - MT5 Telefon Koprusu ve Edge Durumu 2026-09-29]].

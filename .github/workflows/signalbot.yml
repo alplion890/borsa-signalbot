@@ -2,18 +2,15 @@ name: borsa-signalbot
 
 on:
   schedule:
-    # Gold/NQ ana penceresi: Yahoo kapanmis 5m mumunu yakalamak icin 5 dakikada bir.
-    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 13-16 * * 1-5"
-    # Londra: ana bot + AI scout 15 dakikada bir.
-    - cron: "2,17,32,47 7-11 * * 1-5"
-    # NY seansinin ikinci yarisi: 30 dakikada bir.
-    - cron: "7,37 17-20 * * 1-5"
-    # Geciken/atlanan cronlar icin dort saatlik guvenli yedek. (Eskiden BTC'nin
-    # 7/24 penceresi icindi; BTC 2026-08-06'da Telegram'dan cikarildi -- forward
-    # exp_R -0.691. Yedek olarak birakildi: GitHub cron'lari yogunlukta atlar.)
-    - cron: "19 */4 * * *"
+    # Bootstrap daytime worker; each running worker scans every five minutes.
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 6-20 * * 1-5"
   workflow_dispatch:
     inputs:
+      continuous:
+        description: "Piyasa kapanisina kadar 5dk bulut dongusu"
+        required: false
+        default: false
+        type: boolean
       dry_run:
         description: "Telegram'a yollamadan tara"
         required: false
@@ -42,6 +39,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: borsa-signalbot
@@ -53,7 +51,7 @@ jobs:
     environment: telegram bot token
     # Flash + birden cok Pro teyidi 5 dakikayi asabilir; timeout state cache'ini
     # kaybettirip ayni firsatin yeniden bildirilmesine yol acmasin.
-    timeout-minutes: 10
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -73,6 +71,18 @@ jobs:
 
       - name: Bagimliliklari kur
         run: pip install -r strategy-lab/intraday/signalbot/requirements.txt
+
+      - name: Daytime calendar gate
+        id: scan_window
+        env:
+          PYTHONPATH: strategy-lab
+        run: |
+          python - <<'PY'
+          import os
+          from intraday.signalbot.scan_schedule import is_open
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'active={str(is_open()).lower()}\n')
+          PY
 
       - name: Onceki sinyal durumunu yukle
         uses: actions/cache/restore@v4
@@ -130,7 +140,7 @@ jobs:
       # default_modules(): SWEEP_CORE only; EUR/GBP retired 2026-09-30.
       # Adaylar (CAND_*) ve BTC bilerek DISARIDA -- olcumleri forward EA yapar.
       - name: Canli modulleri tara
-        if: ${{ !inputs.dump_state }}
+        if: ${{ !inputs.dump_state && github.event_name != 'schedule' && !inputs.continuous && (steps.scan_window.outputs.active == 'true' || inputs.dry_run || inputs.test_finnhub || inputs.test_telegram) }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # Environment secret eklenirken bu adla kaydedilmis.
@@ -159,7 +169,7 @@ jobs:
       # Ayrı gözlem katmanı: önceki gün NQ seviyesine yakınlık telefonu açtırır.
       # Emir önermez ve mekanik modül/kayıt/risk durumunu değiştirmez.
       - name: Diskresyoner mobil izleme adayi
-        if: ${{ github.event_name == 'schedule' && success() && steps.local_scanner.outputs.active != 'true' }}
+        if: ${{ false }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
@@ -174,7 +184,7 @@ jobs:
       # Bu, mevcut mekanik modullerin listesine katilmaz. Yerel tarayici
       # saglikliyken bulut da PAPER kaydini tutar fakat ikinci alarmi yollamaz.
       - name: NQ ilk 5dk EMA12 PAPER forward
-        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && !cancelled() && !inputs.test_failure }}
+        if: ${{ inputs.dry_run && !inputs.continuous && !cancelled() && !inputs.test_failure }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
@@ -195,7 +205,7 @@ jobs:
       # Finnhub anahtari yalniz GitHub ortaminda bulunur. Bu haber hatti yerel
       # RSS/takvim hattindan ayri; yerel tarama devri bu adimi susturmaz.
       - name: Finnhub bulut haberi (ayri kaynak)
-        if: ${{ (github.event_name == 'schedule' || inputs.dry_run) && !cancelled() && !inputs.test_failure }}
+        if: ${{ inputs.dry_run && !inputs.continuous && !cancelled() && !inputs.test_failure }}
         env:
           FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -250,12 +260,36 @@ jobs:
             echo "::notice title=AI Performance::$line"
           done <<< "$report"
 
+      - name: Continuous five-minute cloud scan
+        id: worker
+        if: ${{ (github.event_name == 'schedule' || inputs.continuous) && steps.scan_window.outputs.active == 'true' && !inputs.test_failure }}
+        env:
+          PYTHONPATH: strategy-lab
+          PYTHONUNBUFFERED: "1"
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
+          FINNHUB_API_KEY: ${{ secrets.FINHUB_API_KEY }}
+          PHASE: ${{ vars.ACCOUNT_PHASE || 'bnpl_challenge' }}
+          ACCOUNT_BALANCE: "5000"
+          SIGNALBOT_STATE_PATH: .signalbot/state.json
+          MOBILE_WATCH_STATE_PATH: .signalbot/mobile_watch.json
+          EMA12_PAPER_STATE_PATH: .signalbot/ema12_paper_cloud.json
+          FINNHUB_NEWS_STATE_PATH: .signalbot/finnhub_news.json
+        run: python -m intraday.signalbot.continuous_scan
+
       - name: Sinyal durumunu sakla
-        if: always()
+        if: ${{ always() && (steps.scan_window.outputs.active == 'true' || inputs.dry_run) }}
         uses: actions/cache/save@v4
         with:
           path: .signalbot
           key: signalbot-state-${{ github.run_id }}
+
+      - name: Rotate worker before hosted runner limit
+        if: ${{ steps.worker.outputs.continue == 'true' && success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run signalbot.yml --ref main -f continuous=true
 
       # Sessiz basarisizliga karsi. Bot 15 gun olu kalabildi ve forward EA'nin
       # durdugu fark edilmedi; DeepSeek aylarca 402 dondu, CI hep yesil gorundu.

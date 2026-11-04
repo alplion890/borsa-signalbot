@@ -14,6 +14,8 @@ def test_send_with_env_vars(monkeypatch):
         class MockResp:
             def raise_for_status(self):
                 pass
+            def json(self):
+                return {'ok': True}
         return MockResp()
 
     monkeypatch.setattr(tn.requests, "post", mock_post)
@@ -32,3 +34,16 @@ def test_send_missing_token_raises(monkeypatch):
 
     with pytest.raises(RuntimeError):
         tn.send("x")
+
+
+def test_send_rejected_json_is_not_success(monkeypatch):
+    monkeypatch.setenv('TELEGRAM_BOT_TOKEN', 'TESTTOKEN')
+    monkeypatch.setenv('TELEGRAM_CHAT_ID', '999')
+    class Response:
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return {'ok': False}
+    monkeypatch.setattr(tn.requests, 'post', lambda *a, **k: Response())
+    with pytest.raises(RuntimeError, match='reddetti'):
+        tn.send('test')

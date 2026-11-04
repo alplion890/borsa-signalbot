@@ -16,3 +16,5 @@ Doğrulama: aktif kullanım sayfalarında eski EUR/GBP PAPER/London görevi tan�
 Açık operasyon sorunları: 30 Eylül 3/21 yerel mobil kapsam, 0 pencere içi bulut koşusu; EMA12 ilk gerçek forward/teslim henüz doğrulanmadı; NQ-Mobile Windows hata kodu 1’in nedeni çözülmedi.
 
 İlgili: [[Borsa - Guncel Edge ve Filtre Kararlari 2026-09-27]], [[Borsa - EUR GBP London Emeklilik Karari 2026-09-30]], [[Borsa - Forward Kapsam Denetimi 2026-09-30]].
+
+Sonraki kullanıcı kararı: eski durum/arşiv kopyaları ve historical_london_detector.py silindi; ham deney raporları/CSV kanıtı korundu. Önceki arşivleme anlatımı artık dosyanın bulunduğu anlamına gelmez.

@@ -22,6 +22,7 @@ import json
 import sys
 import time
 import warnings
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -56,11 +57,13 @@ def _load_state() -> dict:
     return {"last_bar": {}, "open_positions": [], "closed": []}
 
 
-def _save_state(book: Book, last_bar: dict) -> None:
+def _save_state(book: Book, last_bar: dict, broker_source: dict | None = None) -> None:
     state = {
+        "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "last_bar": {k: str(v) for k, v in last_bar.items()},
         "open_positions": [_pos_to_json(p) for p in book.open_positions],
         "closed": book.closed,
+        "broker_source": broker_source,
     }
     STATE_JSON.write_text(json.dumps(state, indent=2, default=str), encoding="utf-8")
     led = book.ledger()
@@ -146,7 +149,8 @@ def _dashboard(book: Book, acc: dict) -> None:
     print("=" * 92 + "\n")
 
 
-def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False) -> None:
+def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False,
+             notify: bool = True) -> None:
     # Safety banner: loud warning if live mode is active
     if live and not status_only:
         print("\n" + "!" * 92)
@@ -163,9 +167,19 @@ def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False
     with mt5_io.session():
         acc = mt5_io.account()
         if not status_only:
+            broker, server = str(acc.get("broker", "")), str(acc.get("server", ""))
+            if not acc.get("connected") or "maven" not in (broker + " " + server).lower():
+                raise mt5_io.MT5Error("Maven bağlantısı doğrulanamadı; defter başka broker verisiyle ilerletilmedi")
+            previous_source = state.get("broker_source") or {}
+            if previous_source.get("server") and previous_source["server"] != server:
+                raise mt5_io.MT5Error("Broker sunucusu değişti; aynı deftere otomatik devam edilmedi")
+            source = {"provider": "maven_mt5", "broker": broker, "server": server,
+                      "verified_at": datetime.now(timezone.utc).isoformat(),
+                      "verified_since": previous_source.get("verified_since") or datetime.now(timezone.utc).isoformat(),
+                      "legacy_note": "Doğrulama başlangıcından önceki kayıtların broker kimliği satır bazında tutulmamıştı"}
             opened = _cycle(modules, book, last_bar, warmup_days)
-            _save_state(book, last_bar)
-            if opened:
+            _save_state(book, last_bar, broker_source=source)
+            if opened and notify:
                 from .notify import notify_new_positions
                 sent = notify_new_positions(opened)
                 if sent:
@@ -200,12 +214,13 @@ def run_once(warmup_days: int = 0, status_only: bool = False, live: bool = False
         _dashboard(book, acc)
 
 
-def run_loop(interval_s: int, warmup_days: int = 0, live: bool = False) -> None:
+def run_loop(interval_s: int, warmup_days: int = 0, live: bool = False,
+             notify: bool = True) -> None:
     print(f"  Forward EA loop basladi (her {interval_s}sn). Ctrl+C ile dur.\n")
     first = True
     while True:
         try:
-            run_once(warmup_days if first else 0, live=live)
+            run_once(warmup_days if first else 0, live=live, notify=notify)
             first = False
         except Exception as e:
             print(f"  [HATA] dongu: {e}")
@@ -241,14 +256,15 @@ def main() -> None:
     p.add_argument("--warmup", type=int, default=0, help="ilk calistirmada N gun backfill")
     p.add_argument("--status", action="store_true", help="sadece panoyu goster")
     p.add_argument("--live", action="store_true", help="gercek MT5 emri at (whitelist modulleri). Yoksa sadece paper.")
+    p.add_argument("--no-notify", action="store_true", help="yalnız defteri güncelle; Telegram gönderme")
     args = p.parse_args()
 
     if args.status:
         run_once(status_only=True)
     elif args.loop:
-        run_loop(args.loop, args.warmup, live=args.live)
+        run_loop(args.loop, args.warmup, live=args.live, notify=not args.no_notify)
     else:
-        run_once(args.warmup, live=args.live)
+        run_once(args.warmup, live=args.live, notify=not args.no_notify)
 
 
 if __name__ == "__main__":
