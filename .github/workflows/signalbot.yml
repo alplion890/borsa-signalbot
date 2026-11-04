@@ -183,27 +183,7 @@ jobs:
 
       # Bu, mevcut mekanik modullerin listesine katilmaz. Yerel tarayici
       # saglikliyken bulut da PAPER kaydini tutar fakat ikinci alarmi yollamaz.
-      - name: NQ ilk 5dk EMA12 PAPER forward
-        if: ${{ inputs.dry_run && !inputs.continuous && !cancelled() && !inputs.test_failure }}
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TEELGRAM_CHAT_ID }}
-          EMA12_PAPER_STATE_PATH: .signalbot/ema12_paper_cloud.json
-          LOCAL_SCANNER_ACTIVE: ${{ steps.local_scanner.outputs.active }}
-        run: |
-          if [ "${{ inputs.dry_run || false }}" = "true" ]; then
-            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper --dry-run
-          elif [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Telegram secret yok; EMA12 PAPER atlandi."
-            exit 1
-          elif [ "$LOCAL_SCANNER_ACTIVE" = "true" ]; then
-            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper --suppress-alert
-          else
-            PYTHONPATH=strategy-lab python -m intraday.signalbot.ema12_paper
-          fi
-
-      # Finnhub anahtari yalniz GitHub ortaminda bulunur. Bu haber hatti yerel
-      # RSS/takvim hattindan ayri; yerel tarama devri bu adimi susturmaz.
+      # EMA12 PAPER 2026-11-05 itibariyla Maven forward EA modulu (CAND_EMA12_FIRST5M).
       - name: Finnhub bulut haberi (ayri kaynak)
         if: ${{ inputs.dry_run && !inputs.continuous && !cancelled() && !inputs.test_failure }}
         env:
@@ -234,7 +214,6 @@ jobs:
           ACCOUNT_BALANCE: "5000"
           SIGNALBOT_STATE_PATH: .signalbot/state.json
           MOBILE_WATCH_STATE_PATH: .signalbot/mobile_watch.json
-          EMA12_PAPER_STATE_PATH: .signalbot/ema12_paper_cloud.json
           FINNHUB_NEWS_STATE_PATH: .signalbot/finnhub_news.json
         run: python -m intraday.signalbot.continuous_scan
 

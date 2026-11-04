@@ -305,7 +305,41 @@ def candidate_modules() -> list[LiveModule]:
         # bos kalir). Feed yonlendirmesi de bu anahtara bakar.
         LiveModule("CAND_BTC_ABSORPTION", "BTCUSDT", "1H", 0.0, 96,
                    _btc_absorption_detector()),
+        # EMA12 ilk 5dk PAPER (2026-11-05): bulut/yfinance olcumunden Maven'e
+        # tasindi. Kural ema12_paper.py ile ayni: stop = mum araligi, hedef
+        # yok, 6 saat (72 bar) sonra kapanis. Maliyet INSTRUMENTS (Maven).
+        LiveModule("CAND_EMA12_FIRST5M", "NASDAQ100", "5m", 0.0, 72,
+                   ema12_first5m_detector),
     ]
+
+
+_NY = "America/New_York"
+_NO_TARGET_R = 1000.0  # rule has no take-profit; exit is stop or 6h timeout
+
+
+def ema12_first5m_detector(sub: pd.DataFrame) -> Signal | None:
+    """NY 09:30 first 5m candle vs EMA12 of closes, evaluated on its close.
+
+    Bars are naive UTC (Maven via mt5_io). Only the last closed bar is
+    inspected, so no future data is used.
+    """
+    if len(sub) < 60:
+        return None
+    stamp = pd.Timestamp(sub.index[-1]).tz_localize("UTC").tz_convert(_NY)
+    if stamp.weekday() >= 5 or (stamp.hour, stamp.minute) != (9, 30):
+        return None
+    bar = sub.iloc[-1]
+    entry = float(bar["close"])
+    distance = float(bar["high"] - bar["low"])
+    if not entry > 0 or distance <= 0:
+        return None
+    ema12 = float(sub["close"].ewm(span=12, adjust=False).mean().iloc[-1])
+    if entry == ema12:
+        return None
+    direction = 1 if entry > ema12 else -1
+    return Signal(direction=direction, entry=entry,
+                  sl=entry - direction * distance,
+                  tp=entry + direction * distance * _NO_TARGET_R)
 
 
 def forward_test_modules() -> list[LiveModule]:
