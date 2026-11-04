@@ -54,3 +54,36 @@ def test_diagnose_reports_api_error(monkeypatch):
     result = finnhub_live.diagnose_api(api_key="bad")
     assert result["http_status"] == 401
     assert result["error"] == "Invalid API key"
+
+
+def test_diagnose_calendar_counts_consensus_without_leaking_key(monkeypatch):
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"economicCalendar": [
+                {"event": "CPI", "estimate": 0.3, "actual": None, "prev": 0.2},
+                {"event": "Jobless", "estimate": None, "actual": 220, "prev": 218},
+            ]}
+
+    seen = {}
+    monkeypatch.setattr(finnhub_live.requests, "get",
+                        lambda url, params, timeout: seen.update(params) or _Response())
+    result = finnhub_live.diagnose_calendar(api_key="secret-key")
+    assert result == {"key_present": True, "http_status": 200, "events": 2,
+                      "with_estimate": 1, "with_actual": 1}
+    assert "secret-key" not in str(result)
+    assert seen["token"] == "secret-key"
+
+
+def test_diagnose_calendar_reports_access_error(monkeypatch):
+    class _Response:
+        status_code = 403
+
+        def json(self):
+            return {"error": "You don't have access to this resource."}
+
+    monkeypatch.setattr(finnhub_live.requests, "get", lambda *a, **k: _Response())
+    result = finnhub_live.diagnose_calendar(api_key="k")
+    assert result["http_status"] == 403
+    assert "access" in result["error"]

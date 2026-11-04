@@ -332,6 +332,7 @@ def main() -> None:
     if args.test_finnhub:
         keys = {"XAUUSD", "NASDAQ100", "SP500", "EURUSD", "GBPUSD", "BTC"}
         print(f"Finnhub API tani: {json.dumps(finnhub_live.diagnose_api(), ensure_ascii=False)}")
+        print(f"Finnhub takvim tani: {json.dumps(finnhub_live.diagnose_calendar(), ensure_ascii=False)}")
         quotes = finnhub_live.collect_quotes(keys, timeout_seconds=12.0)
         for key in sorted(keys):
             quote = quotes.get(key)

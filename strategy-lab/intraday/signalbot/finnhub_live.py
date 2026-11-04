@@ -5,6 +5,7 @@ or connection errors return no quote and never suppress a strategy signal.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import time
@@ -119,4 +120,33 @@ def diagnose_api(*, api_key: str | None = None) -> dict:
         )
     except Exception as exc:
         result["error"] = f"{type(exc).__name__}: {exc}"
+    return result
+
+
+def diagnose_calendar(*, api_key: str | None = None, days: int = 7) -> dict:
+    """Check economic-calendar access and consensus coverage; never echo the key."""
+    token = api_key or os.environ.get("FINNHUB_API_KEY")
+    if not token:
+        return {"key_present": False, "error": "FINNHUB_API_KEY eksik"}
+    result: dict = {"key_present": True}
+    today = dt.datetime.now(dt.timezone.utc).date()
+    try:
+        response = requests.get(
+            "https://finnhub.io/api/v1/calendar/economic",
+            params={"from": (today - dt.timedelta(days=days)).isoformat(),
+                    "to": (today + dt.timedelta(days=days)).isoformat(),
+                    "token": token},
+            timeout=15,
+        )
+        result["http_status"] = response.status_code
+        data = response.json()
+        rows = data.get("economicCalendar") if isinstance(data, dict) else None
+        if not isinstance(rows, list):
+            result["error"] = str(data.get("error", data) if isinstance(data, dict) else data)
+            return result
+        result["events"] = len(rows)
+        result["with_estimate"] = sum(r.get("estimate") is not None for r in rows)
+        result["with_actual"] = sum(r.get("actual") is not None for r in rows)
+    except Exception as exc:
+        result["error"] = type(exc).__name__
     return result
