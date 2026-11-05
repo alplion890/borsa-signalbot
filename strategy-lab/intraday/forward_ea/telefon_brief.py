@@ -34,7 +34,7 @@ from ..elenenler import KATALOG, STATULER, veto_mu
 # baska bir esikten karar verirdi.
 from ..signalbot.risk import DEMOTION_MIN_N as MIN_N
 from ..signalbot.risk import live_module_names
-from . import diskresyoner, trend_katmani
+from . import trend_katmani
 from .ledger import birlesik_forward, load_forward
 from .seans_brief import (
     ATR_PENCERE,
@@ -98,26 +98,6 @@ def _mekanik_durum() -> list[str]:
         satirlar.append(
             f"- **{modul}**: {olcum}; taahhut sayimi (birlesik, bulut "
             f"2026-11-05'te dondu) n={n_t}, exp_R={exp_t:+.3f}, {esik}")
-    return satirlar
-
-
-def _diskresyoner_durum() -> list[str]:
-    try:
-        o = diskresyoner.ozet()
-    except Exception as e:
-        return [f"- DEFTER OKUNAMADI: {type(e).__name__}: {e}"]
-    satirlar = [f"- acik aday: {o['aday_acik']}, pas: {o['pas']}, "
-                f"secicilik: %{o['secicilik']:.0f}"
-                if o["secicilik"] == o["secicilik"] else
-                f"- acik aday: {o['aday_acik']}, pas: {o['pas']}"]
-    if not o["n"]:
-        satirlar.append("- Kapanmis islem yok (defter bos).")
-        return satirlar
-    satirlar.append(f"- n={o['n']}, exp_R={o['exp_R']:+.3f}, "
-                    f"toplam {o['toplam_R']:+.2f}R, WR %{o['wr']:.0f}")
-    if o["durma_tetik"]:
-        satirlar.append("- **DURMA KURALI TETIKLENDI** (n>=20 ve exp_R<0): "
-                        "yeni diskresyoner islem YOK.")
     return satirlar
 
 
@@ -201,8 +181,8 @@ def brief_metni(semboller: list[tuple[str, str]] | None = None,
         "",
     ]
     p += _mekanik_durum()
-    p += ["", "### Diskresyoner ray (birincil)", ""]
-    p += _diskresyoner_durum()
+    p += ["", "- Diskresyoner ray 2026-11-05'te kaldirildi (2 ayda 0 kayit); "
+          "defter kodu arsivde."]
 
     p += ["", "## Takvim", ""]
     bugunku, haftaki = takvim_olgusu()

@@ -64,11 +64,13 @@ def test_brief_KAYNAK_ve_BASIS_uyarisi_tasir():
     assert "basis" in metin.lower()
 
 
-def test_brief_MEKANIK_ve_DISKRESYONER_durumu_yazar():
+def test_brief_MEKANIK_durumu_yazar_diskresyoner_kaldirildi():
+    """2026-11-05: diskresyoner ray kaldirildi (2 ayda 0 kayit)."""
     metin = telefon_brief.brief_metni(
         semboller=[], simdi_utc=datetime(2026, 9, 1, 15, 0, tzinfo=UTC))
     assert "Mekanik ray" in metin and "dondurulmus" in metin
-    assert "Diskresyoner ray" in metin
+    assert "Diskresyoner ray (birincil)" not in metin
+    assert "Diskresyoner ray 2026-11-05'te kaldirildi" in metin
 
 
 def test_brief_KATALOG_statusunu_tasir():
