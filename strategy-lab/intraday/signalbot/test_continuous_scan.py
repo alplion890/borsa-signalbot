@@ -1,8 +1,16 @@
 import datetime as dt
 
+import pytest
+
 from . import continuous_scan as worker
 
 NOW = dt.datetime(2026, 10, 1, 15, 35, tzinfo=dt.timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _no_network_macro(monkeypatch):
+    """Stage tests must never hit the real calendar or price feeds."""
+    monkeypatch.setattr(worker.makro_olcum, 'run', lambda **kwargs: None)
 
 
 def test_stage_failure_does_not_block_other_stages(monkeypatch, capsys):
@@ -46,3 +54,15 @@ def test_ema12_is_measured_on_maven_not_in_cloud(monkeypatch):
     for name in ('signal_scan', 'mobile_watch', 'finnhub_news'):
         monkeypatch.setattr(getattr(worker, name), 'run', lambda **kwargs: None)
     assert 'ema12' not in worker.scan_once(NOW, dry_run=True)
+
+
+def test_macro_measurement_runs_as_its_own_stage(monkeypatch):
+    seen = []
+    monkeypatch.setattr(worker, 'local_active', lambda now: False)
+    for name in ('signal_scan', 'mobile_watch', 'finnhub_news'):
+        monkeypatch.setattr(getattr(worker, name), 'run', lambda **kwargs: None)
+    monkeypatch.setattr(worker.makro_olcum, 'run',
+                        lambda **kwargs: seen.append(kwargs))
+    result = worker.scan_once(NOW, dry_run=True)
+    assert result['makro'] == 'ok'
+    assert seen == [{'now': NOW, 'dry_run': True}]

@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 
-from . import finnhub_news, mobile_watch, signal_scan, telegram_notify
+from . import finnhub_news, makro_olcum, mobile_watch, signal_scan, telegram_notify
 from .scan_schedule import is_open
 
 UTC = dt.timezone.utc
@@ -31,6 +31,7 @@ def scan_once(now: dt.datetime, *, dry_run: bool = False) -> dict:
         'sweep': lambda: signal_scan.run(now=now, dry_run=dry_run or lease),
         'mobile': lambda: mobile_watch.run(now=now, dry_run=dry_run),
         # EMA12 PAPER is measured by the Maven forward EA since 2026-11-05.
+        'makro': lambda: makro_olcum.run(now=now, dry_run=dry_run),
         'finnhub': lambda: finnhub_news.run(now=now, dry_run=dry_run),
     }
     outcomes = {}
