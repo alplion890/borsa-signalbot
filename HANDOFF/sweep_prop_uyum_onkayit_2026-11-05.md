@@ -22,3 +22,21 @@ Kaynak: prop firma kuralları (hafta sonu gap riski; yüksek etkili haberde ±5 
 
 ## Yasak
 Ara sonuca göre k, saat veya pencere değiştirmek; ek filtre eklemek.
+
+## Sonuç (koşum 2026-11-05, ön-kayıt eb30887 sonrası)
+Kod: `strategy-lab/intraday/sweep_prop_lab.py`; çıktı `outputs/intraday/sweep_prop_lab/result_2026-11-05.json`.
+Motorla parite: birebir (assert geçti). Veri: Dukascopy NASDAQ100 15m 2012-01-19 → 2026-08-28.
+
+| | n | ort R | toplam R | en kötü | max DD (R) | <2022 | ≥2022 |
+|---|---|---|---|---|---|---|---|
+| Taban | 235 | +0.0485 | +11.40 | −22.46 | 58.64 | −0.357 | +0.752 |
+| H1 prop uyumu | 231 | +0.0559 | +12.92 | −22.46 | 60.71 | −0.376 | +0.813 |
+| H2 derinlik ≥0.10·ATR | 142 | +0.0123 | +1.75 | −2.10 | 22.36 | +0.020 | −0.004 |
+
+Feed örtüşmesi (Maven US100 vs NQ=F, 4366 ortak bar): taban Jaccard 0.391 (16/16, ortak 9); H2 0.333 (12/12, ortak 6).
+
+- **H1: kural gereği BENİMSENDİ** (ort. R +0.007, en kötü işlem eşit). Etki marjinal; 4 işlem kesildi. En kötü işlem hafta sonu gap'i değildi (aşağıda).
+- **H2: REDDEDİLDİ** (birincil: örtüşme düştü; ikincil: ort. R −0.036, n %60). H2'nin en kötü işlemi/DD'yi düzeltmesi ölçüt değildi; sonradan ölçüt yapılmaz.
+
+## Yan bulgu: veri kalitesi
+−22.46R işlemi (2013-02-25 16:00) bozuk veride: barlar saatlerce ~2 puanlık sabit aralıkta tekrarlıyor. Önbellekte 205 "donuk" gün var (çoğu hafta sonu/tatil sabit dolgusu); Sweep'te yalnız bu işlemi etkiliyor. Çıkarılınca uzun geçmiş: n234, **ort +0.145R**, <2022 −0.208, ≥2022 +0.752. 10-29'daki "+0.132 yeniden üretilemedi" farkının büyük kısmı bu tek işlem. Temizlik ayrı iş (veri temizliği rayı); bu koşumda sonuçlar ham veriyle raporlandı.
