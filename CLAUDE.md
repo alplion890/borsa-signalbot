@@ -1,7 +1,11 @@
 # borsa — proje talimatı
 
-> Güncel durum — 2026-09-30: Sweep tek LIVE yetkili mekanik modül; EMA12 ayrı PAPER gözlem. EUR/GBP London, NQ ORB ve Gold ORB emekli. Makro/COT sürümleri araştırma; LIVE filtre değil. Yeni EUR/GBP taraması ve forward girişi yok. Güncel karar: [karar tablosu](TELEFON/GUNCEL_EDGE_KARARLARI.md).
-
+> Güncel durum — 2026-11-05: Tek ölçüm kaynağı **Maven MT5** (`forward_ledger.csv`).
+> Sweep tek LIVE yetkili mekanik modül (emir kullanıcıda); EMA12 Maven forward
+> EA'da PAPER (`CAND_EMA12_FIRST5M`). Bulut defteri donduruldu (`f4c000d`);
+> bulut botu yalnız haber/makro **ölçümü** yapar. Diskresyoner ray kaldırıldı.
+> Karar: [[Borsa - Tek Kaynak ve Bulut Rolu Karari 2026-11-05]] ·
+> [karar tablosu](TELEFON/GUNCEL_EDGE_KARARLARI.md).
 
 Bu dosya Claude Code oturumlarında otomatik yüklenir. Claude telefon
 uygulamasında otomatik yüklenmez; telefon projesine `TELEFON/KISA_TALIMAT.md`
@@ -10,8 +14,8 @@ içindeki metin yapıştırılmış olmalıdır.
 ## Rolün
 
 Olgu getirirsin, yorumu kullanıcı yapar. Bu üslup değil, deneyin kendisi:
-yürüyen ölçüm tam olarak *kullanıcının kendi yorumunun* işe yarayıp
-yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
+yürüyen ölçüm kullanıcının kendi kararlarının işe yarayıp yaramadığını
+sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 
 ## Asla
 
@@ -28,68 +32,34 @@ yaramadığını sınıyor. Sen yorum katarsan ölçülen şey bozulur.
 5. **Kötü bulguyu saklamazsın.** Kullanıcı bir kez istedi, reddedildi: gerçek
    parayla işlem açıyor.
 
-## Üç raylı düzen (bağlayıcı, 2026-08-28)
+## Düzen (bağlayıcı, 2026-11-05)
 
-- **Mekanik ray:** yalnız SWEEP_CORE LIVE yetkili, emir kullanıcıda. EUR/GBP
-  London 2026-09-30, NQ ORB 2026-09-11 ve Gold ORB daha önce emekli edildi.
-  Yeni modül/parametre kendiliğinden eklenmez. Kullanıcının 2026-09-29 kararıyla
-  EMA12 ayrı PAPER gözlemindedir; mevcut LIVE kural ve riski değiştirmez.
-  Önceden kurulmuş 9 CAND_ deneyi sessiz ölçümdür; aktif Telegram edge'i değildir.
-- **Diskresyoner ray — BİRİNCİL.** İşlem burada açılıyor. Protokol aşağıda.
-- **Araştırma rayı — SINIRLI ve AKTİF (birincil değil).** Önce LSE futures
-  verisindeki roll/aykırı bar/gap temizliği yapılır. Ardından tek ön-kayıtlı
-  çalışma, SWEEP_CORE'un NQ-ES göreceli güç filtresiyle kaynak-dayanıklılığıdır.
-  Sonuç LIVE kuralını veya riski değiştirmez; sıfırdan edge araması bundan sonra
-  tek hipotez ailesiyle açılabilir.
-
-## Diskresyoner protokol
-
-1. 18:15 TR'den önce setup aranmaz, 20:00'den sonra yeni giriş yok.
-2. Katman kapısı ≥2/4: narrative / hacim / trend / destek (2026-09-03'te 3/4'ten
-   indirildi — giriş filtresi kararı, kayıt kuralı değil). Kullanıcı eksik
-   bırakırsa doldurulmamış katmanları SEN sorarsın ("hacme baktın mı?");
-   "bakmadım" derse boş kalır, uydurulmaz. Kalan katmanlar aynı anda güçlü
-   ters haber/tepki anlatmıyorsa çelişki sayılmaz; güçlü çelişkide daha güçlü
-   kanıt aranır ya da işlem alınmaz.
-3. Tez **ve** çürüten zorunlu. Çürüteni olmayan tez sonradan her sonuca
-   uydurulabilir; defter hiçbir şey öğretmez.
-4. Tez kurulunca katalogdan geçir: `python -m intraday.elenenler --kontrol <kelime>`
-   - `rejected` / `retired` → VETO
-   - `standalone_rejected` → tek başına giriş sebebi değil, bağlam olabilir
-   - `not_adopted` → yasak değil, seçilmedi
-   - katalogda yok → "çalışır" değil, "ölçülmemiş"
-   - kapsam satırı varsa oku: isim benzerliği çalışan modülü vetolamaz
-5. Aday **girmeden önce** kaydedilir; pas geçilenler de kaydedilir (seçicilik
-   ancak böyle ölçülür).
-
-   **Telefondan açılan işlem (2026-09-03):** kullanıcı seansta telefondan açıp
-   kaydı sonra veriyor. Kabul edildi çünkü scalp yok — işlem hâlâ açıkken
-   yazılıyor, sonuç belli değil. `--acilis` ile GERÇEK açılış saati verilir;
-   kayıt anı ayrı tutulur ve `kayit_gecikmesi_dk` ölçülür. Gecikme yasak değil,
-   ölçülen bir alan: 20 işlem sonunda "gecikmeli kayıtlar farklı mı" sorulabilir.
-6. Durma kuralı: n≥20 ve exp_R<0 → ray durur. Bu EDGE ölçer; hayatta kalmayı
-   garanti etmez, o yüzden ayrıca solvency kapısı var (aşağıda).
-
-## Diskresyoner risk (2026-09-04'te %3'e indirildi)
-
-- Risk **%3**, her işlemde **güncel bakiyenin** yüzdesi (sabit dolar değil).
-  2026-09-03'te %6'ydı; haftalık ≥5 işlem hedefi solvency kapısıyla çeliştiği
-  için kullanıcı üç ölçülü tier'dan (1.5/3/6) ortancayı seçti (bkz
-  [[Borsa - Diskresyoner Defter Taahhudu]] 2026-09-04 bölümü).
-- Mekanik ray AYRI ve DOKUNULMADI: `signalbot/risk.py` challenge cap'i %3
-  (aynı sayı, farklı kaynak — karıştırma).
-- **Solvency kapısı**: planlanan stop kaybı, bakiye ile breach (4500) arasındaki
-  tamponu aşamaz; 100 USD güvenlik payı ayrı tutulur. Aritmetik: %3 ≈ 150 USD,
-  tampon 500 USD = 3.33R. Kural ilk %6'lık işlemden ÖNCE yazıldı, post-hoc değil.
-- Deftere gerçekleşen risk yazılır: giriş bakiyesi, risk_pct, risk_usd. Bakiye
-  MT5'ten okunur; okunamazsa alanlar boş kalır ve kapı ÇALIŞMAZ (uyarı basılır).
+- **Tek ölçüm kaynağı:** Maven MT5. Yerel forward EA (`ForwardEA-5dk` görevi,
+  MT5 açık olmalı) `strategy-lab/outputs/intraday/forward_ea/forward_ledger.csv`
+  yazar. Bu dosya git'te takip edilmez; `publish_ledger.py` her döngü sonunda
+  kopyasını GitHub API ile `forward_ea/published/` altına yazar, bulut onu okur.
+- **Mekanik ray:** yalnız SWEEP_CORE LIVE, emir kullanıcıda. EUR/GBP London,
+  NQ ORB ve Gold ORB emekli. Yeni modül/parametre kendiliğinden eklenmez.
+  EMA12 ve 9 CAND_ deneyi Maven'de sessiz PAPER ölçümdür; Telegram'a çıkmaz.
+- **Sweep düşürme taahhüdü (2026-08-21):** n≥25 ve exp_R<0 → LIVE'dan PAPER'a.
+  Bu taahhüt 2026-08-28 kuralıyla **birleşik sayımla** (MT5 ∪ bulut) biter;
+  bulut kısmı 2026-11-05'te dondu. Kaynağı sonuca bakıp değiştirmek yasak.
+- **Bulut botu:** Sweep alarmı (Yahoo verisi, mesajda "Maven grafiğinde
+  doğrula") + makro ölçüm (`makro_olcum.py`: beklenti/gerçekleşen/sürpriz,
+  NQ/XAU +15/+60 dk tepkisi, ZT=F ve 5Y getiri bp) + Finnhub haber başlığı.
+  Bulut işlem ölçmez.
+- **Diskresyoner ray:** 2026-11-05'te kaldırıldı (2026-09-03'ten beri 0 kayıt).
+  Kod ve `/seans` arşivde: `docs/archive/diskresyoner-2026-11-05/`.
+- **Araştırma rayı:** sıradaki iş elenen edge'lerin yeniden yargılanması —
+  ön-kayıt önce, tek motor, tek maliyet modeli; uzun geçmiş Dukascopy
+  (araştırma), forward Maven (icra). Sonuç LIVE kuralını veya riski kendiliğinden
+  değiştirmez.
 
 ## Rejim/makro okuma (2026-09-04, kullanıcı kararı)
 
-Sabit kural araması yavaş (kanıta ~56 ay). Claude/Hermes artık seansta **sadece
-sayı** verir — açıklama öncesi beklenti, gerçekleşen/revizyon, piyasa tepkisi,
-makro olay + tarih ve sembollerde kırılım/yeni high-low/trend metriği. Yorum,
-karar ve ACİ/fibonacci doğrulaması kullanıcıda.
+Claude/Hermes seansta **sadece sayı** verir — açıklama öncesi beklenti,
+gerçekleşen/revizyon, piyasa tepkisi, makro olay + tarih ve sembollerde
+kırılım/yeni high-low/trend metriği. Yorum ve karar kullanıcıda.
 Araştırıldı ve ölçüldü: trend-günü ön-sınıflandırma ve AI'nin yön tahmini
 kanıtsız/negatif kanıtlı; makro release sadece **oynaklık zamanlaması** verir,
 yön vermez. Detay: [[Borsa - Rejim Okuma Donusu 2026-09-04]],
@@ -100,12 +70,14 @@ yön vermez. Detay: [[Borsa - Rejim Okuma Donusu 2026-09-04]],
 ```bash
 cd strategy-lab
 python -m intraday.forward_ea.telefon_brief --stdout   # olgular
+python -m intraday.forward_ea.live_runner --status     # Maven forward defteri
 python -m intraday.elenenler --kontrol <kelime>        # veto kontrolü
-python -m intraday.forward_ea.diskresyoner --durum     # diskresyoner defter
-python -m pytest intraday/ -q                          # 400 passed, 3 skipped
+python -m pytest intraday/ -q                          # 707 passed, 3 skipped
 ```
 
-Seans başlatmak için: `/seans`
+Forward EA'yı elle çalıştırırken Python: `%USERPROFILE%\vectorbt-lab\.venv`
+(MetaTrader5 paketi orada). MT5 başka hesapta (örn. FTMO) açıksa döngü
+"Maven bağlantısı doğrulanamadı" der ve defteri ilerletmez — doğru davranış.
 
 ## Bilinen tuzaklar (dördü de bu projede oldu)
 
@@ -121,7 +93,9 @@ metodoloji.
 ## Çalışma kuralları
 
 - Türkçe konuş. Kod, commit ve PR normal İngilizce.
-- Bot main'e commit atıyor: çalışmadan önce `git pull`.
+- Bot main'e commit atıyor: çalışmadan önce `git pull`. İş bitince commit at;
+  haftalarca commitsiz çalışma yok (Ekim 2026'da 6 hafta oldu, pull kilitlendi).
+- Kodu tek ajan yazar; diğerleri okur.
 - Kalıcı bulgu → Obsidian vault notu + MOC wikilink + MEMORY.md tek satır.
 - Hermes denetçi, yazar değil: her denetimde commit hash yazılır
   (`HANDOFF/` klasörü).

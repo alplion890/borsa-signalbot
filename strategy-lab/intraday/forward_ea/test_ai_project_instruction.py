@@ -27,10 +27,13 @@ def test_ai_talimati_olgu_ve_manuel_karar_sozlesmesini_tasir():
     metin = _kopyalanacak_metin().lower()
     for gerekli in (
         "yalnız olgu getir", "yorumu ben yaparım", "yön önerme",
-        "haberden tez üretme", "sayı", "2/4", "çürüten",
+        "haberden tez üretme", "sayı", "maven mt5", "baz puan",
     ):
         assert gerekli in metin
     assert "asla emir açma/kapatma/değiştirme" in metin
+    # 2026-11-05: discretionary rail removed; the phone must not ask for it.
+    assert "diskresyoner ray 2026-11-05'te kaldırıldı" in metin
+    assert "/seans" not in metin
 
 
 def test_operator_belgesi_planli_briefi_guncel_varsaymaz():

@@ -6,22 +6,20 @@ Maven 5K BNPL challenge icin ucretsiz piyasa verisi, MT5 forward defteri ve
 Telegram bildirimleri kullanan manuel islem yardimcisidir. Otomatik emir acmaz;
 brokerdaki son karar ve emir kullanicidadir.
 
-## Guncel duzen (2026-09-16)
+## Guncel duzen (2026-11-05)
 
-- **Mekanik ray dondurulmus:** tek gercek-para yetkili modul
-  `SWEEP_CORE_AVOID_MID_VWAP` (NASDAQ100/US100, 15dk). NQ_ORB 2026-09-11'de
-  negatif forward sonucu nedeniyle tarama ve Telegram listesinden cikarildi.
-- **Diskresyoner ray birincil:** kullanici guncel teknik/makro olgulari
-  yorumlar, tez ve curuteni onceden kaydeder; emir MT5/Maven'da elle girilir.
-- **Arastirma rayi sinirli ve aktif:** yeni veri once temizlenir; ilk ve tek
-  on-kayitli calisma, mevcut SWEEP_CORE'un NQ-ES goreceli guc filtresiyle
-  kaynak-dayanikliligini PAPER'da sinamaktir. Sonuc LIVE kuralini veya riski
-  otomatik degistirmez. Sifirdan edge aramasi bu calismanin ardindan gelir.
-- **Diskresyoner rayda haber + teknik birlikte olculur:** olay oncesi beklenti,
-  gerceklesen/revizyon, ilk piyasa tepkisi, tez ve curuten makro defterine
-  yazilir. Giris kapisi en az 2/4'tur: narrative, hacim, trend,
-  destek/seviye. Kalan katmanlar ayni anda guclu ters bilgi vermiyorsa celiski
-  sayilmaz; guclu celiskide ya daha guclu kanit gerekir ya da islem alinmaz.
+- **Tek olcum kaynagi Maven MT5:** yerel forward EA defteri
+  (`forward_ledger.csv`, git'te takip edilmez) her dongude
+  `publish_ledger.py` ile `forward_ea/published/` altina yayinlanir. Bulut
+  (Yahoo) defteri 2026-11-05'te donduruldu.
+- **Mekanik ray:** tek gercek-para yetkili modul `SWEEP_CORE_AVOID_MID_VWAP`
+  (NASDAQ100/US100, 15dk), emir kullanicida. EMA12 ve CAND_ deneyleri
+  Maven'de PAPER.
+- **Bulut botu:** Sweep alarmi + makro olcum (beklenti/gerceklesen/surpriz,
+  NQ/XAU tepkisi, ZT=F ve 5Y getiri bp) + haber basligi. Islem olcmez.
+- **Diskresyoner ray kaldirildi** (2026-11-05, 0 kayit). Arsiv:
+  `docs/archive/diskresyoner-2026-11-05/`.
+- **Arastirma rayi:** elenen edge'lerin on-kayitli yeniden yargilanmasi.
 - `default_modules()` tarama listesinde yalnız SWEEP_CORE
   modulu vardir; LIVE/PAPER yetkisinin tek kaynagi `signalbot/risk.py`dir.
 - Gunluk otomatik fon/brifing mesaji 2026-09-28'de durduruldu; yerel gercek tarayici ve olay bildirimleri icin [mobil akis](TELEFON/MOBIL_KARAR_AKISI.md).
