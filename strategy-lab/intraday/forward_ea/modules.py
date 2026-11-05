@@ -310,6 +310,13 @@ def candidate_modules() -> list[LiveModule]:
         # yok, 6 saat (72 bar) sonra kapanis. Maliyet INSTRUMENTS (Maven).
         LiveModule("CAND_EMA12_FIRST5M", "NASDAQ100", "5m", 0.0, 72,
                    ema12_first5m_detector),
+        # Yeniden yargilama (on-kayit 36a8e4c, 2026-11-05): emekli NQ ORB'nin
+        # 9acf55b ile kaldirilan tanimi BIREBIR. n=30'da karar; parametre
+        # degistirilmez. HANDOFF/edge_yeniden_yargilama_onkayit_2026-11-05.md
+        LiveModule("CAND_RT_NQ_ORB", "NASDAQ100", "5m", 0.0, 48,
+                   _orb_detector(ORBCase("NASDAQ100", 14.5, 15, 20.5, "retest",
+                                         "none", 1.5, "other_side", 1.0, 48),
+                                 adx_min=28.0)),
     ]
 
 
