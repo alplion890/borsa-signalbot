@@ -20,6 +20,7 @@ dosya birlesik sayimda reddedilip parite raporunda kanit sayilabiliyordu.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +28,8 @@ import pandas as pd
 
 _OUT = (Path(__file__).resolve().parent.parent.parent
         / "outputs" / "intraday" / "forward_ea")
-LEDGER_CSV = _OUT / "forward_ledger.csv"
+# Cloud jobs read the copy published by publish_ledger.py (2026-11-05).
+LEDGER_CSV = Path(os.environ.get("FORWARD_LEDGER_PATH") or _OUT / "forward_ledger.csv")
 CLOUD_CSV = _OUT / "cloud_ledger.csv"
 
 # Ayni islemin iki defterdeki zaman damgasi birebir tutmaz: bulut bedava

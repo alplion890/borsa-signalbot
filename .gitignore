@@ -26,7 +26,9 @@ strategy-lab/outputs/*
 strategy-lab/outputs/intraday/*
 !strategy-lab/outputs/intraday/forward_ea/
 strategy-lab/outputs/intraday/forward_ea/*
-!strategy-lab/outputs/intraday/forward_ea/forward_ledger.csv
+# 2026-11-05: yerel Maven defteri artik takip edilmez (pull kilidini onler);
+# yedegi publish_ledger.py ile published/ altina API uzerinden yazilir.
+!strategy-lab/outputs/intraday/forward_ea/published/
 # Icra defteri de yeniden uretilemez: gercek islemlerde kurala uyumun tek
 # kaydi. Challenge patlarsa "kural mi yanlisti, ben mi uymadim" sorusunu
 # yalnizca bu dosya cevaplar.

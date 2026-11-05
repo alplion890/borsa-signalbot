@@ -79,6 +79,8 @@ jobs:
           # Opsiyonel yedek: ana Yahoo verisi yok/bayatsa kullanilir. LSE de
           # bayatsa fail-closed; LSE tek basina LIVE aday uretemez.
           LSE_API_KEY: ${{ secrets.LSE_API_KEY }}
+          # Tek olcum kaynagi: Maven defterinin yayinlanan kopyasi (2026-11-05).
+          FORWARD_LEDGER_PATH: ${{ github.workspace }}/strategy-lab/outputs/intraday/forward_ea/published/forward_ledger.csv
         run: |
           python -m intraday.forward_ea.telefon_brief
           python -m intraday.forward_ea.telegram_brief --cikti-dir /tmp/telegram-brief

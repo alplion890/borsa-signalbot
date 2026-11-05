@@ -14,3 +14,5 @@ if not defined PY set "PY=%USERPROFILE%\vectorbt-lab\.venv\Scripts\python.exe"
 if not exist "%PY%" set "PY=python"
 
 "%PY%" -m intraday.forward_ea.live_runner --once >> "%~dp0outputs\intraday\forward_ea\runner.log" 2>&1
+rem Maven defterinin kopyasini GitHub API ile yayinla (degismediyse istek atmaz).
+"%PY%" -m intraday.forward_ea.publish_ledger >> "%~dp0outputs\intraday\forward_ea\runner.log" 2>&1
