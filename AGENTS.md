@@ -72,7 +72,7 @@ cd strategy-lab
 python -m intraday.forward_ea.telefon_brief --stdout   # olgular
 python -m intraday.forward_ea.live_runner --status     # Maven forward defteri
 python -m intraday.elenenler --kontrol <kelime>        # veto kontrolü
-python -m pytest intraday/ -q                          # 709 passed, 3 skipped
+python -m pytest intraday/ -q                          # 715 passed, 3 skipped
 ```
 
 Forward EA'yı elle çalıştırırken Python: `%USERPROFILE%\vectorbt-lab\.venv`
