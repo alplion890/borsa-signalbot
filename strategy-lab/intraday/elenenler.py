@@ -323,6 +323,23 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("sunucu", "server", "kiralama", "islem gucu", "tarama",
                     "compute", "gpu"),
     ),
+    Elenen(
+        id="rsiband_supertrend_video",
+        statu="rejected",
+        baslik="YouTube 'ucretsiz al-sat sistemi': RSI Bands + Supertrend + RSI/TDI, Heikin Ashi",
+        iddia="Tum zaman dilimlerinde, kripto ve forexte calisir; HA bant disina sarkar -> "
+              "RSI kesisimi -> ilk Supertrend buy/sell, hedef karsi bant (sayi verilmedi).",
+        olcum="On-kayitli test, 11 seri (BTC 15m/1h/4h, EUR/GBP/XAU/NQ 15m/1h), 3 yil: "
+              "hepsi exp_R<0 (BTC 15m -0.167 n=2001, 1h -0.162, 4h -0.064). "
+              "Maliyetsiz bile ~0 (BTC 15m -0.005). WR ~%47-51, ort. kazanc ~0.9R.",
+        neden="Sinyal bilgi tasimiyor: maliyet oncesi yazi-tura, maliyet sonrasi net kayip. "
+              "Video ornekleri secilmis grafik + broker/sinyal grubu reklami.",
+        tarih="2026-11-07",
+        kaynak="rsiband_st_video_lab.py + HANDOFF/rsiband_supertrend_video_onkayit_2026-11-07.md "
+               "+ [[Borsa - RSI Bands Supertrend Video Testi 2026-11-07]]",
+        anahtarlar=("supertrend", "rsi band", "rsi bands", "heikin", "heikin ashi", "tdi",
+                    "rsi", "kripton", "youtube", "al-sat sistemi"),
+    ),
 )
 
 

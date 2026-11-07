@@ -44,3 +44,22 @@ Sonuç LIVE kuralını, riski veya portföyü kendiliğinden değiştirmez.
 
 ## Yasak
 Ara sonuca göre parametre, tampon, pencere, enstrüman veya filtre değiştirmek.
+
+## Sonuç (koşum 2026-11-07, ön-kayıt 764b8cc sonrası)
+Kod: `strategy-lab/intraday/rsiband_st_video_lab.py`; çıktı `outputs/intraday/rsiband_st_video/result_2026-11-07.{csv,json}`.
+Birincil hücre (varyant A, tampon 0.5 ATR, 1x maliyet):
+
+| seri | n | exp_R | WR % | 2x maliyet | 1. yarı | 2. yarı | maliyetsiz |
+|---|---|---|---|---|---|---|---|
+| BTC 15m | 2001 | -0.167 | 47.2 | -0.330 | -0.177 | -0.157 | -0.005 |
+| BTC 1h | 549 | -0.162 | 47.4 | -0.241 | -0.112 | -0.215 | -0.084 |
+| BTC 4h | 150 | -0.064 | 49.3 | -0.101 | +0.019 | -0.158 | -0.026 |
+| EURUSD 15m / 1h | 1551 / 430 | -0.086 / -0.056 | | | | | +0.016 / -0.009 |
+| GBPUSD 15m / 1h | 1505 / 396 | -0.170 / -0.098 | | | | | -0.051 / -0.043 |
+| XAUUSD 15m / 1h | 1448 / 373 | -0.141 / -0.027 | | | | | -0.070 / +0.008 |
+| NQ 15m / 1h | 1418 / 402 | -0.035 / -0.024 | | | | | +0.034 / -0.000 |
+
+66 hücrenin (11 seri × 2 varyant × 3 tampon) 64'ünde exp_R < 0, 1'i tam 0.000 (EURUSD 1h B tampon 0), yalnız 1'i pozitif: BTC 4h tampon 0 (+0.012, 2x maliyette -0.035, 2. yarı -0.084).
+Long > short gözlemi kısmen doğru (çoğu seride long daha az kötü) ama hiçbir long serisi karar kuralını geçmiyor.
+**KARAR: ELENDİ.** `elenenler` kataloğuna `rsiband_supertrend_video` olarak eklendi.
+Sınır: hedef tetik barındaki bant değerinde sabit (video dinamik bant dokunuşu diyor); maliyetsiz sonuç ~0 olduğu için bu sonucu değiştirmesi beklenmez.
