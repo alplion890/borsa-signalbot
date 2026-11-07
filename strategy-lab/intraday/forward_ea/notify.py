@@ -43,6 +43,29 @@ def _is_candidate(pos: PaperPosition) -> bool:
     return pos.module.startswith("CAND_") or float(pos.weight) == 0.0
 
 
+# 14-day execution trial (prereg HANDOFF/icra_denemesi_14gun_onkayit_2026-11-07.md):
+# these candidates are alerted on Telegram only inside the trial window.
+TRIAL_ALERT_MODULES = frozenset({"CAND_DONCHIAN_XAU_1H"})
+TRIAL_START = dt.date(2026, 11, 9)
+TRIAL_END = dt.date(2026, 11, 22)
+
+
+def _trial_alert(pos: PaperPosition, now: dt.datetime) -> bool:
+    return pos.module in TRIAL_ALERT_MODULES and TRIAL_START <= now.date() <= TRIAL_END
+
+
+def build_trial_message(pos: PaperPosition, now: dt.datetime) -> str:
+    """Plain execution card: numbers only, the user places the order."""
+    yon = "LONG (al)" if pos.direction == 1 else "SHORT (sat)"
+    dist = abs(pos.entry - pos.sl)
+    return (f"ICRA DENEMESI · Altin Donchian 1H · {pos.symbol} {yon}\n"
+            f"Giris ~{pos.entry:.2f} · SL {pos.sl:.2f} · TP {pos.tp:.2f}\n"
+            f"Stop mesafesi {dist:.2f} $ → 0.01 lot ile risk ~{dist:.2f} $ "
+            f"(lot = bakiye×%0.5 / (mesafe×100))\n"
+            f"Kaynak Maven MT5, mum kapanisi {sessions.to_trt(now)}. "
+            f"Emri sen girersin; SL zorunlu.")
+
+
 def build_message(pos: PaperPosition, now: dt.datetime) -> str:
     """Tek pozisyondan signalbot formatinda Telegram mesaji uret."""
     phase = os.environ.get("PHASE", "bnpl_challenge")
@@ -85,11 +108,12 @@ def notify_new_positions(new_positions: list[PaperPosition],
         # signalbot/_load_modules tarafinda test ediliyordu; forward EA'nin
         # kendi bildirim yolu kapsanmamisti. Kanitlanmamis bir sinyalin
         # telefona dusmesi tam da BTC'de aylarca sessizce yasanan seydi.
-        if _is_candidate(pos):
+        trial = _trial_alert(pos, now)
+        if _is_candidate(pos) and not trial:
             print(f"  [ADAY] {pos.module}: olculur, Telegram'a gonderilmez.")
             continue
         try:
-            msg = build_message(pos, now)
+            msg = build_trial_message(pos, now) if trial else build_message(pos, now)
         except Exception as e:  # noqa: BLE001
             # build_message risk_plan -> _VALUE_PER_POINT[symbol] okur.
             # Tabloda olmayan bir sembol KeyError firlatir ve bu HATA

@@ -72,3 +72,15 @@ def test_discretionary_mobile_watch_is_not_a_cloud_stage(monkeypatch):
     for name in ('signal_scan', 'finnhub_news'):
         monkeypatch.setattr(getattr(worker, name), 'run', lambda **kwargs: None)
     assert 'mobile' not in worker.scan_once(NOW, dry_run=True)
+
+
+def test_cloud_sweep_alert_is_dry_during_execution_trial(monkeypatch):
+    """2026-11-09..22: alerts come only from the Maven-fed local bot."""
+    calls = {}
+    monkeypatch.setattr(worker, 'local_active', lambda now: False)
+    monkeypatch.setattr(worker.signal_scan, 'run', lambda **kw: calls.update(kw))
+    monkeypatch.setattr(worker.finnhub_news, 'run', lambda **kw: None)
+    worker.scan_once(dt.datetime(2026, 11, 12, 15, 0, tzinfo=dt.timezone.utc))
+    assert calls['dry_run'] is True
+    worker.scan_once(dt.datetime(2026, 11, 24, 15, 0, tzinfo=dt.timezone.utc))
+    assert calls['dry_run'] is False

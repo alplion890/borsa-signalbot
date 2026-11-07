@@ -34,3 +34,8 @@ Eşik sağlanırsa instant/prop hesabı değerlendirilir (karar kullanıcıda). 
 
 ## Yasak
 14 gün içinde kural, enstrüman veya risk değiştirmek; kaybeden işlemden sonra risk büyütmek.
+
+## Ek (2026-11-07, deneme başlamadan önce — kural değişikliği değil, altyapı)
+- Alarmların tek kaynağı Maven MT5 (yerel forward EA). Bulut Sweep alarmı 2026-11-09..22 arası kuru çalışır (`continuous_scan._trial_local_only`).
+- XAU Donchian `CAND_DONCHIAN_XAU_1H` olarak Maven forward'da ölçülür ve yalnız deneme penceresinde Telegram'a "ICRA DENEMESI" kartıyla çıkar (`notify.TRIAL_ALERT_MODULES`). Gecikme: 1H mum kapanışı + en çok 5 dk.
+- Alarm yalnız PC + MT5 (Maven hesabı) açıkken çalışır.

@@ -313,6 +313,11 @@ def candidate_modules() -> list[LiveModule]:
         # Yeniden yargilama (on-kayit 36a8e4c, 2026-11-05): emekli NQ ORB'nin
         # 9acf55b ile kaldirilan tanimi BIREBIR. n=30'da karar; parametre
         # degistirilmez. HANDOFF/edge_yeniden_yargilama_onkayit_2026-11-05.md
+        # 14 gunluk icra denemesi (on-kayit 3c65dd2): donchian_xau_lab ile ayni
+        # kural (N20, SL karsi kanal, TP 2R, 200 bar). Maven 1H. Deneme
+        # penceresinde notify.TRIAL_ALERT_MODULES ile Telegram'a cikar.
+        LiveModule("CAND_DONCHIAN_XAU_1H", "XAUUSD", "1H", 0.0, 200,
+                   donchian_detector(20, 2.0)),
         LiveModule("CAND_RT_NQ_ORB", "NASDAQ100", "5m", 0.0, 48,
                    _orb_detector(ORBCase("NASDAQ100", 14.5, 15, 20.5, "retest",
                                          "none", 1.5, "other_side", 1.0, 48),
@@ -322,6 +327,28 @@ def candidate_modules() -> list[LiveModule]:
 
 _NY = "America/New_York"
 _NO_TARGET_R = 1000.0  # rule has no take-profit; exit is stop or 6h timeout
+
+
+def donchian_detector(n: int = 20, rr: float = 2.0):
+    """Turtle Donchian break on the last closed bar (same as donchian_xau_lab).
+
+    Upper/lower = high/low of the previous n bars (current bar excluded).
+    Long when the close crosses above upper; SL = lower, TP = entry + rr*risk.
+    """
+    def detect(sub: pd.DataFrame) -> Signal | None:
+        if len(sub) < n + 2:
+            return None
+        upper = sub["high"].rolling(n).max().shift(1)
+        lower = sub["low"].rolling(n).min().shift(1)
+        c, c_prev = float(sub["close"].iloc[-1]), float(sub["close"].iloc[-2])
+        up, up_prev = float(upper.iloc[-1]), float(upper.iloc[-2])
+        lo, lo_prev = float(lower.iloc[-1]), float(lower.iloc[-2])
+        if c > up and c_prev <= up_prev and c - lo > 0:
+            return Signal(1, c, lo, c + rr * (c - lo))
+        if c < lo and c_prev >= lo_prev and up - c > 0:
+            return Signal(-1, c, up, c - rr * (up - c))
+        return None
+    return detect
 
 
 def ema12_first5m_detector(sub: pd.DataFrame) -> Signal | None:

@@ -16,6 +16,13 @@ UTC = dt.timezone.utc
 _last_error_notice = 0.0
 
 
+TRIAL_LOCAL_ONLY = (dt.date(2026, 11, 9), dt.date(2026, 11, 22))
+
+
+def _trial_local_only(now: dt.datetime) -> bool:
+    return TRIAL_LOCAL_ONLY[0] <= now.date() <= TRIAL_LOCAL_ONLY[1]
+
+
 def local_active(now: dt.datetime) -> bool:
     # Cloud owns notifications while this worker is running. Local tasks inspect
     # the running Actions job and suppress their duplicate alerts.
@@ -28,7 +35,9 @@ def scan_once(now: dt.datetime, *, dry_run: bool = False) -> dict:
         return {}
     lease = local_active(now)
     stages = {
-        'sweep': lambda: signal_scan.run(now=now, dry_run=dry_run or lease),
+        # During the execution trial only the Maven-fed local bot alerts Sweep
+        # (one price source on the phone). Prereg 3c65dd2.
+        'sweep': lambda: signal_scan.run(now=now, dry_run=dry_run or lease or _trial_local_only(now)),
         # Discretionary mobile watch removed with the rail (2026-11-05).
         # EMA12 PAPER is measured by the Maven forward EA since 2026-11-05.
         'makro': lambda: makro_olcum.run(now=now, dry_run=dry_run),
