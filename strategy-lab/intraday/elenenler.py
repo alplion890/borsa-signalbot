@@ -354,7 +354,8 @@ KATALOG: tuple[Elenen, ...] = (
         kaynak="mnq_orb_video_lab.py + HANDOFF/mnq_orb_15m_halfR_video_onkayit_2026-11-10.md "
                "+ [[Borsa - MNQ ORB 0.5R Video Testi 2026-11-10]]",
         kapsam="Yalniz bu kural: 9:15 NY tek 15m mum araligi + 0.5R hedef + kirilim mumu stopu. "
-               "Bizim NQ_ORB / CAND_RT_NQ_ORB ayri kuraldir, bu madde onu vetolamaz.",
+               "Canli SWEEP_CORE_AVOID_MID_VWAP ve bizim CAND_RT_NQ_ORB ayri kurallardir, "
+               "bu madde onlari vetolamaz.",
         anahtarlar=("orb", "opening range", "0.5r", "yarim r", "mnq", "9:15", "theagent",
                     "instagram", "win rate", "20k"),
     ),
