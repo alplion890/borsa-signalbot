@@ -30,3 +30,17 @@ Not: 0.5R hedefte başabaş WR (maliyetsiz) %66.7'dir; %72 WR tek başına edge 
 
 ## Yasak
 Ara sonuca göre saat, pencere, hedef, filtre değiştirmek.
+
+## Sonuç (koşum 2026-11-10, ön-kayıt e0382e8 sonrası)
+Kod: `strategy-lab/intraday/mnq_orb_video_lab.py`; çıktı `outputs/intraday/mnq_orb_video/result_2026-11-10.json`.
+
+| veri | n | exp_R 1x | WR % | PF | 2x | maliyetsiz | 1. yarı | 2. yarı | long / short |
+|---|---|---|---|---|---|---|---|---|---|
+| 2021-06 → 2026-06 (birincil) | 1288 | **-0.079** | 65.7 | 0.78 | -0.145 | -0.014 | -0.068 | -0.090 | -0.082 / -0.076 |
+| 2012 → 2026-08 (temiz) | 3578 | -0.158 | 62.2 | 0.63 | -0.256 | -0.060 | -0.225 | -0.097 | -0.177 / -0.136 |
+
+Birincil yıllık exp_R: 2021 -0.129, 2022 -0.029, 2023 -0.081, 2024 -0.089, 2025 -0.116, 2026 -0.019 (hiçbir yıl pozitif değil).
+Gün sonu kapanışı kaldırılınca değişmiyor (-0.080). 2012 (-0.912, n=113) veri başlangıcı; kararı etkilemez.
+Ort. kazanç 0.44R, ort. kayıp -1.07R; maliyetsiz WR %65.7 < başabaş %66.7.
+**KARAR: ELENDİ.** Katalogda `mnq_orb_15m_half_r_video`.
+Sınır: Dukascopy NQ CFD (MNQ vadeli değil); maliyet config 0.00009/yön, gerçek MNQ maliyetinden yüksek olabilir — maliyetsiz sonuç da negatif olduğu için karar değişmez.

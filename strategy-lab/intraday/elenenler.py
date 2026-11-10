@@ -340,6 +340,22 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("supertrend", "rsi band", "rsi bands", "heikin", "heikin ashi", "tdi",
                     "rsi", "kripton", "youtube", "al-sat sistemi"),
     ),
+    Elenen(
+        id="mnq_orb_15m_half_r_video",
+        statu="rejected",
+        baslik="Instagram '$20K/ay' MNQ ORB: 9:15-9:30 NY mumu, 15m kapanis kirilimi, hedef 0.5R",
+        iddia="TradingView: 714 islem, WR %72, 2026'da WR %80 PF 2.06; 20 prop hesapla ~$17K/ay.",
+        olcum="On-kayitli test, NQ 15m 2021-06..2026-06: n=1288, exp_R -0.079, WR %65.7, "
+              "her yil negatif; 2012+ n=3578 exp_R -0.158. Maliyetsiz bile -0.014 "
+              "(0.5R'de basabas WR %66.7).",
+        neden="Yuksek WR, kucuk hedefin dogal sonucu; basabas WR'nin altinda. "
+              "'5 rejim filtresi uret, en iyisini sec' = post-hoc filtre; ayarlar gizli.",
+        tarih="2026-11-10",
+        kaynak="mnq_orb_video_lab.py + HANDOFF/mnq_orb_15m_halfR_video_onkayit_2026-11-10.md "
+               "+ [[Borsa - MNQ ORB 0.5R Video Testi 2026-11-10]]",
+        anahtarlar=("orb", "opening range", "0.5r", "yarim r", "mnq", "9:15", "theagent",
+                    "instagram", "win rate", "20k"),
+    ),
 )
 
 
