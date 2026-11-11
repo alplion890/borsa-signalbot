@@ -44,3 +44,10 @@ footprint kısmı "ölçülemedi" olarak kataloğa girer. Not: 1.5R'de başabaş
 
 ## Yasak
 Ara sonuca göre dilim, D-eşiği, onay penceresi, stop tamponu, hedef, parite değiştirmek.
+
+## Sapma (koşumdan ÖNCE, sonuç görülmeden — 2026-11-11)
+Dukascopy `freeserv.dukascopy.com` iki denemede ve sandbox dışında da zaman aşımı verdi; veri inmedi.
+Kaynak **Maven MT5** M15'e çevrildi (projenin icra kaynağı): 8 minörün hepsi, her biri 95.000 bar, 2023-01-17 → 2026-11-11,
+tik hacmi. Günler broker sunucu saatine göre gruplanır (FX günü, UTC değil). Medyan bar spread'i (puan):
+EURGBP 5, AUDNZD 5, AUDCAD 7, EURNZD 16, GBPNZD 13, NZDJPY 3, EURJPY 5, GBPJPY 9 — ön-kayıttaki maliyet varsayımları
+bunlardan daha muhafazakâr olduğu için **değiştirilmedi**. Kural, eşik, hedef, karar kuralı aynı.
