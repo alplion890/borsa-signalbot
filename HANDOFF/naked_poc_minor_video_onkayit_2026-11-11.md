@@ -51,3 +51,26 @@ Kaynak **Maven MT5** M15'e çevrildi (projenin icra kaynağı): 8 minörün heps
 tik hacmi. Günler broker sunucu saatine göre gruplanır (FX günü, UTC değil). Medyan bar spread'i (puan):
 EURGBP 5, AUDNZD 5, AUDCAD 7, EURNZD 16, GBPNZD 13, NZDJPY 3, EURJPY 5, GBPJPY 9 — ön-kayıttaki maliyet varsayımları
 bunlardan daha muhafazakâr olduğu için **değiştirilmedi**. Kural, eşik, hedef, karar kuralı aynı.
+
+## Sonuç (koşum 2026-11-11, ön-kayıt 7a5ace6 + sapma notu e27f0ee sonrası)
+Kod: `strategy-lab/intraday/naked_poc_video_lab.py`; çıktı `outputs/intraday/naked_poc_video/result_2026-11-11.{csv,json}`.
+
+| parite | n | exp_R 1.5R | WR % | 2x | maliyetsiz | 1. yarı | 2. yarı |
+|---|---|---|---|---|---|---|---|
+| EURGBP | 326 | -0.420 | 39.3 | -0.819 | -0.021 | -0.407 | -0.432 |
+| AUDNZD | 315 | -0.453 | 38.4 | -0.840 | -0.065 | -0.491 | -0.416 |
+| AUDCAD | 311 | -0.286 | 40.5 | -0.573 | 0.000 | -0.336 | -0.238 |
+| EURNZD | 318 | -0.306 | 40.6 | -0.624 | +0.012 | -0.280 | -0.334 |
+| GBPNZD | 313 | -0.504 | 35.1 | -0.885 | -0.123 | -0.439 | -0.583 |
+| NZDJPY | 322 | -0.030 | 46.3 | -0.210 | +0.150 | +0.025 | -0.090 |
+| EURJPY | 319 | -0.063 | 45.1 | -0.246 | +0.119 | +0.088 | -0.213 |
+| GBPJPY | 298 | -0.343 | 38.9 | -0.650 | -0.036 | -0.312 | -0.377 |
+| **Birleşik** | **2522** | **-0.300** | **40.6** | -0.605 | **+0.005** | -0.267 | -0.333 |
+
+1.0R hedef: n=2565, exp_R -0.306, WR %49.6, maliyetsiz -0.001. Pozitif parite 0/8.
+Maliyetsiz WR %40.8 ≈ 1.5R başabaşı %40: seviye yazı-tura. Maliyet kaybı büyük çünkü stop dar (temas ucu + 0.1 ATR).
+İddia edilen WR %70–75; ölçülen %40.6.
+**KARAR: SEVİYE ELENDİ.** Katalogda `naked_poc_minor_video`. Footprint onayı ölçülemedi (kapalı program; yayında ATAS'ın
+geriye dönük veri vermediği söyleniyor, 02:20) — o kısım hakkında hüküm yok.
+Sınır: maliyetler ön-kayıt varsayımı (Maven medyan spread'inden yüksek); maliyetsiz sonuç ~0 olduğu için karar değişmez.
+Günlük POC tek bir "akümülasyon" tanımı; yayındaki göz kararı çok-TF seçimi mekanikleştirilemez.
