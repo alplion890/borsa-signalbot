@@ -74,3 +74,12 @@ Maliyetsiz WR %40.8 ≈ 1.5R başabaşı %40: seviye yazı-tura. Maliyet kaybı 
 geriye dönük veri vermediği söyleniyor, 02:20) — o kısım hakkında hüküm yok.
 Sınır: maliyetler ön-kayıt varsayımı (Maven medyan spread'inden yüksek); maliyetsiz sonuç ~0 olduğu için karar değişmez.
 Günlük POC tek bir "akümülasyon" tanımı; yayındaki göz kararı çok-TF seçimi mekanikleştirilemez.
+
+## Düzeltme: maliyet varsayımı fazla yüksekti (2026-11-12, teşhis — karar kuralı değişmez)
+Ön-kayıttaki yön başına maliyet, Maven M15 barlarının medyan spread'inin yarısından **3.3–7.6 kat** yüksek çıktı
+(ör. EURGBP 0.00010 vs 0.0000286; GBPJPY 0.00016 vs 0.0000211). Medyan stop fiyatın %0.06–0.14'ü olduğu için fark büyük.
+Gerçek medyan spread ile birleşik 1.5R: n=2522, **exp_R -0.058**, WR %40.8 (ön-kayıt maliyetiyle -0.300, maliyetsiz +0.005).
+Karar (ELENDİ) değişmez: gerçek spread'le de negatif, maliyetsiz ~0. Ama "-0.30R" kaybın büyüklüğünü abartıyor;
+gerçekçi aralık -0.06 (medyan spread, kaymasız, komisyonsuz) ile -0.30 arası. MT5 bar spread'i barın içindeki tipik/düşük
+spread'tir; giriş anı spread'i, kayma ve olası komisyon bunun üstüne eklenir.
+Ders: yeni enstrümanda maliyeti tahmin etme, önce icra kaynağından ölç.
