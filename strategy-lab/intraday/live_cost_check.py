@@ -22,9 +22,17 @@ ROOT = Path(__file__).resolve().parent.parent
 prof = pd.read_csv(ROOT / "outputs/intraday/mt5_bridge/reality_profile.csv").set_index("symbol")
 
 
+# Maven FX commission: $1 per lot per side (deal history 2026: EURUSD, USDJPY) ~ 1e-5 of notional.
+# Index CFDs showed zero commission (US30). XAU commission not observed -> treated as zero (unknown).
+FX_COMMISSION = 0.00001
+FX = {"EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "EURJPY", "GBPJPY"}
+
+
 def pts(sym):  # per-side cost in price points, measured at today's price
     r = prof.loc[sym]
-    return float((r.spread_one_side_now + r.slippage_p90) * r.price_now), float(r.spread_one_side_now * r.price_now)
+    comm = FX_COMMISSION if sym in FX else 0.0
+    return (float((r.spread_one_side_now + r.slippage_p90 + comm) * r.price_now),
+            float((r.spread_one_side_now + comm) * r.price_now))
 
 
 def zero(sym):
@@ -68,13 +76,19 @@ def main() -> None:
     rows.append(report("NQ_ORB adx28 (~CAND_RT_NQ_ORB)", "NASDAQ100", nq5, *so.build(nq5),
                        min_rr=so.min_rr, max_rr=so.max_rr, max_hold=so.max_hold))
 
+    for name, sym in (("EUR_LONDON", "EURUSD"), ("GBP_LONDON", "GBPUSD"), ("GOLD_ORB", "XAUUSD")):
+        d5 = clean(load_history(sym, "5m", start_year=2012))
+        sx = spec_by_name(name)
+        rows.append(report(f"{name} (emekli)", sym, d5, *sx.build(d5),
+                           min_rr=sx.min_rr, max_rr=sx.max_rr, max_hold=sx.max_hold))
+
     x1 = dx._resample_1h(clean(load_history("XAUUSD", "5m", start_year=2012)))
     rows.append(report("DONCHIAN XAU N20 1H", "XAUUSD", x1, *dx.build_signals(x1, dx.DonchianCase(20)),
                        min_rr=dx.RR - 0.01, max_rr=dx.RR, max_hold=dx.MAX_HOLD_BARS))
 
     pd.set_option("display.width", 250)
     print(pd.DataFrame(rows).round(3).T.to_string())
-    print({s: pts(s) for s in ("NASDAQ100", "XAUUSD")})
+    print({s: pts(s) for s in ("NASDAQ100", "XAUUSD", "EURUSD", "GBPUSD")})
 
 
 if __name__ == "__main__":
