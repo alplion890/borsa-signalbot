@@ -89,8 +89,13 @@ def _slippage(tk: pd.DataFrame, session: tuple[int, int]) -> dict:
     }
 
 
+# Profili tanimli olmayan semboller (or. FX minorleri): London+NY seansi, fiyat
+# seviyesi duzeltmesi yok (bugunku spread orani kullanilir).
+DEFAULT_TARGET = {"session": (7, 20), "backtest_price": None}
+
+
 def profile_symbol(key: str, days: int = 5) -> dict:
-    cfg = PROFILE_TARGETS[key]
+    cfg = PROFILE_TARGETS.get(key, DEFAULT_TARGET)
     meta = mt5_io.symbol_meta(key)
     tk = mt5_io.ticks(key, days=days)
 
@@ -142,7 +147,7 @@ def _verdict(assumed: float, real_central: float, real_high: float) -> str:
     return "IYIMSER (config gercegi hafife aliyor)"
 
 
-def main(days: int = 5) -> None:
+def main(days: int = 5, symbols: list[str] | None = None) -> None:
     print("\n" + "=" * 100)
     print("  MT5 REALITY PROFILER — config.cost_per_side vs gercek spread+slippage")
     print("=" * 100 + "\n")
@@ -150,7 +155,7 @@ def main(days: int = 5) -> None:
     with mt5_io.session():
         acc = mt5_io.account()
         print(f"  Hesap: {acc['login']} @ {acc['server']} | connected={acc['connected']}\n")
-        for key in PROFILE_TARGETS:
+        for key in symbols or list(PROFILE_TARGETS):
             try:
                 rows.append(profile_symbol(key, days=days))
                 print(f"  [OK] {key}")
@@ -182,5 +187,6 @@ if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--days", type=int, default=5)
+    p.add_argument("--symbols", nargs="*", help="Olculecek semboller (varsayilan: PROFILE_TARGETS)")
     args = p.parse_args()
-    main(args.days)
+    main(args.days, args.symbols)

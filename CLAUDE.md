@@ -100,3 +100,21 @@ metodoloji.
 - Hermes denetçi, yazar değil: her denetimde commit hash yazılır
   (`HANDOFF/` klasörü).
 - Telefondaki asistan için ayrıntılı kural seti: `TELEFON/SISTEM.md`.
+
+## Maliyet kuralı (bağlayıcı, 2026-11-12, kullanıcı kararı)
+
+Backtest maliyeti **tahmin edilmez, Maven'den ölçülür.** (Naked POC testinde
+tahmin gerçek spread'in 3–7 katı çıktı; sonuç -0.058R iken -0.300R raporlandı.)
+
+1. Ön-kayıttan önce: MT5 açık ve Maven'e girili iken
+   `python -m intraday.mt5_bridge.reality_profiler --symbols <SEMBOLLER>`
+   (`%USERPROFILE%\vectorbt-lab\.venv` Python'u). Tick'ten spread + stop kayması.
+   MT5 kapalıysa açmasını kullanıcıdan iste; araç terminali kendisi açmaz.
+2. Ön-kayda maliyet kaynağı ve tarihi yazılır (ölçüm dosyası/tarih).
+3. Her sonuç üç satır raporlanır: **maliyetsiz**, **ölçülmüş merkez**
+   (`real_cost_per_side_central`), **kötümser** (`real_cost_per_side_high` veya 2x).
+4. Ölçüm yapılamıyorsa (MT5 kapalı, sembol yok): bunu açıkça yaz, Maven M15
+   bar `spread` medyanının yarısını **alt sınır** say, sonucu "maliyet ölçülmedi"
+   etiketiyle ver. Elle uydurulmuş sayı kullanma.
+5. Config'teki `cost_per_side` ölçümle çelişiyorsa raporda ikisini yan yana göster;
+   config'i değiştirmek ayrı karar (kullanıcıda).
