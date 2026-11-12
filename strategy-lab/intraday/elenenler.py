@@ -365,7 +365,7 @@ KATALOG: tuple[Elenen, ...] = (
         baslik="Canli yayin 'prop firm sistemi': D-sekilli naked POC'a ilk temas, FX minor (seviye kismi)",
         iddia="Dokunulmamis POC'a ilk temas + sentetik footprint onayi; 1-1.5R'de WR %70-75 (sayi/rapor yok).",
         olcum="On-kayitli test, Maven MT5 M15 2023-01..2026-11, 8 minor: birlesik n=2522, 1.5R exp_R -0.300, "
-              "WR %40.6 (abartili varsayim maliyet); Maven gercek medyan spread ile -0.058; maliyetsiz +0.005 "
+              "WR %40.6 (abartili varsayim); Maven olculmus maliyetle (spread+kayma) -0.128; maliyetsiz +0.005 "
               "(WR %40.8 = basabas %40). 8/8 parite negatif, iki yari negatif.",
         neden="Seviye tek basina bilgi tasimiyor: maliyetsiz yazi-tura, dar stop yuzunden maliyet sonrasi agir kayip. "
               "Footprint onayi (kapali program, ATAS gecmis veri vermiyor) OLCULEMEDI -- bu madde onu kapsamaz.",

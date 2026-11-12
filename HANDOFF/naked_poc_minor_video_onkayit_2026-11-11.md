@@ -83,3 +83,13 @@ Karar (ELENDİ) değişmez: gerçek spread'le de negatif, maliyetsiz ~0. Ama "-0
 gerçekçi aralık -0.06 (medyan spread, kaymasız, komisyonsuz) ile -0.30 arası. MT5 bar spread'i barın içindeki tipik/düşük
 spread'tir; giriş anı spread'i, kayma ve olası komisyon bunun üstüne eklenir.
 Ders: yeni enstrümanda maliyeti tahmin etme, önce icra kaynağından ölç.
+
+## Ölçülmüş maliyetle nihai üç satır (2026-11-12, maliyet kuralı uygulandı)
+Kaynak: `reality_profiler --days 5` (Maven tick, 2026-11-12; spread + stop kayması p90). Minör yön başına merkez
+0.000054–0.000090, kötümser bant biraz üstü.
+| maliyet | n | exp_R 1.5R | WR % |
+|---|---|---|---|
+| maliyetsiz | 2522 | +0.005 | 40.8 |
+| **ölçülmüş merkez** | 2522 | **-0.128** | 40.8 |
+| kötümser (p90 spread) | 2522 | -0.158 | 40.8 |
+Önceki -0.058 (yalnız bar spread'i, kaymasız) alt sınırdı; -0.300 (tahmin) üst. Raporlanacak değer **-0.128**. Karar: ELENDİ.
