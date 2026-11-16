@@ -408,7 +408,8 @@ KATALOG: tuple[Elenen, ...] = (
         neden="Brut etki CFD spread'inden kucuk ve 2022 sonrasi kaybolmus; gunluk tek 30 dk islem maliyeti tasiyamiyor.",
         tarih="2026-11-17",
         kaynak="last30_momentum.py + HANDOFF/baltussen_son30dk_onkayit_2026-11-17.md",
-        kapsam="Yalniz rROD son-30dk kurali, gamma filtresi yok. Noise Band ayri kuraldir.",
+        kapsam="Yalniz rROD son-30dk kurali, gamma filtresi yok. Canli SWEEP_CORE_AVOID_MID_VWAP, "
+               "CAND_EMA12_FIRST5M ve Noise Band ayri kurallardir, bu madde onlari vetolamaz.",
         anahtarlar=("baltussen", "son 30 dakika", "last half hour", "intraday momentum", "rrod", "gamma hedging"),
     ),
 )
