@@ -465,6 +465,23 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("noise band sp500", "noise band us30", "noise band us2000", "noise band dow", "noise band russell",
                     "zarattini sp500", "beat the market spy"),
     ),
+    Elenen(
+        id="ema12_first5m_nq_14y",
+        statu="rejected",
+        baslik="NQ EMA12 ilk 5 dk (CAND_EMA12_FIRST5M) 14 yil olculmus maliyet",
+        iddia="NY 09:30 5m mumu EMA12 ustu/alti -> yon; stop mum araligi, hedef yok, 6 saat. Acilis momentumu.",
+        olcum="On-kayitli (5400829), Dukascopy 5m 2012-2026, n=3776, ayda ~21, WR %28. Maliyetsiz +0.138R CI>0; "
+              "olculmus merkez +0.036R CI [-0.028, +0.103] (2022+ +0.064); 2x maliyet -0.066R. En uzun kayip "
+              "serisi 20. Not: on-kayitli ham sonuc +0.020R, 7 sifir-aralikli veri artefakti mumu (-709R tek islem) "
+              "dahil; artefaktsiz satir yukarida.",
+        neden="Brut etki var ama medyan stop ~22 puan dar; olculmus spread islem basina ~0.09R yiyor, "
+              "geriye anlamli olmayan pozitif kaliyor. Forward n=7 +1.28R kanit degil.",
+        tarih="2026-11-17",
+        kaynak="ema12_first5m_14y.py + HANDOFF/ema12_ilk5dk_14y_onkayit_2026-11-17.md",
+        kapsam="Yalniz bu kuralin LIVE adayligi. Maven sessiz PAPER olcumu kullanici karariyla surer. "
+               "Canli SWEEP_CORE_AVOID_MID_VWAP ve NQ Noise Band bu maddenin disinda.",
+        anahtarlar=("ema12", "ilk 5 dakika", "first 5m", "first candle", "acilis mumu", "opening momentum"),
+    ),
 )
 
 
