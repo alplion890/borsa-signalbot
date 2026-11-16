@@ -482,6 +482,20 @@ KATALOG: tuple[Elenen, ...] = (
                "Canli SWEEP_CORE_AVOID_MID_VWAP ve NQ Noise Band bu maddenin disinda.",
         anahtarlar=("ema12", "ilk 5 dakika", "first 5m", "first candle", "acilis mumu", "opening momentum"),
     ),
+    Elenen(
+        id="btc_22utc_2h_long",
+        statu="rejected",
+        baslik="BTC 22:00 UTC 2 saat long (Quantpedia strateji sayfasi surumu)",
+        iddia="Padysak-Vojtko/Quantpedia: 22:00 UTC long, 2 saat; 2015-2022 yillik ~%33.",
+        olcum="On-kayitli (04d8fca), Binance 1h 2017-08..2026-11, n=3376, Maven BTCUSD olculmus maliyet. "
+              "Maliyetsiz +2.54bp/gun CI 0'i kapsiyor; olculmus -0.56bp, 2022-03+ -2.24bp.",
+        neden="Bir saat kaymis pencere (22-24 UTC) etkiyi tasimiyor; ayni on-kayittaki 21-23 UTC surumu ayri degerlendirildi.",
+        tarih="2026-11-17",
+        kaynak="fx_fix_btc_hours.py + HANDOFF/fx_fix_btc_saat_onkayit_2026-11-17.md",
+        kapsam="Yalniz 22:00-00:00 UTC penceresi. 21:00-23:00 UTC (H6), canli SWEEP_CORE_AVOID_MID_VWAP "
+               "ve NQ Noise Band bu maddenin disinda.",
+        anahtarlar=("btc 22 utc", "bitcoin 22:00", "btc gece saati 22"),
+    ),
 )
 
 

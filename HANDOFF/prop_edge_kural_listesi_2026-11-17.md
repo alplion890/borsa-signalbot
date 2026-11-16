@@ -38,3 +38,24 @@ bu listeye göre süzülür, test edildikten sonra `intraday.prop_fit` ile Maven
 | Noise Band | 2012+ | 1× | 65 / 1 / 87 | 18 / 9 |
 | EMA12 | 2022+ | %0.25 risk | 74 / 0 / 62 | 3 / 40 |
 Funded ilk payout varsayımı: ≥14 işlem günü (Maven resmi kuralı doğrulanacak). Kapalı bakiye yaklaşımı.
+
+## D. Kural-eleme raporu: edge mi zayıf, firma kuralı mı eliyor? (2022+, yıllık funded çekim, $5K, %80 pay)
+`prop_fit.yearly_ev`: funded hesapta 1 yıl boyunca her uygun döngüde kâr çekilir, ihlalde durur. "Sıfır edge" = aynı
+seri, ortalaması çıkarılmış (şans/opsiyon değeri). Edge katkısı = edge − sıfır.
+
+| Edge (boyut) | Maven BNPL funded | Tutarlılık yok | Statik %10, günlük %5, tutarlılık yok | Bağlayıcı kural |
+|---|---|---|---|---|
+| Sweep (%0.5 risk) | $29/yıl (katkı +29) | $219 (+128) | $219 (+128), ihlal %0 | **%20 tutarlılık** |
+| Noise Band (1×) | $126 (+101) | $323 (+150) | $323 (+150), ihlal %8 | **%20 tutarlılık** |
+| EMA12 (%0.25 risk) | $14 (+11), ihlal %42 | $238 (+86) | $250 (+82), ihlal %0.4 | **tutarlılık + kayan DD** |
+| BTC 21–23 (0.5×) | $100 (+12) | $219 (+35) | $219 (+35), ihlal %11 | tutarlılık; edge katkısı küçük |
+
+Okuma: Maven BNPL funded'daki %20 tutarlılık kuralı yıllık çekimi edge'e göre 2–17 kat düşürüyor. Kayan→statik DD
+ihlali azaltıyor, çekimi değiştirmiyor (bu boyutlarda). Tutarlılıksız firmada sıfır edge'in de çekimi var
+(opsiyon değeri); edge'in gerçek katkısı "katkı" sütunu.
+
+## E. Tutarlılık kuralı olmayan firma adayları (ajan, yalnız resmi sayfadan doğrulanan, 2026-11-17)
+- **E8 Pro:** statik %8 DD, günlük %2.5, tutarlılık yok, günlük kâr sınırı %2, endeks + BTC var. EA politikası bulunamadı.
+- **Maven Standard 2-step:** statik %8, günlük %4, tutarlılık yok (5K ~$21 kuponlu). Standard 1-step trailing %5.
+- FXIFY Instant Lite: %20 tutarlılık + EA yasak → uygun değil.
+- FTMO, The5ers, FundedNext, Funding Pips, Blue Guardian, Alpha Capital, Goat: resmi sayfa okunamadı (403/404) → tarayıcıyla elle doğrulanmalı.
