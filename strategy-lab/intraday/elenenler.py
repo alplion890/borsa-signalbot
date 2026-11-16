@@ -412,6 +412,23 @@ KATALOG: tuple[Elenen, ...] = (
                "CAND_EMA12_FIRST5M ve Noise Band ayri kurallardir, bu madde onlari vetolamaz.",
         anahtarlar=("baltussen", "son 30 dakika", "last half hour", "intraday momentum", "rrod", "gamma hedging"),
     ),
+    Elenen(
+        id="uydu_cushing_petrol",
+        statu="rejected",
+        baslik="Uydu (Sentinel-2) ile Cushing petrol stoku tahmini -> WTI Pzt-Crs islemi",
+        iddia="Video: yuzen cati golgesiyle Cushing stok yonu %63.48 isabet (512 hafta); EIA aciklamasindan once bilinir.",
+        olcum="On-kayitli kahin testi 2017-2026, EIA gercek verisi onceden biliniyormus gibi. Naif 'gecen haftanin "
+              "yonu' Cushing isabeti %65.9 (videodan yuksek). Kusursuz Cushing bilgisiyle bile WTI Pzt acilis->Crs "
+              "kapanis: n513 isabet %51.1, t +0.83 (2020 haric t +0.23). ABD toplam stok kahini t +2.81 ama "
+              "2022+ t +0.49, isabet %51.4.",
+        neden="Uydu tahmini naif kaliciliktan kotu; ustelik Cushing'i kusursuz bilmek bile fiyat yonu vermiyor. "
+              "Toplam stok bilgisi 2022 sonrasi fiyata yansimis gorunuyor. Petrol icin Maven maliyeti olculmedi.",
+        tarih="2026-11-17",
+        kaynak="HANDOFF/uydu_petrol_kahin_onkayit_2026-11-17.md + scratchpad oil_oracle.py (EIA LeafHandler + Yahoo CL=F)",
+        kapsam="Yalniz Cushing stok -> WTI haftalik yon. Canli SWEEP_CORE_AVOID_MID_VWAP ve diger uydu "
+               "kullanimlari (tarim NDVI, NO2, dogalgaz hava) bu maddenin disinda.",
+        anahtarlar=("uydu", "satellite", "sentinel", "cushing", "petrol stok", "eia", "alternatif veri"),
+    ),
 )
 
 
