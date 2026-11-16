@@ -18,3 +18,12 @@ Ek rapor (kriter değil): NQ Noise Band günlük getirisiyle korelasyon ve aynı
 oranı — yüksekse yeni enstrüman bağımsız edge değil, aynı bahsin kopyasıdır (slot kısıtı,
 [[Borsa - Portfoy Kompozisyonu ve Slot Kisiti]]).
 Geçen: Maven forward PAPER adayı. LIVE/risk kendiliğinden değişmez.
+
+## Veri notu (koşu sırasında, sonuç görülmeden)
+`config.py` US30/US2000 için `duka=""` diyor; Dukascopy'de karşılıkları var: `E_D&J-Ind` (US30),
+`USSC2000.IDX/USD` (US2000). Config değiştirilmeden yalnız araştırma cache'ine indirildi.
+US30 2012–2026 tam. US2000 verisi Dukascopy'de 2018-11'de başlıyor → IS dönemi 2018-11..2021.
+
+## Sonuç (2026-11-17)
+Üçü de GEÇMEDİ (ölçülmüş merkez): SP500 −0.63 bp/gün (maliyetsiz +2.37, NQ ile kor. 0.68),
+US30 −0.02 (maliyetsiz +0.90, CI 0'ı kapsıyor), US2000 −4.61 (maliyetsiz −2.09).

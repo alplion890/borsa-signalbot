@@ -447,6 +447,24 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("dogalgaz", "doğalgaz", "natgas", "natural gas", "hdd", "cdd", "derece gun", "depolama",
                     "ung", "hava durumu"),
     ),
+    Elenen(
+        id="noise_band_sp500_us30_us2000",
+        statu="rejected",
+        baslik="Noise Band (Zarattini 2024) NQ disi endeksler: SP500, US30, US2000",
+        iddia="NQ'da 14 yil gecen Noise Band kurali ayni parametrelerle diger ABD endekslerinde de calisir, islem sayisini artirir.",
+        olcum="On-kayitli (6537c91), degistirilmemis simulate, Dukascopy 5m, Maven olculmus maliyet, Bonferroni 3 test. "
+              "SP500 2012-26: maliyetsiz +2.37bp/gun CI>0 ama olculmus -0.63bp, NQ ile gunluk korelasyon 0.68, "
+              "ayni yon %92. US30 2012-26: maliyetsiz +0.90bp CI 0'i kapsiyor, olculmus -0.02bp, 2022+ -0.79. "
+              "US2000 2018-11..2026 (Dukascopy daha eskisi yok): maliyetsiz bile -2.09bp/gun.",
+        neden="Brut etki yalniz NQ ve SP500'de; SP500'de olculmus spread siliyor ve NQ'nun kopyasi. US30 zayif, "
+              "US2000 ters. Kural ek bagimsiz islem uretmiyor.",
+        tarih="2026-11-17",
+        kaynak="noise_band_cross.py + HANDOFF/noise_band_capraz_endeks_onkayit_2026-11-17.md",
+        kapsam="Yalniz SP500/US30/US2000 Noise Band. NQ Noise Band (14y gecti) ve canli "
+               "SWEEP_CORE_AVOID_MID_VWAP bu maddenin disinda.",
+        anahtarlar=("noise band sp500", "noise band us30", "noise band us2000", "noise band dow", "noise band russell",
+                    "zarattini sp500", "beat the market spy"),
+    ),
 )
 
 
