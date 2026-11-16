@@ -429,6 +429,24 @@ KATALOG: tuple[Elenen, ...] = (
                "kullanimlari (tarim NDVI, NO2, dogalgaz hava) bu maddenin disinda.",
         anahtarlar=("uydu", "satellite", "sentinel", "cushing", "petrol stok", "eia", "alternatif veri"),
     ),
+    Elenen(
+        id="dogalgaz_hava_depolama",
+        statu="rejected",
+        baslik="Dogalgaz: hava (HDD/CDD) ve depolama surprizi -> UNG/NG haftalik yon",
+        iddia="Hava gaz talebini belirler; hava veya depolama onceden bilinirse Persembe EIA raporu oncesi yon alinir.",
+        olcum="On-kayitli kahin testi 2011-2026, UNG. Kusursuz haftalik hava bilgisi: t -0.45, isabet %49.1. "
+              "Kusursuz depolama surprizi (5 yil ort. gore): +46.7bp/hafta t +2.33 (2022+ t +1.05); isabet naif "
+              "duzeye (%64.6) inince ort +13.9bp, 5. yuzdelik -18.4bp. Gercek naif kalicilik (H3): t +0.62, "
+              "2022+ ~0, 5bp maliyette ~0.",
+        neden="Hava fiyata yansimis; depolama bilgisi yalniz ~%90+ isaret isabetiyle anlamli olur. Yeralti "
+              "depolamasi uydudan gorulmez, ucretsiz yoldan bu isabet saglanamiyor. Maliyet olculmedi.",
+        tarih="2026-11-17",
+        kaynak="HANDOFF/dogalgaz_hava_kahin_onkayit_2026-11-17.md + HANDOFF/dogalgaz_hava_ng_oracle.py",
+        kapsam="Yalniz haftalik hava/depolama -> UNG/NG yon. Canli SWEEP_CORE_AVOID_MID_VWAP ve boru hatti "
+               "akis verisiyle (EBB) depolama tahmini bu maddenin disinda.",
+        anahtarlar=("dogalgaz", "doğalgaz", "natgas", "natural gas", "hdd", "cdd", "derece gun", "depolama",
+                    "ung", "hava durumu"),
+    ),
 )
 
 
