@@ -397,6 +397,20 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("meta-label", "meta label", "rejim filtresi", "testere", "volatil", "hacimli mum",
                     "haber gunu", "adx filtresi"),
     ),
+    Elenen(
+        id="baltussen_last30_momentum",
+        statu="rejected",
+        baslik="Baltussen et al. 2021 son-30-dakika momentumu (rROD) NQ ve XAU",
+        iddia="JFE 2021: onceki kapanistan T-30dk getirisinin isaretiyle son 30 dk; 1974-2020 vadelilerde Sharpe 0.87-1.73.",
+        olcum="On-kayitli, Dukascopy 5m 2012-2026, Maven olculmus maliyet. NQ n=3639: maliyetsiz +0.75bp "
+              "(2022+ -0.39), olculmus -1.46bp/islem, yillik -%3.7. XAU n=3719: maliyetsiz +0.56bp, olculmus "
+              "-2.14bp, yillik -%5.4. Iki enstruman da 2022+ maliyetsiz bile negatif.",
+        neden="Brut etki CFD spread'inden kucuk ve 2022 sonrasi kaybolmus; gunluk tek 30 dk islem maliyeti tasiyamiyor.",
+        tarih="2026-11-17",
+        kaynak="last30_momentum.py + HANDOFF/baltussen_son30dk_onkayit_2026-11-17.md",
+        kapsam="Yalniz rROD son-30dk kurali, gamma filtresi yok. Noise Band ayri kuraldir.",
+        anahtarlar=("baltussen", "son 30 dakika", "last half hour", "intraday momentum", "rrod", "gamma hedging"),
+    ),
 )
 
 
