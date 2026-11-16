@@ -377,6 +377,26 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("poc", "point of control", "naked poc", "volume profile", "hacim profili",
                     "minor", "minör", "ziya", "footprint", "sentetik"),
     ),
+    Elenen(
+        id="meta_label_regime_filter",
+        statu="rejected",
+        baslik="Meta-label: kaybeden sinyali giris anindaki piyasa kosuluyla ayiklamak",
+        iddia="Edge gecmiste hangi kosulda (oynaklik, hacimli mum, testere, haber gunu, trend) kaybettiyse "
+              "o kosulda sinyali gecersek zayif/negatif edge pozitife doner.",
+        olcum="On-kayitli, IS 2012-2021 / OOS 2022+, Maven olculmus maliyet. 5 modul x 9 ozellik (atr_rank, "
+              "adx, eff20, rel_vol, bar_atr, event_day, hour, gap, with_trend) tek-kural + 5 lojistik model "
+              "= 50 hipotez: 0 gecti (Holm p hepsi >=0.55). Hicbir kural IS'te keep exp_R'yi pozitife "
+              "cevirmedi. En yakin: SWEEP 'en guclu ADX tercilinde gecme' OOS +1.09 vs +0.72, ham p 0.012, "
+              "Holm 0.55.",
+        neden="Giris aninda bilinen bu kosullar kaybeden ve kazanan sinyalleri ayirmiyor; ayni grafik "
+              "bilgisiyle goz filtresinin de ayirmasi icin dayanak yok. Plansiz haber (savas vb.) olculemedi.",
+        tarih="2026-11-16",
+        kaynak="meta_label_lab.py + HANDOFF/meta_label_onkayit_2026-11-16.md",
+        kapsam="Yalniz bu 9 ozellikle sinyal ayiklama. Modullerin kendisini vetolamaz; SWEEP-ADX ipucu "
+               "yeni on-kayitla tek hipotez olarak sinanabilir.",
+        anahtarlar=("meta-label", "meta label", "rejim filtresi", "testere", "volatil", "hacimli mum",
+                    "haber gunu", "adx filtresi"),
+    ),
 )
 
 
