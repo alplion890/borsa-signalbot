@@ -34,3 +34,11 @@ Ortalama > 0, isabet > %50, <2022 ve 2022+ ayrı ayrı > 0, t > 2.
 Kâhin geçmezse gerçek tahmin de geçemez → veri hattı kurulmaz.
 Geçerse: isabeti naif baz oran düzeyine indirip (rastgele işaret çevirme, 1000 tekrar)
 ortalama getiri raporlanır; asıl soru tahminin naif tahminden iyi olup olamayacağıdır.
+
+## Ek ön-kayıt (H1 sonucu GÖRÜLDÜKTEN sonra, H3 sonucu görülmeden) — 2026-11-17
+H1 kâhini nominal geçti (UNG t +2.33; 2022+ t +1.05). H2 hava kâhini geçmedi.
+- Adım 2 (planlandığı gibi): H1 isabeti naif baz orana (%64.6) indirilir, 1000 tekrar.
+- **H3 (gerçek, kâhinsiz):** Pazartesi bilinen bir önceki haftanın sürpriz işareti bu haftanın
+  tahmini sayılır (sürpriz kalıcılığı). Aynı giriş/çıkış, UNG, maliyetsiz + 5 bp.
+  Geçme: H1 ile aynı kriterler. Uyarı: H1 görüldükten sonra eklendi → seçim riski; geçse bile
+  yalnız forward PAPER/ek doğrulama adayı.
