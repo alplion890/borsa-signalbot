@@ -104,8 +104,9 @@ metodoloji.
 ## Para/risk kodu test kuralı (bağlayıcı, 2026-11-17)
 
 Örnek testler yetmez: challenge drawdown limiti 2 katına çıkınca 738 testin
-hiçbiri fark etmedi. Bu yüzden `prop_fit.py` (veya bakiye, drawdown, çekim,
-lot, PnL hesaplayan herhangi bir kod) değişince:
+hiçbiri fark etmedi. Bu yüzden `prop_fit.py`, `prop_equity.py`,
+`portfolio_ab.py` (veya bakiye, drawdown, çekim, lot, PnL hesaplayan herhangi
+bir kod) değişince — yeni para dosyası eklenirse `mutation_check.GUARDS`'a da ekle:
 
 1. Değişmez kuralı property test olarak yaz (`hypothesis`,
    `intraday/test_prop_fit_properties.py` örnek). Kural örnekleri: kazanılandan
