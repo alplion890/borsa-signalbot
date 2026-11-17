@@ -76,3 +76,34 @@ anı (MAE/MFE) eklendi. Funded ihlal %, Maven BNPL kuralları:
 Challenge geçme oranları neredeyse değişmiyor (statik %10 geniş). BTC tek başına equity bazında tehlikeli:
 en kötü gün içi an 1×'te −%15.4 (NB en kötü −%3.2). Kombine portföyde BTC payı küçük olduğu için sağlam kalıyor.
 Tutarlılıksız + statik %10 / günlük %5 kuralında kombine portföy yıllık çekim $347 (2012+), $257 (2022+), ihlal ≤%5.
+
+## G. Firma kuralları — tarayıcıyla resmi sayfadan doğrulama (2026-11-17)
+
+### Maven BNPL (maventrading.com/faqs, BNPL bölümü)
+| Kural | Resmi metin | Modelde (`prop_fit.Rules`) | Durum |
+|---|---|---|---|
+| Faz 1 DD | %10 **statik** (başlangıç bakiyesinden, sabit) | `challenge_trailing=False` | ✅ çelişki çözüldü: statik |
+| Faz 1 hedef | %4, günlük limit yok, tutarlılık yok | aynı | ✅ |
+| Funded günlük | %4, equity bazlı, 00:00 UTC'de equity/bakiyeden **büyüğüne** göre sıfırlanır | %4 kapalı gün P&L (prop_equity: gün içi) | ✅ |
+| Funded maks DD | %8 trailing, **açık pozisyon dahil running equity** zirvesi | `prop_fit` kapalı bakiye zirvesi; `prop_equity` gün içi high | prop_fit iyimser, prop_equity yakın |
+| **Çekim sonrası DD** | **İlk çekimden sonra DD tabanı başlangıç bakiyesine kilitlenir** (örnek: $10K→$10,800, $600 çek → tampon $200) | Her çekimde bal=0, peak=0, %8 tampon yeniden | ❌ **model iyimser**: tüm kâr çekilirse tampon 0 |
+| Tutarlılık | Funded %20; en iyi gün ≤ döngü toplam kârının %20'si (kayıp günler dahil), her payout'ta sıfırlanır | %20 | ✅ |
+| Payout bekleme | **Sabit bekleme yok**; %20 tutarlılık + diğer şartlar sağlanınca | `first_payout_min_days=10` (Standard'ın kuralı) | ❌ model kötümser (BNPL'de 10 gün yok) |
+| Min çekim | $20 (pay öncesi kâr) | 0.004 × $5K | ✅ |
+| Pay | %80, add-on yok | %80 | ✅ |
+| Haber | BNPL funded'da haber işlemi **tamamen serbest** | — | Önceki not "kırmızı haber ±2dk yasak" Standard/OMO içindir |
+| Kalan ücret | Kârdan düşülmez, ayrı ödeme; değerlendirme kârı çekilemez | — | — |
+| İnaktivite | 30 günde ≥1 işlem | — | — |
+| Stil yasakları | İşlemlerin >%50'si <60 sn tutulursa "aşırı scalping"; all-in; gamifying | — | NB/BTC/Sweep etkilenmez |
+
+### Diğer firmalar (resmi sayfa)
+| Firma / program | Maks DD | Günlük | Tutarlılık | Not |
+|---|---|---|---|---|
+| Maven Standard 2-Step | %8 statik | %4 equity | Yok | İlk payout ilk funded işlemden 10 iş günü sonra; kırmızı haber ±2 dk yasak |
+| FTMO 2-Step | %10 **statik** (başlangıç sermayesinden) | %5 (başlangıç sermayesinin; 00:00 CE(S)T bakiyesinden) | 2-Step bölümünde yok | Hedef %10 / %5. 1-Step farklı: günlük %3, %10 **gün sonu trailing**, Best Day ≤ %50 |
+| The5ers High Stakes | %10 (tipi sayfada yazmıyor) | %5 | Sayfada yok | Min 3 kârlı gün (≥%0.5); haber ±2 dk yasak; kripto + endeks var; MT5 |
+| FundedNext Stellar 2-Step | %10 **statik** (taban başlangıç bakiyesi, sabit) | %5 başlangıç bakiyesinin | Şartnamede yalnız "Express + Consistency" seçeneğinde | Sunucu GMT+2/+3 |
+| Funding Pips 2-Step | %12 (tipi bulunamadı) | %4 | Bulunamadı | Yardım merkezinde yalnız "Legacy Rules" var → **doğrulanmadı** |
+
+Doğrulanmayan: EA politikası (FTMO, The5ers, FundedNext), The5ers DD tipi, Funding Pips DD tipi/tutarlılık,
+her firmada NQ/BTC sembolü ve spread'i (maliyet kuralı gereği ölçülmeden backtest'e girmez).

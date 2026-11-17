@@ -36,7 +36,7 @@ class Rules:
     min_trade_days: int = 5
     first_payout_min_days: int = 10   # Maven FAQ: first payout 10 business days after first funded trade
     horizon_days: int = 252
-    challenge_trailing: bool = False  # Maven site table says BNPL phase-1 10% "trailing"; vault says static
+    challenge_trailing: bool = False  # Maven BNPL FAQ (verified 2026-11-17): phase-1 10% static
     funded_trailing: bool = True
     min_payout_profit: float = 0.004  # Maven minimum withdrawal $20 on $5K
     account_usd: float = 5000.0
