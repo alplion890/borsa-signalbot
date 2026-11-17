@@ -60,3 +60,30 @@ equity bazlı `prop_equity` simülasyonunda (NB 0.75× ile portföy; A4 ölçeğ
 std'si H6 0.35× ile eşit olacak kaldıraç; kural seti `maven_bnpl`, 2022+) funded ihlal oranı
 H6'dan yüksek değilse H6'nın yerine aday olur. Aksi halde H6 kalır. İkisi birlikte
 portföye eklenmez (aynı etki, örtüşen bacak).
+
+---
+## SONUÇLAR (ön-kayıt fe57dc4 sonrası, 2026-11-18)
+Kod: `strategy-lab/intraday/kaynak_adaylari.py`; çıktı `outputs/intraday/kaynak_adaylari/A1..A4.json`.
+Maliyet: Maven merkez (reality_profile.csv). Swap hariç.
+
+| Aday | Maliyetsiz | Ölçülmüş merkez | 2× | Alt dönemler (merkez) | Sonuç |
+|---|---|---|---|---|---|
+| A1 UK100 | +0.03 bp | −1.45 bp | −2.93 | −1.23 / −1.86 | GEÇMEDİ |
+| A1 FRA40 | −0.26 | −2.31 | −4.36 | −2.30 / −2.34 | GEÇMEDİ |
+| A1 JAP225 | +0.10 | −3.05 | −6.19 | −2.60 / −3.62 | GEÇMEDİ |
+| A1 GER40 | +0.70 (CI [−0.22, 1.57]) | ölçülmedi | — | maliyetsiz 2022+ +0.10 | maliyet ölçülmedi; 2022+ her pozitif maliyette < 0 → şart (2) sağlanamaz |
+| A2 SP500 OE haftası | +8.9 bp/hafta | +5.7 | +2.5 | +15.8 / −14.6 | GEÇMEDİ (OE − diğer = −20.5 bp) |
+| A2 NQ | +16.0 | +13.8 | +11.6 | +31.8 / −22.4 | GEÇMEDİ (OE − diğer = −24.1 bp) |
+| A3 SP500 TOM+1 | +10.8 | +7.6, CI [−9.7, 24.9] | +4.4 | +9.5 / +3.8 | GEÇMEDİ (CI) — TOM − diğer = +5.8 bp |
+| A3 NQ | +16.2 | +14.0, CI [−7.1, 35.5] | +11.8 | +18.9 / +4.2 | GEÇMEDİ (CI) — TOM − diğer = +9.3 bp |
+| A4 BTC gece | +18.5 | +15.4, CI [0.7, 30.5] | +12.3 | +23.9 / +7.8 | İSTATİSTİK GEÇTİ, İKAME ŞARTI GEÇMEDİ |
+
+A4 ikame şartı (NB 0.75× + BTC, Maven BNPL, 2022+, equity):
+- H6 21–23 UTC 0.35×: çekim $99/yıl, funded ihlal %33, challenge %65 geç.
+- A4 0.101× (eşit std): çekim $154/yıl, funded ihlal **%67**, challenge %72 geç / %1.6 patla.
+- Sharpe 2022+ (işlem başı) A4 0.030 > H6 0.016; korelasyon 0.25; A4 gün içi en kötü −%37 (1×).
+- Karar (ön-kayıt kuralı): ihlal H6'dan yüksek → H6 kalır. A4 `not_adopted` (veto değil).
+- Bilgi (ön-kayıtta şart değildi): tutarlılıksız statik %10 kural setinde A4 $362/yıl ihlal %5.4; H6 $265 ihlal %0.
+- Gündüz 10–16 ET aynı BTC saatleri: 2022+ −0.81 bp/saat log → etki gece/gündüz ayrımı, salt BTC yükselişi değil.
+
+Ek: Gao ilk30→son30 kuralı NQ/XAU/EUR/GBP'de 2026-09-21'de de negatifti; ikisi `elenenler` `gao_itsm_first30_last30` maddesinde birleştirildi.

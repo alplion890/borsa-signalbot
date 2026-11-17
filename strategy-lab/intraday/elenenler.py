@@ -512,6 +512,70 @@ KATALOG: tuple[Elenen, ...] = (
                "ve BTC 21-23 UTC bu maddenin disinda.",
         anahtarlar=("fx fix", "wm reuters", "london fix", "tokyo fix", "fix reversal", "usd fix"),
     ),
+    Elenen(
+        id="gao_itsm_first30_last30",
+        statu="rejected",
+        baslik="Gun ici zaman serisi momentumu: ilk 30 dk yonu -> son 30 dk (Gao-Han-Li-Zhou), 8 piyasa",
+        iddia="Gao-Han-Li-Zhou JFE 2018 + Li-Sakkas-Urquhart JFM 2022 (16 gelismis piyasa): ilk yarim saat "
+              "getirisi son yarim saati ongorur.",
+        olcum="2026-09-21 (intraday_momentum_research_lab): NQ -0.038R, Gold -0.072R, EUR -0.121R, GBP -0.172R, "
+              "tum varyantlar negatif. 2026-11-18 on-kayitli (fe57dc4) ABD disi endeksler, Dukascopy 5m 2012-2026: "
+              "maliyetsiz UK100 +0.03bp, FRA40 -0.26bp, JAP225 +0.10bp, GER40 +0.70bp (2022+ +0.10bp); olculmus "
+              "UK100 -1.45, FRA40 -2.31, JAP225 -3.05bp. GER40 maliyeti olculmedi.",
+        neden="Brut etki 8 piyasanin hicbirinde CFD maliyetini karsilamiyor; GER40 2022+ brut +0.1bp her pozitif "
+              "maliyette negatif.",
+        tarih="2026-11-18",
+        kaynak="kaynak_adaylari.py (A1) + intraday_momentum_research_lab.py + HANDOFF/kaynak_adaylari_onkayit_2026-11-18.md",
+        kapsam="Yalniz ilk-30dk isaretiyle son-30dk kurali. Baltussen rROD ayri madde. Canli SWEEP_CORE_AVOID_MID_VWAP, "
+               "NQ Noise Band ve CAND_EMA12_FIRST5M bu maddenin disinda.",
+        anahtarlar=("itsm", "intraday time series momentum", "ilk 30", "first half hour", "gao han",
+                    "son yarim saat", "last half hour"),
+    ),
+    Elenen(
+        id="opex_week_long",
+        statu="rejected",
+        baslik="Opsiyon vadesi haftasi long (3. Cuma haftasi), SP500 ve NQ",
+        iddia="Stivers-Sun JBF 2013: OE haftasi getirisi diger haftalardan yuksek (delta-hedge geri sarma).",
+        olcum="On-kayitli (fe57dc4), 2012-2026, n=178 hafta. Olculmus: SP500 +5.7bp/hafta, NQ +13.8bp; AMA diger "
+              "haftalar SP500 +29.5, NQ +40.2bp -> OE haftasi farki -20.5 / -24.1bp. 2022+ SP500 -14.6, NQ -22.4bp.",
+        neden="OE haftasi diger haftalardan KOTU; gorunen pozitiflik endeks drift'i (baz oran). 2022+ negatif.",
+        tarih="2026-11-18",
+        kaynak="kaynak_adaylari.py (A2) + HANDOFF/kaynak_adaylari_onkayit_2026-11-18.md",
+        kapsam="Yalniz takvim kurali. Canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band ve CAND_EMA12_FIRST5M bu maddenin disinda.",
+        anahtarlar=("opex", "option expiration", "opsiyon vadesi", "third friday", "3. cuma", "expiration week"),
+    ),
+    Elenen(
+        id="turn_of_month_plus1",
+        statu="rejected",
+        baslik="Ay donumu +1 gunu: ayin son gunu kapanis -> ertesi gun kapanis long, SP500 ve NQ",
+        iddia="Carchano-Pardo 2011: S&P futures'ta maliyetten sonra kalici tek takvim etkisi.",
+        olcum="On-kayitli (fe57dc4), 2012-2026, n=178. Olculmus SP500 +7.6bp (diger gunler +5.0), NQ +14.0bp "
+              "(diger +7.0); Bonferroni CI SP500 [-9.7, 24.9], NQ [-7.1, 35.5]. 2022+ SP500 +3.8, NQ +4.2bp.",
+        neden="Isaret dogru ve baz orandan iyi ama 178 islemle sifirdan ayrilmiyor; ayda 1 islem kaniti "
+              "yillarca hizlandirmaz.",
+        tarih="2026-11-18",
+        kaynak="kaynak_adaylari.py (A3) + HANDOFF/kaynak_adaylari_onkayit_2026-11-18.md",
+        kapsam="Yalniz takvim kurali. Canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band ve CAND_EMA12_FIRST5M bu maddenin disinda.",
+        anahtarlar=("turn of month", "turn-of-month", "ay donumu", "tom", "month end", "ay sonu"),
+    ),
+    Elenen(
+        id="btc_nyse_overnight_long",
+        statu="not_adopted",
+        baslik="BTC NYSE kapaliyken long (16:00 ET -> sonraki NYSE gunu 10:00 ET)",
+        iddia="Quantpedia (Dujava 2024): 2021 sonrasi BTC getirisi gece/hafta sonu seanslarinda.",
+        olcum="On-kayitli (fe57dc4), Binance 1h 2017-08..2026-11, n=2319. Olculmus +15.4bp/islem, CI [0.7, 30.5], "
+              "2017-21 +23.9 / 2022+ +7.8, 2x +12.3 -> istatistik GECTI. Gunduz 10-16 ET ayni donem negatif. "
+              "Ikame sarti: NB0.75 + esit std olcek (0.101x) Maven BNPL 2022+ equity: ihlal %67 (H6 ile %33), "
+              "cekim $154 vs $99. Gun ici en kotu -%37 (1x). Swap olculmedi.",
+        neden="On-kayitli ikame sarti saglanmadi (Maven funded ihlal H6'nin iki kati); H6 21-23 UTC ile ayni etki "
+              "(korelasyon 0.25), ikisi birlikte eklenmez. Tutarliliksiz statik %10 kuralda $362/yil, ihlal %5.4 "
+              "(on-kayitta karar sarti degildi).",
+        tarih="2026-11-18",
+        kaynak="kaynak_adaylari.py (A4) + HANDOFF/kaynak_adaylari_onkayit_2026-11-18.md",
+        kapsam="Veto DEGIL. Canli/aday BTC 21-23 UTC (H6) bu maddenin disinda; firma degisirse yeniden degerlendirilebilir "
+               "(once swap olcumu).",
+        anahtarlar=("btc overnight", "btc gece", "bitcoin overnight", "nyse kapali", "weekend btc"),
+    ),
 )
 
 
