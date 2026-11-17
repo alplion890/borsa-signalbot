@@ -27,3 +27,8 @@ FX sepet maliyeti = çiftlerin ölçülmüş maliyet ortalaması. BTC = BTCUSDT 
 2. FX: 2012–2021 ve 2022+ ayrı ayrı > 0 · BTC: 2017-08..2022-02 ve 2022-03+ ayrı ayrı > 0
 3. 2× maliyette ortalama > 0
 Geçen → `prop_fit` (Maven challenge + funded tutarlılık) ve Maven forward PAPER adayı.
+
+## Sonuç (2026-11-18)
+- H1–H4 FX fix: hepsi GEÇMEDİ. Londra brüt ~0; Tokyo brüt +0.64/+0.55 bp/gün (CI>0) ama ölçülmüş −0.10/−0.18.
+- H5 BTC 22–24 UTC: GEÇMEDİ (ölçülmüş −0.56 bp).
+- **H6 BTC 21–23 UTC: GEÇTİ** — ölçülmüş +5.42 bp/gün, Bonferroni CI [1.29, 9.67], ≤2022-02 +9.00, 2022-03+ +1.97, 2× +2.32.

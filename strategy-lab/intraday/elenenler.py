@@ -496,6 +496,22 @@ KATALOG: tuple[Elenen, ...] = (
                "ve NQ Noise Band bu maddenin disinda.",
         anahtarlar=("btc 22 utc", "bitcoin 22:00", "btc gece saati 22"),
     ),
+    Elenen(
+        id="fx_fix_reversal_london_tokyo",
+        statu="rejected",
+        baslik="FX fix donusu: Londra 16:00 ve Tokyo 09:55 oncesi USD long / sonrasi USD short (6 parite sepeti)",
+        iddia="Krohn-Mueller-Whelan JF 2024: dolar fix oncesi yukselir, sonrasi duser.",
+        olcum="On-kayitli (04d8fca), Dukascopy 5m 2012-2026, n~3860 gun, Maven olculmus maliyet. Londra: maliyetsiz "
+              "+0.02/+0.03bp (etki yok), olculmus -0.71bp. Tokyo: maliyetsiz +0.64/+0.55bp CI>0 (etki gercek), "
+              "olculmus -0.10/-0.18bp, 2x negatif.",
+        neden="Londra 16:00'da 1 saatlik pencerede etki yok; Tokyo'da brut etki var ama sepet maliyeti (~0.7bp gidis-donus) "
+              "etkiden buyuk.",
+        tarih="2026-11-18",
+        kaynak="fx_fix_btc_hours.py + HANDOFF/fx_fix_btc_saat_onkayit_2026-11-17.md",
+        kapsam="Yalniz 1 saatlik pre/post pencereler, 6 USD paritesi. Canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band "
+               "ve BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("fx fix", "wm reuters", "london fix", "tokyo fix", "fix reversal", "usd fix"),
+    ),
 )
 
 
