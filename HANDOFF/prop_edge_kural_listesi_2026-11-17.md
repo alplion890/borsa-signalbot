@@ -59,3 +59,20 @@ ihlali azaltıyor, çekimi değiştirmiyor (bu boyutlarda). Tutarlılıksız fir
 - **Maven Standard 2-step:** statik %8, günlük %4, tutarlılık yok (5K ~$21 kuponlu). Standard 1-step trailing %5.
 - FXIFY Instant Lite: %20 tutarlılık + EA yasak → uygun değil.
 - FTMO, The5ers, FundedNext, Funding Pips, Blue Guardian, Alpha Capital, Goat: resmi sayfa okunamadı (403/404) → tarayıcıyla elle doğrulanmalı.
+
+## F. Equity (açık pozisyon dahil) simülasyonu — `intraday.prop_equity` (2026-11-18)
+Maven günlük limiti ve kayan DD'yi equity üzerinden ölçüyor. NQ 5m ve BTC 1h barlarıyla her günün en kötü/en iyi
+anı (MAE/MFE) eklendi. Funded ihlal %, Maven BNPL kuralları:
+
+| Portföy | dönem | kapanmış bakiye | equity |
+|---|---|---|---|
+| Noise Band 1× | 2012+ | %8.8 | %13.2 |
+| Noise Band 1× | 2022+ | %17.2 | %22.5 |
+| BTC 21–23 0.5× | 2012+ | %29.8 | **%53.6** |
+| BTC 21–23 0.5× | 2022+ | %19.4 | **%64.6** |
+| NB 0.75× + BTC 0.35× | 2012+ | %4.3 | %8.1 |
+| NB 0.75× + BTC 0.35× | 2022+ | %0.0 | %0.0 |
+
+Challenge geçme oranları neredeyse değişmiyor (statik %10 geniş). BTC tek başına equity bazında tehlikeli:
+en kötü gün içi an 1×'te −%15.4 (NB en kötü −%3.2). Kombine portföyde BTC payı küçük olduğu için sağlam kalıyor.
+Tutarlılıksız + statik %10 / günlük %5 kuralında kombine portföy yıllık çekim $347 (2012+), $257 (2022+), ihlal ≤%5.
