@@ -560,7 +560,7 @@ KATALOG: tuple[Elenen, ...] = (
     ),
     Elenen(
         id="btc_nyse_overnight_long",
-        statu="not_adopted",
+        statu="rejected",
         baslik="BTC NYSE kapaliyken long (16:00 ET -> sonraki NYSE gunu 10:00 ET)",
         iddia="Quantpedia (Dujava 2024): 2021 sonrasi BTC getirisi gece/hafta sonu seanslarinda.",
         olcum="On-kayitli (fe57dc4), Binance 1h 2017-08..2026-11, n=2319. Olculmus +15.4bp/islem, CI [0.7, 30.5], "
@@ -568,12 +568,12 @@ KATALOG: tuple[Elenen, ...] = (
               "Ikame sarti: NB0.75 + esit std olcek (0.101x) Maven BNPL 2022+ equity: ihlal %67 (H6 ile %33), "
               "cekim $154 vs $99. Gun ici en kotu -%37 (1x). Swap olculmedi.",
         neden="On-kayitli ikame sarti saglanmadi (Maven funded ihlal H6'nin iki kati); H6 21-23 UTC ile ayni etki "
-              "(korelasyon 0.25), ikisi birlikte eklenmez. Tutarliliksiz statik %10 kuralda $362/yil, ihlal %5.4 "
-              "(on-kayitta karar sarti degildi).",
+              "(korelasyon 0.25). Maven swap olcumu (2026-11-18, MT5): BTCUSD swap_mode 6 = -%30/yil, her 00:00 UTC "
+              "rollover'da; ortalama 1.45 rollover/islem -> swapli net +3.3bp, CI [-11.4, 18.4], 2022+ -4.4bp: GECMEZ.",
         tarih="2026-11-18",
         kaynak="kaynak_adaylari.py (A4) + HANDOFF/kaynak_adaylari_onkayit_2026-11-18.md",
-        kapsam="Veto DEGIL. Canli/aday BTC 21-23 UTC (H6) bu maddenin disinda; firma degisirse yeniden degerlendirilebilir "
-               "(once swap olcumu).",
+        kapsam="Yalniz gece/hafta sonu tasiyan BTC long. BTC 21-23 UTC (H6) 00:00 UTC rollover'i gecmedigi icin bu "
+               "maddenin disinda. Kripto swap'i belirgin dusuk bir firmada yeniden olculebilir.",
         anahtarlar=("btc overnight", "btc gece", "bitcoin overnight", "nyse kapali", "weekend btc"),
     ),
 )

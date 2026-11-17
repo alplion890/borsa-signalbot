@@ -87,3 +87,24 @@ A4 ikame şartı (NB 0.75× + BTC, Maven BNPL, 2022+, equity):
 - Gündüz 10–16 ET aynı BTC saatleri: 2022+ −0.81 bp/saat log → etki gece/gündüz ayrımı, salt BTC yükselişi değil.
 
 Ek: Gao ilk30→son30 kuralı NQ/XAU/EUR/GBP'de 2026-09-21'de de negatifti; ikisi `elenenler` `gao_itsm_first30_last30` maddesinde birleştirildi.
+
+## Ek: Maven swap ölçümü ve A4 kuyruk dağılımı (2026-11-18, MT5 MavenTrade-Server)
+Kaynak: `MetaTrader5.symbol_info` (salt okuma). Sunucu saati = UTC (tick zamanı UTC ile aynı) → rollover 00:00 UTC.
+
+| Sembol | swap_mode | Long | Short | Üçlü gün | Gece başı (oran, bugünkü fiyat) |
+|---|---|---|---|---|---|
+| BTCUSD | 6 (açılış fiyatına yıllık faiz) | −%30/yıl | −%30/yıl | 7 (her gün) | −8.33 bp |
+| US100 | 1 (puan) | −319.5 puan | +80.7 | Cuma | long −1.18 bp, short +0.30 bp |
+| XAUUSD | 1 | −45.3 | +25.2 | 7 | long −1.18 bp, short +0.66 bp |
+| US500 | 1 | −9.36 | +2.37 | Cuma | küçük |
+| GER30 | 1 | −26.5 | −1.27 | Cuma | — |
+
+- A4 BTC gece: ortalama 1.45 rollover/işlem (1: 1812, 3: 419 hafta sonu, 4: 63, 2: 25). Swaplı merkez net
+  **+3.3 bp, CI [−11.4, 18.4], 2017–21 +11.8 / 2022+ −4.4 → GEÇMEZ.** `elenenler` statüsü rejected.
+- H6 BTC 21–23 UTC 00:00 UTC'den önce kapanıyor → swap yok. **Risk:** sunucu yaz saatinde UTC+1'e geçerse
+  rollover 23:00 UTC = H6 çıkış anı; yazın kontrol edilmeli.
+- Noise Band gün içi kapanır → swap yok. Sweep/Donchian gece taşırsa long ~−1.2 bp/gece.
+
+A4 gün içi en kötü an dağılımı (1×, n=2319): medyan −%1.5; %10'luk −%5.4; %5'lik −%7.9; %1'lik −%15.8; %0.1'lik −%28.1.
+−%10 veya kötüsü 70 işlem (%3.0), −%20 veya kötüsü 11 (%0.5). En kötü: 2020-03-12 −%37.3 (Covid çöküşü), 2021-05-18 −%30.7,
+2020-03-11 −%29.1. Yıllık en kötü 2023–2026: −9.8, −21.8, −12.6, −11.1.
