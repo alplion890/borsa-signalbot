@@ -101,6 +101,23 @@ metodoloji.
   (`HANDOFF/` klasörü).
 - Telefondaki asistan için ayrıntılı kural seti: `TELEFON/SISTEM.md`.
 
+## Para/risk kodu test kuralı (bağlayıcı, 2026-11-17)
+
+Örnek testler yetmez: challenge drawdown limiti 2 katına çıkınca 738 testin
+hiçbiri fark etmedi. Bu yüzden `prop_fit.py` (veya bakiye, drawdown, çekim,
+lot, PnL hesaplayan herhangi bir kod) değişince:
+
+1. Değişmez kuralı property test olarak yaz (`hypothesis`,
+   `intraday/test_prop_fit_properties.py` örnek). Kural örnekleri: kazanılandan
+   fazla çekilmez; günlük limit aşan gün hesabı bitirir; sonuç bağımsız
+   "kural kitabı" yeniden yazımıyla aynı.
+2. Üretilen veri tüm eksenleri kapsasın: sadece kapanış değil gün içi
+   dip/tepe (lo/hi) de. Bu eksik olunca 2 bug kaçtı.
+3. `python -m intraday.mutation_check` çalıştır. Kaçan (ESCAPED) mutant varsa
+   iş bitmemiştir: yakalayan property testi ekle. Yeni kural eklediysen
+   `MUTANTS` listesine onun bozuk halini de ekle.
+4. Kullanıcıya test tekniği anlatma; sadece sonucu söyle ("6/6 bug yakalanıyor").
+
 ## Maliyet kuralı (bağlayıcı, 2026-11-12, kullanıcı kararı)
 
 Backtest maliyeti **tahmin edilmez, Maven'den ölçülür.** (Naked POC testinde

@@ -14,3 +14,5 @@ numba; python_version < "3.14"
 # scipy: yalniz laboratuvar/test tarafi. Defter okuyucusu (ledger.py) ONU
 # KULLANMAZ -- bulut kosucusu scipy'siz calismak zorunda (test_cloud_deps).
 scipy
+
+hypothesis>=6.100  # property tests (test_prop_fit_properties.py)
