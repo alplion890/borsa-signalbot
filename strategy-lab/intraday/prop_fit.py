@@ -5,10 +5,11 @@ Input is a daily P&L series in account-fraction units at a "unit" size
 The series is scaled by a sizing factor and replayed from every historical
 start day (real order, no shuffling), so streaks and regimes are preserved.
 
-Rules (Maven 1-step, vault "Borsa - Maven Fon Kurallari"; verify before use):
+Rules (Maven BNPL 1-step, vault "Borsa - Maven Fon Kurallari"; verify before use):
   challenge: +4% target, 10% static drawdown, no daily limit, no consistency
-  funded:    8% trailing drawdown on closed-balance peak, 4% daily loss,
-             20% consistency (best day <= 20% of total profit), min 5 trading days
+  funded:    8% trailing drawdown on equity peak, 4% daily loss, 20% consistency
+             (best day <= 20% of cycle profit), no waiting period; after the first
+             withdrawal the floor locks at the initial balance (Maven BNPL FAQ, 2026-11-17)
 Closed-balance approximation: intraday floating loss is not modelled.
 
     python -m intraday.prop_fit
@@ -33,12 +34,14 @@ class Rules:
     trail_dd: float = 0.08
     daily_limit: float = 0.04
     consistency: float = 0.20
-    min_trade_days: int = 5
-    first_payout_min_days: int = 10   # Maven FAQ: first payout 10 business days after first funded trade
+    min_trade_days: int = 0           # BNPL FAQ lists no minimum-days rule (Standard accounts have one)
+    first_payout_min_days: int = 0    # BNPL FAQ: no fixed payout waiting period (Standard: 10 business days)
     horizon_days: int = 252
     challenge_trailing: bool = False  # Maven BNPL FAQ (verified 2026-11-17): phase-1 10% static
     funded_trailing: bool = True
     min_payout_profit: float = 0.004  # Maven minimum withdrawal $20 on $5K
+    lock_after_withdraw: bool = True  # BNPL FAQ: after first withdrawal the drawdown floor = initial balance
+    withdraw_frac: float = 1.0        # share of profit above initial balance withdrawn at each payout
     account_usd: float = 5000.0
     split: float = 0.80
 
@@ -51,7 +54,7 @@ ABLATIONS: dict[str, dict] = {
     "static_8": {"funded_trailing": False},
     "no_daily": {"daily_limit": OFF},
     "static_10_daily_5_no_cons": {"funded_trailing": False, "trail_dd": 0.10, "daily_limit": 0.05,
-                                  "consistency": OFF},
+                                  "consistency": OFF, "lock_after_withdraw": False},
 }
 
 
@@ -90,23 +93,41 @@ def funded(daily: np.ndarray, traded: np.ndarray, start: int, rules: Rules) -> t
     return 0, end - start, 0.0
 
 
+def funded_path(c: np.ndarray, lo: np.ndarray, hi: np.ndarray, traded: np.ndarray,
+                start: int, rules: Rules) -> tuple[float, bool, int]:
+    """One funded year, withdrawing every eligible cycle.
+
+    c/lo/hi: day close P&L and intraday worst/best P&L (account fraction, vs start-of-day balance).
+    Before the first withdrawal the floor trails the equity peak (or is static); after it, with
+    lock_after_withdraw, the floor is the initial balance (bal = 0). Returns (withdrawn, breached, payouts).
+    """
+    paid, bal, peak, best, ndays, cyc, cyc0, locked, n = 0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, False, 0
+
+    def floor() -> float:
+        return 0.0 if locked else (peak if rules.funded_trailing else 0.0) - rules.trail_dd
+
+    for i in range(start, min(start + rules.horizon_days, len(c))):
+        if lo[i] <= -rules.daily_limit or bal + lo[i] <= floor():
+            return paid, True, n
+        if rules.funded_trailing and not locked:
+            peak = max(peak, bal + hi[i])
+        bal += c[i]
+        if bal <= floor():
+            return paid, True, n
+        best, ndays, cyc = max(best, c[i]), ndays + int(traded[i]), cyc + 1
+        profit, amount = bal - cyc0, rules.withdraw_frac * bal
+        if (cyc >= rules.first_payout_min_days and ndays >= rules.min_trade_days
+                and amount >= rules.min_payout_profit and profit > 0 and best <= rules.consistency * profit):
+            paid, bal, n = paid + amount, bal - amount, n + 1
+            locked = locked or rules.lock_after_withdraw
+            peak, cyc0, best, ndays, cyc = bal, bal, 0.0, 0, 0
+    return paid, False, n
+
+
 def funded_year(daily: np.ndarray, traded: np.ndarray, start: int, rules: Rules) -> tuple[float, bool]:
-    """Withdraw every eligible cycle for one year; return (total withdrawn fraction, breached)."""
-    paid, bal, peak, best, ndays, cycle = 0.0, 0.0, 0.0, 0.0, 0, 0
-    for i in range(start, min(start + rules.horizon_days, len(daily))):
-        d = daily[i]
-        if d <= -rules.daily_limit:
-            return paid, True
-        bal += d
-        peak = max(peak, bal) if rules.funded_trailing else 0.0
-        if bal <= peak - rules.trail_dd:
-            return paid, True
-        best, ndays, cycle = max(best, d), ndays + int(traded[i]), cycle + 1
-        if (cycle >= rules.first_payout_min_days and ndays >= rules.min_trade_days
-                and bal >= rules.min_payout_profit and best <= rules.consistency * bal):
-            paid += bal
-            bal, peak, best, ndays, cycle = 0.0, 0.0, 0.0, 0, 0
-    return paid, False
+    """Closed-balance version of funded_path (intraday floating P&L not modelled)."""
+    paid, breached, _ = funded_path(daily, np.minimum(daily, 0.0), np.maximum(daily, 0.0), traded, start, rules)
+    return paid, breached
 
 
 def yearly_ev(daily: pd.Series, traded: pd.Series, scale: float, rules: Rules = Rules()) -> dict:

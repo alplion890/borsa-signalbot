@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from .history_fetch import load_history
-from .prop_fit import Rules
+from .prop_fit import Rules, funded_path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "outputs" / "intraday" / "prop_fit"
@@ -95,25 +95,25 @@ def run(path: pd.DataFrame, rules: Rules, equity: bool) -> dict:
                 res = 1
                 break
         ch.append(res)
-        paid, bal, peak, best, cyc, breach = 0.0, 0.0, 0.0, 0.0, 0, False
-        for i in range(s, min(s + rules.horizon_days, n)):
-            if lo[i] <= -rules.daily_limit or bal + lo[i] <= peak - rules.trail_dd:
-                breach = True
-                break
-            peak = max(peak, bal + hi[i])
-            bal += c[i]
-            if bal <= peak - rules.trail_dd:
-                breach = True
-                break
-            best, cyc = max(best, c[i]), cyc + 1
-            if cyc >= rules.first_payout_min_days and bal >= rules.min_payout_profit and best <= rules.consistency * bal:
-                paid += bal
-                bal, peak, best, cyc = 0.0, 0.0, 0.0, 0
-        yr.append((paid, breach))
+        paid, breach, npay = funded_path(c, lo, hi, c != 0, s, rules)
+        yr.append((paid, breach, npay))
     ch, yr = np.array(ch), np.array(yr)
     return {"challenge_pass": float((ch == 1).mean() * 100), "challenge_fail": float((ch == -1).mean() * 100),
             "funded_ev_usd_year": float(yr[:, 0].mean() * rules.account_usd * rules.split),
-            "funded_breach": float(yr[:, 1].mean() * 100)}
+            "funded_breach": float(yr[:, 1].mean() * 100), "payouts_per_year": float(yr[:, 2].mean())}
+
+
+# Maven BNPL as verified 2026-11-17; "old model" = pre-verification assumptions (no withdrawal lock,
+# 10-day wait); partial withdrawals keep a buffer above the locked floor.
+RULESETS: dict[str, Rules] = {
+    "maven_bnpl": Rules(),
+    "maven_bnpl_withdraw75": Rules(withdraw_frac=0.75),
+    "maven_bnpl_withdraw50": Rules(withdraw_frac=0.5),
+    "maven_bnpl_withdraw25": Rules(withdraw_frac=0.25),
+    "maven_old_model": Rules(lock_after_withdraw=False, first_payout_min_days=10),
+    "no_consistency_static10": Rules(consistency=1e9, funded_trailing=False, trail_dd=0.10, daily_limit=0.05,
+                                     lock_after_withdraw=False),
+}
 
 
 def main() -> None:
@@ -126,12 +126,11 @@ def main() -> None:
     for name, p in cases.items():
         p = p[(p.index >= max(nb.index.min(), bt.index.min()) if "+" in name else p.index >= p.index.min())]
         for period, q in (("all", p), ("2022+", p[p.index >= "2022-01-01"])):
-            for label, rules in (("maven_bnpl", Rules()), ("no_consistency_static10",
-                                 Rules(consistency=1e9, funded_trailing=False, trail_dd=0.10, daily_limit=0.05))):
+            for label, rules in RULESETS.items():
                 for eq in (False, True):
                     if not eq and label != "maven_bnpl":
                         continue
-                    r = run(q, rules if not eq or rules.funded_trailing else rules, eq)
+                    r = run(q, rules, eq)
                     rows.append({"case": name, "period": period, "rules": label,
                                  "basis": "equity" if eq else "closed", **{k: round(v, 1) for k, v in r.items()}})
                     print(rows[-1])

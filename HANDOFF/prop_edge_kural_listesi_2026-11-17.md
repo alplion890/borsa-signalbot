@@ -107,3 +107,25 @@ Tutarlılıksız + statik %10 / günlük %5 kuralında kombine portföy yıllık
 
 Doğrulanmayan: EA politikası (FTMO, The5ers, FundedNext), The5ers DD tipi, Funding Pips DD tipi/tutarlılık,
 her firmada NQ/BTC sembolü ve spread'i (maliyet kuralı gereği ölçülmeden backtest'e girmez).
+
+## H. Model düzeltmesi: çekim sonrası DD kilidi (`prop_fit.funded_path`, 2026-11-17)
+Değişiklik: `Rules.lock_after_withdraw=True` (ilk çekimden sonra taban = başlangıç bakiyesi), `withdraw_frac`
+(kârın çekilen payı, kalan tampon), BNPL için `first_payout_min_days=0`, `min_trade_days=0` (BNPL FAQ'ında
+gün şartı yok). Kapalı (`prop_fit`) ve equity (`prop_equity`) aynı motoru kullanıyor. Testler: `test_prop_fit.py`.
+Regresyon: `maven_old_model` satırları önceki çıktıyla birebir aynı. Ek hata düzeldi: eski `prop_equity.run`
+statik kuralı trailing işletiyordu (static10 satırları hafif değişti: 2022+ kombine $257→$265).
+
+Equity bazlı, $5K, ölçülmüş merkez maliyet, yıllık funded çekim (pay sonrası) / yıl içi ihlal %:
+
+| Vaka | Dönem | Eski model | Kilitli, %100 çek | %75 çek | %50 çek | %25 çek | Tutarlılıksız statik %10 |
+|---|---|---|---|---|---|---|---|
+| NB 0.75× + BTC 0.35× | 2022+ | $111 / %0 | $99 / **%33** | $88 / %18 | $61 / %10 | $32 / %3 | $265 / %0 |
+| NB 0.75× + BTC 0.35× | 2012+ | $185 / %8 | $178 / %55 | $141 / %28 | $95 / %16 | $48 / %10 | $359 / %5 |
+| NB 1× | 2022+ | $126 / %23 | $126 / %51 | $95 / %25 | $63 / %23 | $32 / %23 | $332 / %8 |
+| BTC 0.5× | 2022+ | $62 / %65 | $60 / %77 | $46 / %68 | $31 / %67 | $16 / %66 | $190 / %28 |
+
+Okuma (olgu): Maven BNPL'de yılda ortalama 0.3–0.5 çekim oluyor (%20 tutarlılık). Kilit kuralı çekimi az
+değiştiriyor ama ilk çekimden sonraki ihlal oranını kombine portföyde 2022+ %0 → %33'e çıkarıyor. Kısmi çekim
+ihlali düşürüyor; tablo yalnız çekilen tutarı sayar, hesapta kalan tampon (çekilmeyen kâr) değere eklenmedi.
+Tutarlılıksız statik firmada (FTMO 2-Step / FundedNext Stellar 2-Step kuralları) yılda ~9 çekim, ~2.7× tutar.
+Uyarı: kilitli %100 satırında "ihlal" çoğunlukla çekimden sonra olur; çekilen para kaybedilmez, hesap kaybedilir.
