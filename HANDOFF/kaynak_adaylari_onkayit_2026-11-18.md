@@ -108,3 +108,17 @@ Kaynak: `MetaTrader5.symbol_info` (salt okuma). Sunucu saati = UTC (tick zamanı
 A4 gün içi en kötü an dağılımı (1×, n=2319): medyan −%1.5; %10'luk −%5.4; %5'lik −%7.9; %1'lik −%15.8; %0.1'lik −%28.1.
 −%10 veya kötüsü 70 işlem (%3.0), −%20 veya kötüsü 11 (%0.5). En kötü: 2020-03-12 −%37.3 (Covid çöküşü), 2021-05-18 −%30.7,
 2020-03-11 −%29.1. Yıllık en kötü 2023–2026: −9.8, −21.8, −12.6, −11.1.
+
+## Ek: başka firma araştırması (2026-11-18)
+BTC gece elendiği için hafta sonu BTC tutma şartı düştü. H6 21–23 UTC hafta sonu payı küçük:
+tüm günler 2022+ +1.21 bp (%4.4/yıl), yalnız hafta içi +1.12 bp (%2.9/yıl), hafta sonu +1.42 bp (%1.5/yıl).
+Gerekenler: NAS100 + XAU + hafta içi BTC CFD, tutarlılık kuralı yok, statik DD, gece tutma serbest.
+
+- FTMO 2-Step: statik %10, günlük %5, tutarlılık kuralı yok — resmi sayfa (73e5e4f'de doğrulandı). Kripto
+  enstrüman listesi ve funded hesapta hafta sonu/haber kuralı resmi sayfadan DOĞRULANMADI.
+- FTMO 1-Step: EOD trailing %10, günlük %3, Best Day %50 (resmi, 73e5e4f).
+- FundedNext Stellar 2-Step: statik %10, günlük %5; tutarlılık yalnız Express'te (73e5e4f). Resmi yardım
+  merkezi kripto makalesi İngilizce/Fransızca sürümde çelişkili (biri hafta sonu tutma var, biri yalnız hafta içi).
+- Ajan raporu eksik: 11 firmadan yalnız FTMO ve FundedNext'e baktı; The5ers, E8, FundingPips, Alpha Capital,
+  Blue Guardian vb. açılmadı. Ajanın "FTMO haberden 2 saat önce gap yasağı" ifadesi doğrulanmadı, kullanılmadı.
+- Başka firmada maliyet (spread/swap) ölçülmedi: maliyet kuralı gereği hesap açılmadan sonuç verilemez.
