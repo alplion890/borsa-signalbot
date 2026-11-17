@@ -122,3 +122,25 @@ Gerekenler: NAS100 + XAU + hafta içi BTC CFD, tutarlılık kuralı yok, statik 
 - Ajan raporu eksik: 11 firmadan yalnız FTMO ve FundedNext'e baktı; The5ers, E8, FundingPips, Alpha Capital,
   Blue Guardian vb. açılmadı. Ajanın "FTMO haberden 2 saat önce gap yasağı" ifadesi doğrulanmadı, kullanılmadı.
 - Başka firmada maliyet (spread/swap) ölçülmedi: maliyet kuralı gereği hesap açılmadan sonuç verilemez.
+
+## Ek: BTC swap'ı düşük/sıfır firma araştırması (2026-11-18)
+A4 swap duyarlılığı (merkez maliyet, swap %/yıl → ortalama / Bonferroni alt / 2022+ / PASS):
+%0 → 15.4 / +0.7 / 7.8 / ✓; %1 → 15.0 / +0.3 / 7.4 / ✓; %2 → 14.6 / −0.1 / 7.0 / ✗; %10 → 11.4 / −3.4 / 3.7 / ✗;
+%20 → 7.3 / −7.4 / −0.3 / ✗; %30 (Maven) → 3.3 / −11.4 / −4.4 / ✗. Ön-kayıt şartı yalnız ~%1/yıl altı swapla sağlanır.
+
+FundedNext (resmi yardım merkezi + CFD Challenge Terms, okundu 2026-11-18):
+- Swap-free hesap "across every challenge", fiyat %10 fazla; örnek BTCUSD Stellar 2-Step (makale 8019806, 2026-04-08).
+  Funded aşamada da geçerli mi ve kötüye kullanım şartı: sayfada YOK.
+- Hafta sonu tutma: Challenge ve FundedNext (funded) hesaplarında, tüm Stellar modellerinde serbest (11982358, 2026-09-08).
+  Express Consistency hariç. Kripto hafta sonu İŞLEM yok (yalnız tutma), kaldıraç 1:1, 9 kripto (8925010; FR 2026-09-30 aynı).
+- Stellar 2-Step: MLL %10 "Initial Account Size"a göre, DLL %5 başlangıç bakiyesine göre (swap/komisyon dahil),
+  tutarlılık kuralı yalnız Express'te (madde 5.6). Statik/trailing kelimesi kullanılmıyor.
+- RİSK maddeleri: 8.15 "excessive one-sided exposure, repeated 'all-in' bets" (liste açık uçlu), 8.16 olağandışı
+  pozisyon büyüklüğü incelemesi, 9.8 yasak uygulama başına USD 25.000 sözleşme cezası, 13.4 ödüller "discretionary".
+  Her gece aynı yönde BTC long bu maddelere takılır mı: belirsiz, firmaya sorulmalı.
+- Doğrulanmayan: funded haber kuralı, payout zamanı/oranı, BTC/NQ spread'i (maliyet ölçülmedi).
+- Simülasyon (swap 0, Maven maliyeti, tutarlılıksız statik %10/günlük %5, NB 0.75× + A4 0.101×, 2022+): $362/yıl,
+  ihlal %5.4. FundedNext maliyetiyle yeniden koşulmalı.
+FTMO: swap-free hesap resmi sayfada bulunamadı (ikincil kaynaklar çelişkili). The5ers: funded'da swap-free "destekten
+istenir" iddiası yalnız ikincil kaynakta. Kripto-yerel firmalar (Breakout, HyroTrader vb.) perpetual kullanır: funding
+ücreti swap yerine geçer, bakılmadı.
