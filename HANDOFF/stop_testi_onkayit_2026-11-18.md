@@ -43,3 +43,22 @@ Eklenme/firma kararı kullanıcıda.
 ## Tuzaklar
 Sonuca bakıp k ızgarası genişletilmez, trailing/zaman stop'u eklenmez; geçmeyen modül yeniden tanımlanmaz.
 6 k × 5 modül = 30 kombinasyon; yalnız 5 seçilmiş test sayılır, diğerleri bilgi.
+
+## SONUÇ (2026-11-18, ön-kayıt 440d204 sonrası tek koşu)
+Kod `strategy-lab/intraday/stop_testi.py`. Kontrol: "stop yok" satırı mevcut sonuçları üretti
+(B7 n=415 +52.1bp, BTC gece n=2318 +15.4bp).
+R = net / (ATR/giriş), merkez maliyet. Biçim: ortalama R · CI (Bonferroni 0.05/5) · <2022/2022+ · stop vurma % · en kötü işlem (R_k, gap dahil).
+- **B7 IBS NQ — k* = stop yok → GEÇTİ** (+0.344 · [0.178, 0.509] · +0.42/+0.20). Stop her mesafede zarar verdi,
+  dar olan daha çok (literatür: ortalamaya dönüşte stop zarar). k=0.5 +0.039 (2022+ −0.011, n 594), k=1 +0.120,
+  k=1.5 +0.167, k=2 +0.216, k=3 +0.263 · [0.077, 0.440] · stop %10 · en kötü −1.53R, k=4 +0.283 · [0.086, 0.471] ·
+  +0.36/+0.14 · stop %5 · en kötü −1.52R. Kazananların MAE p90/p95 = 1.46/1.83 ATR.
+- **AY_DONUMU NQ — k* = 0.5 → GEÇMEDİ** (+0.105 · [−0.041, 0.263] · 2022+ −0.039). Stop'suz hali de bu kuralla
+  geçmiyor: +0.123 · [−0.059, 0.308] · 2022+ +0.003. k=4 stop'suzla aynı (stop %0, en kötü −0.74R).
+- **NOISE_BAND — k* = 0.5 → GEÇMEDİ** (+0.014 · [−0.002, 0.031]). Tüm k ≈ aynı (stop'suz +0.014 · [−0.003, 0.031]);
+  k ≥ 1 stop hiç vurulmuyor (gün içi işlem, günlük ATR geniş). İşlem bazlı bu test NB'nin önceki günlük kabul
+  testinden farklı; burada CI 0'ı içeriyor.
+- **BTC 21–23 — k* = stop yok → GEÇTİ** (+0.009 · [+0.000, 0.017] · +0.016/+0.002; sınırda). k ≥ 1.5 stop ≈ %0,
+  ortalama +0.008, CI alt −0.001..−0.003.
+- **BTC gece — k* = 1.0 → GEÇMEDİ** (+0.035 · [−0.000, 0.072]). Stop'suz +0.040 · [+0.001, 0.078] (sınırda);
+  k=1.5 +0.039 · [+0.003, 0.076] · stop %4 · en kötü −1.01R (bilgi, karar değil).
+Seçim notu: NB (0.034 vs 0.032) ve AY_DONUMU'nda k* farkı gürültü düzeyinde — "optimum stop" tek nokta değil, düz bölge.
