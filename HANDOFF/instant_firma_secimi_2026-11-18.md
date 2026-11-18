@@ -1,0 +1,40 @@
+# Instant firma taraması: bot + VPS + US100/XAU/BTC + swap + Türkiye (2026-11-18)
+
+Kriter: instant (değerlendirme yok), bot/EA serbest, MT5 (Python MetaTrader5 köprüsü), VPS, hafta sonu taşıma
+(B7, BTC gece), US100+XAU+BTC, swap-free veya düşük swap, tutarlılık yok/zayıf, Türkiye yasaklı değil, güvenilir.
+Portföy artık stop'lu ve risk boyutlu (işlem başı %0.5; bkz stop_portfoy_firma_sim_2026-11-18.md).
+Kaynak: 4 paralel resmi sayfa taraması (+3. taraf yalnız güvenilirlik için, etiketli).
+
+## Tüm kriterlerden en çok geçen: FundedNext Stellar Instant
+- Fiyat: $5K $104.99 (liste $149.99, sayfada NOVINS %30), $10K $209.99. Toplam instant tavanı $20K.
+- EA: 3. taraf dahil serbest, ücretli EA eklentisi (fiyat checkout'ta). Her EA farklı strateji; FN hesapları arası
+  aynı kurulum kopyası yasak. VPS: $50K altı serbest, ücretli. MT5 var.
+- Swap-free eklentisi var. Hafta sonu/gece serbest. Günlük limit yok, tutarlılık yok, min gün yok.
+- Limit %6 kayan (başlangıç bakiyesini geçmez). Açık risk her an ≤ %3 (stop'a göre + gerçekleşmemiş zarar).
+- Payout: %5 büyümede talep üzerine, ya da 14 günde %1–5; split %70 (Tier 3+ %80). Haber ±5 dk kârın %40'ı sayılır.
+- Türkiye yasaklı listede yok. Ödeme USDT/USDC/Rise/banka. Trustpilot 4.5 (84.213 yorum).
+- Doğrulanmayan: MT5 sembol adları (US100/XAU/BTC), swap-free eklentisi endeks+kripto kapsıyor mu, eklenti fiyatları.
+- Simülasyon (risk boyutlu 6'lı+B7, liste fiyatı): ilk payout medyan 21 gün, 12 ay net $188, zarar %21.
+
+## İkinci: Blueberry Funded Instant Elite
+- $5K $200, $10K $400 (BERRY15 kodu instant'a geçer mi belirsiz). MT5.
+- EA yalnız kendi yazdığın + destek onayı (kod sende → uyar). VPS yazmıyor.
+- %10 kayan-kilit, günlük yok, tutarlılık yok, işlem fikri başına %1.5 (bizim %0.5 sığar). Min 5 gün (%0.5), 14 gün, %80.
+- Swap-free YOK. Haber kuralı instant için belirsiz. Türkiye yasaklı değil. Trustpilot puanı gizli (sahte yorum).
+
+## Elenenler (neden)
+- FTMO Instant: 2 saatten uzun piyasa arasında taşıma yasak (hafta sonu), %30 tutarlılık.
+- FXIFY Instant: EA "strictly prohibited". FundingPips Zero: hafta sonu taşıma yok, açık risk %1.
+- Goat Funded Trader: 2026-10-06'dan beri VPS/hosting yasak, swap-free yok.
+- FT+ (Mayıs 2026'da el değiştirdi): hafta sonu taşıma yasak (3. taraf). CTI: %20 tutarlılık, swap.
+- Blue Guardian, AquaFunded, Finotive, Audacity: Trustpilot puanı gizli/zayıf + payout şikayetleri.
+- iFunds: MT5 doğrulanamadı. Instant Funding (IF Pro): hafta sonu ek ürün, Türkiye belirsiz, puan gizli.
+- FYFX: stop 3 dk zorunlu (artık karşılanır) ama MT5 yok. Maven Instant: %3 kayan limit dar.
+
+## Satın almadan önce firmadan yazılı teyit
+1. MT5'te US100 (NDX100?), XAUUSD, BTCUSD sembol adları. 2. Swap-free eklentisi endeks + kriptoyu kapsıyor mu.
+3. Python MetaTrader5 köprüsüyle bot = EA sayılır mı, eklenti fiyatı. 4. %3 açık risk stop'lu pozisyonda nasıl hesaplanır.
+5. Türkiye'den ödeme (kart engeli → kripto).
+## Botta eksik
+"Açık risk + yeni işlem > %3 ise işlemi atla" kuralı yok; risk boyutlu portföy günlerin %1.5–4'ünde %3'ü aşıyor.
+B7 forward ölçülmedi.
