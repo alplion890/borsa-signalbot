@@ -45,3 +45,11 @@ B7 forward ölçülmedi.
 - Ücret/hesap oranı 5K ile aynı (%2.1 indirimli, %3 liste) → simülasyon ölçekle aynı: liste fiyatında 12 ay net medyan ≈ $75
   (5K'nın 0.4'ü), zarar olasılığı ≈ %21, 12 ayda ortalama 2.4 hesap alımı. Min lot inceliği 2K'da modellenmedi.
 - Maven Instant 2K $14.25: %3 kayan + %2 günlük + %1 açık zarar + %20 tutarlılık → elendi. Blue Guardian resmi sayfası 404.
+
+## Ek (2026-11-19): FN challenge'ları, stop'lu portföy (6'lı+B7), 500 yol × 365 gün, seed 20261118
+Fiyat/kurallar 2026-11-18 resmi okuma. Biçim: ilk payout medyan gün · 12 ay net medyan · zarar olasılığı. Funded'da risk 1×.
+- Lite 5K $32.99: risk boyutlu x1 235g/$2/%50, x2 152g/$297/%14, x3 117g/$374/%8; mevcut lot x2 98g/$635/%4, x3 69g/$717/%2.
+- 2-Step 6K $59.99: risk boyutlu x3 127g/$429/%6; mevcut lot x2 117g/$742/%4, x3 84g/$845/%3.
+- 1-Step 6K $65.99: risk boyutlu x3 77g/$479/%8; mevcut lot x3 43g/$730/%9 (yılda 7.5 hesap).
+- Sıfır edge (x3, risk boyutlu): üçü de negatif (−$29..−$76, zarar %53–57) → model değeri edge'den alıyor.
+- Doğrulanmadı: challenge'da EA/hafta sonu kuralı, funded'da açık risk kuralı var mı. Script scripts_2026-11-18/step_sim.py.
