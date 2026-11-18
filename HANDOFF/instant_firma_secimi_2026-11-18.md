@@ -38,3 +38,10 @@ Kaynak: 4 paralel resmi sayfa taraması (+3. taraf yalnız güvenilirlik için, 
 ## Botta eksik
 "Açık risk + yeni işlem > %3 ise işlemi atla" kuralı yok; risk boyutlu portföy günlerin %1.5–4'ünde %3'ü aşıyor.
 B7 forward ölçülmedi.
+
+## Ek (2026-11-19): en ucuz uygun seçenek, bütçe ~$30
+- FN Stellar Instant 2K: $41.99 (NOVINS, liste $59.99), resmi sayfa 2026-11-19. Kurallar 5K ile aynı (%6 kayan, açık risk %3,
+  günlük yok, tutarlılık yok, hafta sonu serbest). Kaldıraç: endeks/emtia 1:10, kripto 1:1. EA/VPS "add-on" — fiyat yazmıyor.
+- Ücret/hesap oranı 5K ile aynı (%2.1 indirimli, %3 liste) → simülasyon ölçekle aynı: liste fiyatında 12 ay net medyan ≈ $75
+  (5K'nın 0.4'ü), zarar olasılığı ≈ %21, 12 ayda ortalama 2.4 hesap alımı. Min lot inceliği 2K'da modellenmedi.
+- Maven Instant 2K $14.25: %3 kayan + %2 günlük + %1 açık zarar + %20 tutarlılık → elendi. Blue Guardian resmi sayfası 404.
