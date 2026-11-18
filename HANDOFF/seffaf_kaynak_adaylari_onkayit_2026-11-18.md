@@ -54,3 +54,17 @@ Açılış < dünkü low ise dünkü low'da buy stop (gün içi dolarsa); stop g
 
 ## Tuzaklar
 Post-hoc filtre yasak; parametre "biraz değiştir" yok; geçmeyen aday yeniden tanımlanmaz.
+
+## EK (2026-11-18, test koşulmadan önce): ikinci tarama turu → B7
+Kaynak: `seffaf-edge-kaynaklari/results/F_connors_151_qs.md`, `G_kitap_dergi.md`. Test sayısı 8 → **9**,
+Bonferroni α = 0.05/9 (B1–B6 dahil hepsine uygulanır).
+
+**B7 — IBS ortalamaya dönüş, NQ günlük, yalnız long (QuantifiedStrategies; Kinlay replikasyonu) — 1 test.**
+IBS = (C−L)/(H−L) günlük NY seansı barı (09:30–16:00 ET). IBS < 0.2 → kapanışta long; IBS > 0.8 olan ilk
+günün kapanışında çık. Stop yok (kaynakta yok). Gece taşıma: Maven US100 long swap (−1.18 bp/gece) ayrı satır.
+Önsel uyarı: kaynaklarda maliyet yok; Kinlay 2013 sonrası zayıflama, backtrex NAS100 CFD RSI(2) zayıf.
+
+Alınmayanlar: RSI(2)/Double 7s/TPS/%b (NQ CFD bağımsız maliyetli test zayıf, satıcı kaynaklı, OOS yok — IBS aynı
+ailenin en sade temsilcisi olarak tek test); BTC MAX/MIN (B2 ailesi); BTC 21–23 vol filtresi (canlı modüle
+post-hoc filtre); altın gece/gündüz seansı (kaynak bid/ask sonrası negatif); overnight drift (2021+ kayboldu);
+151 Strategies (backtest yok, geniş sepet ister).
