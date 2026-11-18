@@ -65,3 +65,18 @@ Risk boyutlu 7 modül (6'lı + B7), 500 yol × 365 gün. Açık zarar %1 kuralı
 - FN Instant 2K $41.99, 7 modül x1: 21g · $109 · %9 (sıfır edge −$22 · %59); x0.5: 38g · $46 · %16. Modül çıkarmak hep kötüleştiriyor.
 - Uyarlama seçenekleri: bot "açık risk ≤ %1" kapısı (Maven) uygulanabilir; tutarlılık için temiz çözüm yok (hedef küçültme = strateji
   değişikliği → ön-kayıt + test gerekir).
+
+## Ek (2026-11-19): FN Stellar Instant 2K detay — resmi kurallar + en küçük lot
+Resmi (help.fundednext.com 17253243, 11641338, 8020350, 11641300, 8019806, 8020080; fundednext.com/general-rules/cfds/symbols-and-conditions):
+- $2K $59.99 → $41.99 (NOVINS), iadesiz; reset %10 indirimli, promosyon reset'te geçmez. Swap-free +%10 fiyat (kapsam yazmıyor).
+- %6 kayan (başlangıçta kilitlenir, payout sonrası inmez), günlük yok, **%3 max risk: stop mesafesi + açık zarar, ihlal = hesap biter**.
+- Haber ±5 dk: kârın %40'ı. Min tutma yok; 30 sn altı "quick strike" yasak. Hafta sonu serbest. Hareketsizlik 30 veya 60 gün (çelişkili).
+- EA MT4/MT5'te ücretli (fiyat yok); VPS ücretli; **Telegram/WhatsApp entegrasyonlu EA yasak**; Python köprüsü EA mı belirsiz.
+- Semboller NDX100, XAUUSD, BTC/USD. **Kontrat: endeks 10, altın 100, kripto 1/100/1000 (BTC belirtilmemiş). Min lot yayınlanmamış.**
+- Kaldıraç: endeks 1:5, emtia 1:7.5, kripto 1:1. Komisyon: endeks 0, metal %0.0016/lot, **kripto %0.04/lot** (açılışta). Spread yayınlanmamış.
+- Payout %5'te anında veya 14 günde ≥%1; %70 → Tier 3 %80. Türkiye yasaklı değil. Instant toplam tavan $20K.
+En küçük lot (0.01 VARSAYIMI) ile 2K'da işlem başı risk (hedef %0.5): Sweep medyan %0.14 (uyar), NB %1.49 (p90 %2.15, max %3.86),
+B7 ≈ %6, Ay dönümü ≈ %6 (→ %3 kuralını tek işlemde aşar, imkânsız), Donchian XAU %1.59 (p90 %4.78, max %21), BTC 0.01 lotta %1.62 / 0.001 lotta %0.16.
+Simülasyon FN 2K x1 (fn2k.py, fn2k_c10.py): yalnız Sweep 54g · $28 · %29; Sweep+BTC(0.001) 33g · $67 · %17;
+Sweep+NB(min lot)+BTC 21g · $102 · %9 (sıfır edge −$32 · %63); Sweep+NB 24g · $79 · %14. Altını/BTC'yi büyük lotla zorlamak sıfır edge'de
+de pozitif çıkıyor → kumar geometrisi, güvenilmez. FN maliyeti ölçülmedi (kripto komisyonu BTC 21–23'ün küçük edge'ini yiyebilir).
