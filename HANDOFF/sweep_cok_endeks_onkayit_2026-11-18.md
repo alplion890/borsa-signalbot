@@ -32,3 +32,16 @@ raporlanır; günlük toplam açık risk FN %3 kuralına göre ölçülür.
 ## Bilinen tuzaklar
 - Aynı anda tetiklenen korele endeksler bağımsız gözlem değildir (örtüşen bacak) → portföy günlük bazda ölçülür.
 - Sonuca bakıp sembol çıkarmak/eklemek yasak.
+
+## SONUÇ (2026-11-18, ön-kayıt cd76805 sonrası tek koşu)
+R/işlem: maliyetsiz / ölçülmüş merkez / 2× · Bonferroni alt sınır · <2022 / 2022+ · n
+- NASDAQ100 (kontrol): +0.228 / −0.005 / −0.238 · −0.44 · −0.417 / **+0.718** · 237 → bilinen sonuç yeniden üretildi
+- SP500: −0.446 / −0.865 / −1.284 · −2.18 · −1.027 / −0.402 · 228 → GEÇMEDİ
+- US30: −0.020 / −0.148 / −0.276 · −0.48 · −0.142 / −0.164 · 198 → GEÇMEDİ
+- US2000: +0.128 / −0.076 / −0.281 · −0.48 · −0.151 / −0.015 · 149 → GEÇMEDİ
+- UK100: +0.059 / −0.113 / −0.286 · −0.39 · −0.077 / −0.195 · 274 → GEÇMEDİ
+- FRA40: −0.030 / −0.205 / −0.381 · −0.53 · −0.237 / −0.131 · 276 → GEÇMEDİ
+- JAP225: +0.124 / −0.162 / −0.448 · −0.38 · −0.122 / −0.212 · 545 → GEÇMEDİ
+Portföy adımı koşulmadı (geçen yok). Kısa pencere PAPER artıları (JAP225 n13, SP500 n7, UK100 n7) 14 yılda
+tutmadı — küçük örneklem. `elenenler.sweep_cok_endeks` ölçüm satırı güncellendi.
+Çıktı: `strategy-lab/outputs/intraday/kaynak_adaylari/sweep_multi.json`, `sweep_multi_trades.csv`.

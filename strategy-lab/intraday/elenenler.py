@@ -245,9 +245,13 @@ KATALOG: tuple[Elenen, ...] = (
         statu="rejected",
         baslik="SWEEP'i 7 endekse yayarak kari katlamak",
         iddia="Havuz exp_R +0.194 (n=118) -- ayni kurali cok enstrumanda kos, kar katlanir.",
-        olcum="Ayni-anda-tek-islem (slot) kisiti uygulaninca exp_R -0.062'ye dusuyor.",
+        olcum="Ayni-anda-tek-islem (slot) kisiti uygulaninca exp_R -0.062'ye dusuyor. "
+              "2026-11-18 slot KISITSIZ 14y yeniden test (on-kayit cd76805, olculmus Maven maliyeti): "
+              "SP500 -0.865R, US30 -0.148, US2000 -0.076, UK100 -0.113, FRA40 -0.205, JAP225 -0.162; "
+              "6/6 gecmedi (NQ kontrol 2022+ +0.718 yeniden uretildi).",
         neden="Slot ilk gelen sinyale gidiyor, EN IYI sembole degil. Havuz "
-              "ortalamasi bu kisiti saymiyor. Portfoyde degisiklik yapilmadi.",
+              "ortalamasi bu kisiti saymiyor. Slot kaldirilinca da diger endeksler "
+              "14 yilda olculmus maliyetle negatif. Portfoyde degisiklik yapilmadi.",
         tarih="2026-08-14",
         kaynak="portfolio_ab + [[Borsa - Portfoy Kompozisyonu ve Slot Kisiti]]",
         anahtarlar=("sweep", "cok enstruman", "breadth", "genisleme", "portfoy",
