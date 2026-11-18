@@ -80,3 +80,15 @@ B7 ≈ %6, Ay dönümü ≈ %6 (→ %3 kuralını tek işlemde aşar, imkânsız
 Simülasyon FN 2K x1 (fn2k.py, fn2k_c10.py): yalnız Sweep 54g · $28 · %29; Sweep+BTC(0.001) 33g · $67 · %17;
 Sweep+NB(min lot)+BTC 21g · $102 · %9 (sıfır edge −$32 · %63); Sweep+NB 24g · $79 · %14. Altını/BTC'yi büyük lotla zorlamak sıfır edge'de
 de pozitif çıkıyor → kumar geometrisi, güvenilmez. FN maliyeti ölçülmedi (kripto komisyonu BTC 21–23'ün küçük edge'ini yiyebilir).
+
+## Ek (2026-11-19): ≤ $50 Kasım taraması
+Kaynak: propfirmdeals.org (16 Kas), quantvps BF listesi (14–17 Kas), propfirmmap/deals (18 Kas) + resmi sayfalar.
+- **FN Stellar 2-Step 6K $34.99 (NOVSTR, liste $59.99)**: %8+%5, günlük %5, max %10 statik, min 5 gün; funded'da %3 max risk (stop+açık),
+  tutarlılık yok, haber ±5 dk %40; ilk ödeme 21 gün sonra, sonra 14 gün; %80; ücret 1. ödemede iade; hafta sonu serbest; EA "add-on" (ücret belirsiz);
+  kaldıraç endeks 1:25. MT5 bu sayfalarda yazmıyor (Instant'ta var).
+- 6K gerçek lot (endeks kontrat 10, min 0.01 varsayım): NB %0.50, Donchian medyan %0.53 (max %7), B7/Ay dönümü ~%2 → "%1'i aşan işlemi atla"
+  kapısıyla Sweep+NB+Donchian+BTC: yıl %12.8, Sharpe 1.53. Challenge x3: 132g · $414 · zarar %8; x2: 175g · $311 · %18; x1: zarar %55.
+  Sıfır edge x2: −$70 · %68. BTC'siz x3: 166g · $264 · %18. Challenge'da %3 kuralı geçerliyse x3 sınıra dayanır (doğrulanmadı).
+- Elenen: Maven 2-Step/Omo ($15–21 5K) — "EAs and automated trading are prohibited". NLF Instant Flex 10K $9.90 — %4 DD, %1 max risk,
+  %15 tutarlılık, tek payout. Blue Guardian 1-Step 5K $28 — güvenilirlik. FXIFY BLACK35 — instant'ta EA yasak. Top One Trader %80 — fiyat/güven doğrulanmadı.
+- Black Friday 27 Kasım; çoğu firma BF kodunu henüz yayınlamadı (14 Kas itibarıyla).
