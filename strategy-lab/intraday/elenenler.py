@@ -580,6 +580,26 @@ KATALOG: tuple[Elenen, ...] = (
                "maddenin disinda. Kripto swap'i belirgin dusuk bir firmada yeniden olculebilir.",
         anahtarlar=("btc overnight", "btc gece", "bitcoin overnight", "nyse kapali", "weekend btc"),
     ),
+    Elenen(
+        id="seffaf_kaynak_b1_b6",
+        statu="rejected",
+        baslik="Seffaf kaynak adaylari B1, B3-B6 (NB overlay, MQL5 altin EA'lari, Turtle Soup, Oops)",
+        iddia="Akademik/MQL5 CodeBase/Raschke/Williams kaynaklarinda kurali acik stratejiler; "
+              "NB'ye 5dk geri cekilme overlay'i girisi iyilestirir.",
+        olcum="On-kayit 8db3103 (+560aaa7), 2012-2026, olculmus Maven maliyeti, Bonferroni 0.05/9. bp/islem "
+              "maliyetsiz/merkez/2x, CI, <2022/2022+: B1 fark +0.5/+0.5/+0.5 [-0.2,1.2] +0.8/-0.1; "
+              "B3 XAU H1 +52.6/+49.9/+47.2 [-26,235] +7.3/+161 (n=228); B4 XAU M30 +4.0/+1.3/-1.4 [-3.3,6.0]; "
+              "B5 NQ +4.2 [-16,25], XAU +5.9 [-14,28]; B6 NQ +1.6 [-5.9,9.2], XAU -17.1 [-44,5.7]. 7/7 GECMEDI.",
+        neden="Hicbirinde CI alt siniri > 0 degil; B3'un ortalamasi 2022+ altin trendinden geliyor "
+              "(<2022 +7.3bp), B4 ve B6 NQ 2x maliyette negatif.",
+        tarih="2026-11-18",
+        kaynak="seffaf_adaylari.py + HANDOFF/seffaf_kaynak_adaylari_onkayit_2026-11-18.md",
+        kapsam="Yalniz on-kayitta sabitlenen parametreler. B2 (BTC Donchian topluluk) ve B7 (IBS NQ) GECTI, "
+               "bu maddenin disinda. Canli SWEEP ve NOISE_BAND modulleri (overlay'siz NB) etkilenmez. "
+               "Turtle Soup/Oops icin farkli tutma suresi yeni on-kayit ister.",
+        anahtarlar=("turtle soup", "williams oops", "oops", "gold trend breakout", "ema trend cross",
+                    "pullback overlay", "noise band overlay", "mql5 codebase"),
+    ),
 )
 
 

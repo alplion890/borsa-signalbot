@@ -68,3 +68,33 @@ Alınmayanlar: RSI(2)/Double 7s/TPS/%b (NQ CFD bağımsız maliyetli test zayıf
 ailenin en sade temsilcisi olarak tek test); BTC MAX/MIN (B2 ailesi); BTC 21–23 vol filtresi (canlı modüle
 post-hoc filtre); altın gece/gündüz seansı (kaynak bid/ask sonrası negatif); overnight drift (2021+ kayboldu);
 151 Strategies (backtest yok, geniş sepet ister).
+
+## SONUÇ (2026-11-18, ön-kayıt 8db3103 + 560aaa7 sonrası tek koşu)
+Kod: `strategy-lab/intraday/seffaf_adaylari.py` (Antigravity yazdı, Claude denetledi: short getiri formülü
+düzeltildi — hata Claude'un görev metnindeydi; B1 overlay koşul=True iken nb_simulate ile 802/802 birebir).
+bp/işlem (B2 bp/gün): maliyetsiz / merkez / 2× · Bonferroni CI (merkez) · <2022 / 2022+ · n
+- B1 NB overlay farkı: +0.5 / +0.5 / +0.5 · [−0.2, 1.2] · +0.8 / −0.1 · 3473 gün → GEÇMEDİ
+- **B2 BTC Donchian topluluk (swap 0): +4.27 / +4.24 / +4.21 · [0.73, 7.99] · +6.39 / +2.42 · 3289 gün → GEÇTİ**
+  - swap −%30/yıl satırı: +2.70 · [−0.78, 6.42] · +5.24 / +0.55 → swaplı firmada GEÇMEZ. Ortalama toplam ağırlık 0.19.
+- B3 XAU H1: +52.6 / +49.9 / +47.2 · [−26, 235] · +7.3 / +161 · 228 → GEÇMEDİ
+- B4 XAU M30: +4.0 / +1.3 / −1.4 · [−3.3, 6.0] · −0.9 / +6.4 · 1128 → GEÇMEDİ
+- B5 NQ: +6.4 / +4.2 / +1.9 · [−16, 25] · 120 → GEÇMEDİ; B5 XAU: +8.6 / +5.9 / +3.2 · [−14, 28] · 115 → GEÇMEDİ
+- B6 NQ: +3.8 / +1.6 / −0.6 · [−5.9, 9.2] · 1028 → GEÇMEDİ; B6 XAU: −14.4 / −17.1 / −19.8 · [−44, 5.7] · 64 → GEÇMEDİ
+- **B7 IBS NQ: +54.3 / +52.1 / +49.8 · [23.1, 79.3] · +58.9 / +39.2 · 415 → GEÇTİ**
+  - swap −1.18 bp/gece (ort. 4.6 gece): +46.6 · [17.5, 74.1] · 2022+ +33.5 → swaplı da geçer.
+  - İcra duyarlılığı (kural değil, bilgi): IBS ve giriş/çıkış 15:55 bar kapanışı → +41.6 · [15.9, 66.4] · 2022+ +26.4, n=436.
+
+### Portföy adımı (FN 2-Step 25K, 2022+, 20 gün blok bootstrap 800 yol, seed 20261118)
+Boyut ön-kayıtta yoktu; varsayım (sonuca bakmadan, TOM ile eş): B7 0.5× nominal, B2 0.5× (hedef vol %12.5).
+Günlük korelasyon 2022+: B7 ile mevcut 6 modül −0.02..0.09; B2 ile BTC_21_23 0.20, BTC_GECE 0.12, diğerleri ≤0.04.
+Yıllık % / Sharpe / maxDD%; mc=3: ilk payout medyan gün, 12 ay net $, zarar olasılığı (gün içi 1.5× stres):
+- 6'lı: 18.1 / 1.48 / 11.1 · 99g $2968 %3 (%7)
+- +B7: 23.9 / 1.70 / 14.5 · 79g $4239 %2 (%6)
+- +B2: 22.5 / 1.54 / 12.0 · 91g $3821 %4 (%9)
+- +B7+B2: 28.3 / 1.74 / 14.5 · 75g $5151 %2 (%8)
+- +B7+B2 swaplı: 24.1 / 1.48 / 14.7 · 80g $4389 %4 (%12)
+- mc=1 aynı sıra: 214g $1092 / 178g $2381 / 185g $1984 / 160g $3172 / 171g $2417.
+Sıfır-edge kontrol (ortalama çıkarılmış) her sette negatif/≈0 medyan → değer edge'den geliyor.
+Açık noktalar: B7'de stop yok → FN "en fazla %3 açık risk" kuralı stop'suz pozisyonda nasıl ölçülür, doğrulanmadı.
+B2/B7 P&L simülasyonda giriş gününe yazıldı (mevcut TOM ile aynı) → çok günlük taşımada gün içi dip eksik ölçülür.
+FundedNext'in BTC/NDX swap'ı doğrulanmadı. Eklenme kararı kullanıcıda.
