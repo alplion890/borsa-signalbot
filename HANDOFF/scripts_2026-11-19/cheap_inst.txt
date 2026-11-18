@@ -1,0 +1,132 @@
+MODUL TESHIS (risk boyutlu x1, 2022+): yil% | gun ici zarar >%1 gun% | >%2 gun% | en iyi gun / toplam kar
+ SWEEP           6.0 |  0.3 |  0.1 |  11.8%
+ DONCHIAN_XAU    2.4 |  0.2 |  0.0 |  17.3%
+ NOISE_BAND      1.8 |  0.0 |  0.0 |  18.4%
+ AY_DONUMU_NQ    0.0 |  0.0 |  0.0 | 199.1%
+ BTC_21_23       0.1 |  0.0 |  0.0 | 122.2%
+ BTC_GECE        2.3 |  0.0 |  0.0 |  13.6%
+ B7              0.4 |  0.0 |  0.0 |  20.0%
+
+===== MAVEN_INST 5K $18.05
+ HEPSI (7)
+   x0.25: ilk payout med 222g (yok %43) | 12ay net med $104 zarar %43 | hesap ort 1.0
+   x0.5: ilk payout med 200g (yok %40) | 12ay net med $109 zarar %40 | hesap ort 2.5
+   x1.0: ilk payout med 216g (yok %83) | 12ay net med $-361 zarar %94 | hesap ort 21.0
+ -SWEEP
+   x0.25: ilk payout med 250g (yok %64) | 12ay net med $-18 zarar %64 | hesap ort 1.0
+   x0.5: ilk payout med 196g (yok %39) | 12ay net med $104 zarar %39 | hesap ort 1.8
+   x1.0: ilk payout med 196g (yok %65) | 12ay net med $-253 zarar %83 | hesap ort 16.2
+ -DONCHIAN_XAU
+   x0.25: ilk payout med 263g (yok %64) | 12ay net med $-18 zarar %64 | hesap ort 1.0
+   x0.5: ilk payout med 224g (yok %58) | 12ay net med $-18 zarar %58 | hesap ort 1.5
+   x1.0: ilk payout med 202g (yok %80) | 12ay net med $-181 zarar %86 | hesap ort 10.9
+ -NOISE_BAND
+   x0.25: ilk payout med 231g (yok %49) | 12ay net med $102 zarar %49 | hesap ort 1.0
+   x0.5: ilk payout med 206g (yok %45) | 12ay net med $87 zarar %45 | hesap ort 2.3
+   x1.0: ilk payout med 228g (yok %85) | 12ay net med $-289 zarar %93 | hesap ort 16.8
+ -AY_DONUMU_NQ
+   x0.25: ilk payout med 222g (yok %44) | 12ay net med $104 zarar %44 | hesap ort 1.0
+   x0.5: ilk payout med 201g (yok %40) | 12ay net med $112 zarar %40 | hesap ort 2.5
+   x1.0: ilk payout med 216g (yok %83) | 12ay net med $-361 zarar %94 | hesap ort 21.0
+ -BTC_21_23
+   x0.25: ilk payout med 224g (yok %45) | 12ay net med $103 zarar %45 | hesap ort 1.0
+   x0.5: ilk payout med 204g (yok %38) | 12ay net med $127 zarar %38 | hesap ort 2.2
+   x1.0: ilk payout med 206g (yok %77) | 12ay net med $-289 zarar %90 | hesap ort 17.1
+ -BTC_GECE
+   x0.25: ilk payout med 261g (yok %60) | 12ay net med $-18 zarar %60 | hesap ort 1.0
+   x0.5: ilk payout med 223g (yok %54) | 12ay net med $-18 zarar %54 | hesap ort 1.6
+   x1.0: ilk payout med 196g (yok %83) | 12ay net med $-181 zarar %85 | hesap ort 11.0
+ -B7
+   x0.25: ilk payout med 230g (yok %45) | 12ay net med $103 zarar %45 | hesap ort 1.0
+   x0.5: ilk payout med 206g (yok %41) | 12ay net med $109 zarar %41 | hesap ort 2.3
+   x1.0: ilk payout med 217g (yok %78) | 12ay net med $-301 zarar %90 | hesap ort 17.9
+ yalniz SWEEP
+   x0.25: ilk payout med 322g (yok %96) | 12ay net med $-18 zarar %96 | hesap ort 1.0
+   x0.5: ilk payout med 307g (yok %96) | 12ay net med $-18 zarar %96 | hesap ort 1.2
+   x1.0: ilk payout med 305g (yok %97) | 12ay net med $-36 zarar %97 | hesap ort 2.5
+ yalniz DONCHIAN_XAU
+   x0.25: ilk payout med 300g (yok %98) | 12ay net med $-18 zarar %98 | hesap ort 1.0
+   x0.5: ilk payout med 231g (yok %68) | 12ay net med $-18 zarar %68 | hesap ort 1.2
+   x1.0: ilk payout med 214g (yok %58) | 12ay net med $-36 zarar %58 | hesap ort 2.7
+ yalniz NOISE_BAND
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med 324g (yok %97) | 12ay net med $-18 zarar %97 | hesap ort 1.0
+   x1.0: ilk payout med 260g (yok %82) | 12ay net med $-18 zarar %82 | hesap ort 1.1
+ yalniz AY_DONUMU_NQ
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+ yalniz BTC_21_23
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med 308g (yok %98) | 12ay net med $-18 zarar %98 | hesap ort 1.0
+ yalniz BTC_GECE
+   x0.25: ilk payout med 285g (yok %98) | 12ay net med $-18 zarar %98 | hesap ort 1.0
+   x0.5: ilk payout med 246g (yok %78) | 12ay net med $-18 zarar %78 | hesap ort 1.0
+   x1.0: ilk payout med 212g (yok %61) | 12ay net med $-18 zarar %61 | hesap ort 1.6
+ yalniz B7
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med nang (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med 292g (yok %100) | 12ay net med $-18 zarar %100 | hesap ort 1.0
+
+===== FN_INSTANT 2K $41.99
+ HEPSI (7)
+   x0.25: ilk payout med 77g (yok %4) | 12ay net med $-1 zarar %52 | hesap ort 1.0
+   x0.5: ilk payout med 38g (yok %1) | 12ay net med $46 zarar %16 | hesap ort 1.1
+   x1.0: ilk payout med 21g (yok %0) | 12ay net med $109 zarar %9 | hesap ort 2.6
+ -SWEEP
+   x0.25: ilk payout med 104g (yok %13) | 12ay net med $-19 zarar %77 | hesap ort 1.0
+   x0.5: ilk payout med 45g (yok %5) | 12ay net med $13 zarar %38 | hesap ort 1.1
+   x1.0: ilk payout med 25g (yok %0) | 12ay net med $58 zarar %22 | hesap ort 2.1
+ -DONCHIAN_XAU
+   x0.25: ilk payout med 97g (yok %6) | 12ay net med $-11 zarar %69 | hesap ort 1.0
+   x0.5: ilk payout med 48g (yok %2) | 12ay net med $29 zarar %23 | hesap ort 1.0
+   x1.0: ilk payout med 28g (yok %0) | 12ay net med $93 zarar %9 | hesap ort 1.7
+ -NOISE_BAND
+   x0.25: ilk payout med 81g (yok %7) | 12ay net med $-6 zarar %60 | hesap ort 1.0
+   x0.5: ilk payout med 44g (yok %3) | 12ay net med $36 zarar %23 | hesap ort 1.1
+   x1.0: ilk payout med 24g (yok %0) | 12ay net med $94 zarar %13 | hesap ort 2.5
+ -AY_DONUMU_NQ
+   x0.25: ilk payout med 78g (yok %4) | 12ay net med $-2 zarar %53 | hesap ort 1.0
+   x0.5: ilk payout med 38g (yok %1) | 12ay net med $46 zarar %16 | hesap ort 1.1
+   x1.0: ilk payout med 22g (yok %0) | 12ay net med $104 zarar %9 | hesap ort 2.6
+ -BTC_21_23
+   x0.25: ilk payout med 82g (yok %4) | 12ay net med $-3 zarar %55 | hesap ort 1.0
+   x0.5: ilk payout med 37g (yok %1) | 12ay net med $44 zarar %16 | hesap ort 1.1
+   x1.0: ilk payout med 21g (yok %0) | 12ay net med $109 zarar %9 | hesap ort 2.4
+ -BTC_GECE
+   x0.25: ilk payout med 94g (yok %8) | 12ay net med $-10 zarar %67 | hesap ort 1.0
+   x0.5: ilk payout med 48g (yok %3) | 12ay net med $31 zarar %26 | hesap ort 1.0
+   x1.0: ilk payout med 24g (yok %0) | 12ay net med $86 zarar %11 | hesap ort 2.0
+ -B7
+   x0.25: ilk payout med 81g (yok %4) | 12ay net med $-3 zarar %56 | hesap ort 1.0
+   x0.5: ilk payout med 41g (yok %2) | 12ay net med $41 zarar %17 | hesap ort 1.1
+   x1.0: ilk payout med 22g (yok %0) | 12ay net med $103 zarar %10 | hesap ort 2.5
+ yalniz SWEEP
+   x0.25: ilk payout med 160g (yok %28) | 12ay net med $-31 zarar %94 | hesap ort 1.0
+   x0.5: ilk payout med 87g (yok %14) | 12ay net med $-9 zarar %60 | hesap ort 1.0
+   x1.0: ilk payout med 54g (yok %8) | 12ay net med $28 zarar %29 | hesap ort 1.2
+ yalniz DONCHIAN_XAU
+   x0.25: ilk payout med 167g (yok %47) | 12ay net med $-35 zarar %99 | hesap ort 1.0
+   x0.5: ilk payout med 86g (yok %25) | 12ay net med $-24 zarar %77 | hesap ort 1.0
+   x1.0: ilk payout med 48g (yok %8) | 12ay net med $3 zarar %49 | hesap ort 1.3
+ yalniz NOISE_BAND
+   x0.25: ilk payout med 272g (yok %81) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med 185g (yok %38) | 12ay net med $-35 zarar %99 | hesap ort 1.0
+   x1.0: ilk payout med 84g (yok %16) | 12ay net med $-18 zarar %78 | hesap ort 1.0
+ yalniz AY_DONUMU_NQ
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med nang (yok %100) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med nang (yok %100) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+ yalniz BTC_21_23
+   x0.25: ilk payout med 340g (yok %99) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med 236g (yok %87) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med 152g (yok %52) | 12ay net med $-42 zarar %99 | hesap ort 1.0
+ yalniz BTC_GECE
+   x0.25: ilk payout med 190g (yok %51) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med 114g (yok %24) | 12ay net med $-26 zarar %85 | hesap ort 1.0
+   x1.0: ilk payout med 57g (yok %10) | 12ay net med $-3 zarar %52 | hesap ort 1.1
+ yalniz B7
+   x0.25: ilk payout med nang (yok %100) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x0.5: ilk payout med 304g (yok %95) | 12ay net med $-42 zarar %100 | hesap ort 1.0
+   x1.0: ilk payout med 211g (yok %58) | 12ay net med $-42 zarar %100 | hesap ort 1.0

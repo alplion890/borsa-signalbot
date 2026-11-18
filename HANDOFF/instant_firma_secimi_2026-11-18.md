@@ -53,3 +53,15 @@ Fiyat/kurallar 2026-11-18 resmi okuma. Biçim: ilk payout medyan gün · 12 ay n
 - 1-Step 6K $65.99: risk boyutlu x3 77g/$479/%8; mevcut lot x3 43g/$730/%9 (yılda 7.5 hesap).
 - Sıfır edge (x3, risk boyutlu): üçü de negatif (−$29..−$76, zarar %53–57) → model değeri edge'den alıyor.
 - Doğrulanmadı: challenge'da EA/hafta sonu kuralı, funded'da açık risk kuralı var mı. Script scripts_2026-11-18/step_sim.py.
+
+## Ek (2026-11-19): ucuz instant'ı ne engelliyor? (keşif, ön-kayıtsız; karar için değil teşhis için)
+Risk boyutlu 7 modül (6'lı + B7), 500 yol × 365 gün. Açık zarar %1 kuralı gün içi en kötü (stres 1.5×) ile YAKLAŞIK modellendi
+(kötümser: gerçekleşmiş zararı da sayıyor). FN %3 açık risk kuralı modellenmedi.
+- Maven Instant 5K $18.05, x0.5: 200g · $109 · zarar %40. x1: zarar %94 (yılda 21 hesap). Tek modül çıkarmak hiçbirinde düzeltmiyor;
+  tek modül tek başına daha kötü. Patlamaların çoğu "%1 açık zarar" (x0.5: 580/747), kalanı %3 kayan.
+- Kural kapatma (x0.5): tutarlılık %20 yok → 117g · $214 · %7; açık %1 yok → 202g · $173 · %34; kayan %6 → değişmez.
+  x1 ikisi yok → 51g · $665 · %0 (üst sınır, gerçek değil). Bağlayan kurallar: %20 tutarlılık (süre) + %1 açık zarar (patlama).
+  En iyi gün dağılımı p50 %0.13, p90 %0.87, max %3.15 → %3 kârla payout için en iyi gün ≤ %0.6 olmalı.
+- FN Instant 2K $41.99, 7 modül x1: 21g · $109 · %9 (sıfır edge −$22 · %59); x0.5: 38g · $46 · %16. Modül çıkarmak hep kötüleştiriyor.
+- Uyarlama seçenekleri: bot "açık risk ≤ %1" kapısı (Maven) uygulanabilir; tutarlılık için temiz çözüm yok (hedef küçültme = strateji
+  değişikliği → ön-kayıt + test gerekir).
