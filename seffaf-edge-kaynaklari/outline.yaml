@@ -1,0 +1,45 @@
+topic: "Seffaf, bagimsiz test edilebilir edge kaynaklari (yarisma sampiyonlari, acik kod, akademik, MQL5)"
+created: 2026-11-18
+goal: >
+  Kurali tam acik (kod veya kesin kural), US100/NQ, XAUUSD, BTC, FX ya da Maven/FundedNext'te bulunan
+  enstrumanlarda uygulanabilir stratejileri bul; her biri icin bizim motorda (honest_engine, olculmus maliyet,
+  bootstrap) ya da MT5 Strategy Tester'da test edilebilir kural ozetini cikar. Elenenler katalogunda
+  olanlari isaretle.
+items:
+  # A. Yarisma sampiyonlari / kural aciklayanlar
+  - {id: A1, name: "Kevin Davey (WCC 1./2.)", group: yarisma}
+  - {id: A2, name: "Andrea Unger (4x WCC)", group: yarisma}
+  - {id: A3, name: "Larry Williams (WCC 1987)", group: yarisma}
+  - {id: A4, name: "Linda Raschke - Street Smarts", group: yarisma}
+  - {id: A5, name: "Turtle Trading kurallari", group: yarisma}
+  - {id: A6, name: "World Cup / US Investing Championship kazanan listeleri", group: yarisma}
+  # B. Acik kod platformlari
+  - {id: B1, name: "Quantiacs (vadeli yarisma, acik kod)", group: acik_kod}
+  - {id: B2, name: "QuantConnect Strategies / Strategy Explorer (klonlanabilir)", group: acik_kod}
+  - {id: B3, name: "MQL5 CodeBase (acik kaynak EA)", group: acik_kod}
+  - {id: B4, name: "MQL5 Articles (kod + tester sonucu)", group: acik_kod}
+  - {id: B5, name: "TradingView acik kaynak stratejiler (NQ/XAU/BTC)", group: acik_kod}
+  - {id: B6, name: "WorldQuant 101 Formulaic Alphas", group: acik_kod}
+  - {id: B7, name: "GitHub: awesome-quant, pysystemtrade, Hudson&Thames", group: acik_kod}
+  # C. Dogrulanmis hesaplar (kural kapali)
+  - {id: C1, name: "Darwinex DARWIN", group: dogrulanmis}
+  - {id: C2, name: "Myfxbook / FXBlue / Kinfo", group: dogrulanmis}
+  - {id: C3, name: "MQL5 Signals", group: dogrulanmis}
+  - {id: C4, name: "Collective2", group: dogrulanmis}
+  # D. Akademik / replikasyon
+  - {id: D1, name: "SSRN / arXiv q-fin intraday (NQ, XAU, BTC, FX)", group: akademik}
+  - {id: D2, name: "Concretum / Zarattini makaleleri (Noise Band disindakiler)", group: akademik}
+  - {id: D3, name: "Robert Carver - Systematic Trading / pysystemtrade kurallari", group: akademik}
+  - {id: D4, name: "Ernest Chan, Perry Kaufman, Fitschen kitaplari", group: akademik}
+  - {id: D5, name: "Alpha Architect, Quantocracy, Robot Wealth, Quantitativo", group: akademik}
+  - {id: D6, name: "Open Source Asset Pricing + Jensen-Kelly-Pedersen (uyum dusuk, referans)", group: akademik}
+  - {id: D7, name: "Yayin sonrasi bozulma + Deflated Sharpe/PBO (yontem)", group: yontem}
+  # E. Forum / blog (ayiklanacak)
+  - {id: E1, name: "Elite Trader, NexusFi, Forex Factory gunlukleri", group: forum}
+  - {id: E2, name: "r/algotrading", group: forum}
+  - {id: E3, name: "Bagimsiz test bloglari (Backtests Not Signals vb.)", group: forum}
+  - {id: E4, name: "StrategyQuant / Build Alpha topluluklari (veri madenciligi riski)", group: forum}
+execution:
+  batch_size: 4
+  items_per_agent: 7
+  output_dir: ./seffaf-edge-kaynaklari/results

@@ -1,0 +1,25 @@
+categories:
+  kaynak:
+    - {name: source_type, description: "yarisma/acik_kod/dogrulanmis/akademik/forum", detail_level: brief}
+    - {name: access, description: "ucretsiz/ucretli, URL", detail_level: brief}
+    - {name: last_verified_date, description: "bilginin tarihi", detail_level: brief}
+    - {name: conflict_of_interest, description: "kurs/urun/sinyal satiyor mu", detail_level: brief}
+  strateji:
+    - {name: candidate_strategies, description: "kaynaktaki somut stratejiler; her biri icin giris/cikis/stop/hedef/zaman kurali ozeti", detail_level: detailed}
+    - {name: rule_transparency, description: "tam kod / tam kural / kismi / korumali", detail_level: brief}
+    - {name: instrument_fit, description: "US100/NQ, XAU, BTC, FX; Maven/FundedNext'te var mi", detail_level: moderate}
+    - {name: timeframe_holding, description: "zaman dilimi, tutma suresi, gece/hafta sonu tasima", detail_level: brief}
+  kanit:
+    - {name: sample_length, description: "test donemi, islem sayisi", detail_level: brief}
+    - {name: cost_model, description: "maliyet raporlanmis mi, nasil; 1x/2x duyarlilik", detail_level: moderate}
+    - {name: robustness_method, description: "OOS, walk-forward, Monte Carlo, bagimsiz tekrar", detail_level: moderate}
+    - {name: n_trials_disclosed, description: "yazar kac konfigurasyon denedi", detail_level: brief}
+    - {name: data_source, description: "veri kaynagi, bar mi tick mi, vadeli rol", detail_level: brief}
+    - {name: live_vs_backtest_gap, description: "canli sonuc yayinlanmis mi, fark", detail_level: brief}
+    - {name: post_publication_decay, description: "yayin sonrasi bozulma kaniti", detail_level: brief}
+    - {name: survivorship_bias, description: "yalniz kazananlar mi gosteriliyor", detail_level: brief}
+  bizim_sistem:
+    - {name: overlap_rejected, description: "elenenler katalogunda var mi (ORB, ITSM, TOM, opex, inside-day ...)", detail_level: brief}
+    - {name: test_path, description: "honest_engine Python'a cevrilir mi / MT5 Strategy Tester'da EA olarak mi kosulur", detail_level: moderate}
+    - {name: prop_rule_risk, description: "gunluk limit, tutarlilik, haber, gece/hafta sonu, EA yasagi ile catisma", detail_level: moderate}
+uncertain: []
