@@ -133,3 +133,29 @@ kuralı challenge'da da geçerliyse ihlal eder (doğrulanmadı). 10–20 güne i
 Sweep+NB(min lot)+BTC 21–23+BTC gece: x1 → 30 günde payout %67 (gün medyan 14, tutar medyan $23), patlama %1, bekleyen %32;
 x2 → %74 ($34), patlama %15; x3 → %69 ($53), patlama %28. Sıfır edge x1: payout %49 (14 günlük ≥%1 eşiği gürültüyle de tetiklenir).
 BTC'siz: x1 %60 ($22), x2 %69 ($31), x3 %70 ($44, patlama %20). İlk ödeme medyanı ücretin ($41.99) altında; 2K'da %5 = $100 → %70 = $70 tavan.
+
+## Ek (2026-11-20): Futures prop taraması ve futures vs CFD
+
+Scripts: `HANDOFF/scripts_2026-11-19/mnq_size.py`, `nbfut.py`, `futsim.py`, `futsim_dbg.py`, `futsim2.py`.
+Futures commission NOT measured (r carries CFD cost model) — "maliyet ölçülmedi".
+
+**Turkey + bot filter (official help centers unless noted):**
+- TradeDay: Turkey on official prohibited-countries list (art. 103000123294); no API; third-party bots banned; VPS-to-mask-location banned. (Batch-B subagent said "Turkey confirmed" — WRONG, corrected in vault note.)
+- Apex, Topstep, Lucid, Tradeify: Turkey restricted (third-party BestProps, subagent says confirmed in help centers). Apex also bans automation.
+- MyFundedFutures, Alpha Futures, Top One Futures: Turkey prohibited; Alpha/Top One ban bots. Phidias bans automation. Earn2Trade unclear. Elite: bots need approval.
+- Futureify: bots allowed, Turkey not confirmed, $107, 3 Trustpilot reviews.
+- **FundedNext Futures: only fit.** Bots/EAs allowed (art. 14298560), HFT banned, platforms NinjaTrader/Tradovate (API not found). Turkey not purchase-restricted; Risk Desk review at live eligibility (art. 17228971).
+  - Cheapest: Rapid Pro 25K + Daily Loss Limit add-on, $44.99 first purchase (code RAPID, "until further notice"). Conflict: withdrawal article says Rapid stopped selling 10 Jul 2026, but Nov 2026 coupon still sells it.
+  - Rules: target $1,500, MLL $1,000 EOD trailing (locks $25,100, floating breach instant), DLL $500 soft, no challenge consistency, 20 micros. Funded: same MLL, withdraw every 3 days, needs $500 cycle profit, best day ≤40% of cycle profit, min $250, cap $600 (first 3), split 90%, 5 payouts then ends.
+
+**MNQ sizing ($2/pt):** Sweep stop median 29 pt = $58/contract → fits. NB k1 ATR stop median 298 pt = $597/contract (p90 $862, max $1,542) → 25K at 0.5–1% risk opens 0 trades; forced 1 MNQ = 60% of $1,000 MLL, above $500 DLL. NB 1 MNQ on 25K: 8.7%/yr, 134 trade days, worst day −2.82%.
+
+**Sim (one account, 30 days, 500 paths):**
+- Sweep only: payout 0% at x1–x4 (even 60 days 0%). Sweep trades ~17 days/yr; first time funded cycle reaches $500 the 40% consistency rule is broken in 100% of cases.
+- Sweep + NB 1 MNQ: payout 0–1%; challenge blow 16–22%. Zero-edge: payout 0%, blow 22–43%.
+
+**Futures vs CFD (user constraints ≤$50, ≤30d, bot, Turkey):**
+- CFD FN Stellar Instant 2K $41.99: Sweep+NB(min lot)+BTC 30-day one-shot payout 67% (x1, median $23) / 74% (x2, $34) / 69% (x3, $53); zero-edge 49%.
+- Futures FN Rapid Pro 25K $44.99: 30-day payout ~0–1%.
+- Futures loses because: (1) evaluation before funded, (2) funded consistency + $500 cycle, (3) MNQ granularity too coarse for NB (CFD 0.01 lot is ~20x finer per $ of drawdown), (4) BTC modules not mapped (CME MBT daily break 22–23 UTC overlaps BTC_21_23 window — not tested), (5) nearly all futures firms restrict Turkey.
+- Futures advantages that remain: account size (25K vs 2K), 90% split, no swap, $250 min payout. Not usable under ≤30-day constraint.
