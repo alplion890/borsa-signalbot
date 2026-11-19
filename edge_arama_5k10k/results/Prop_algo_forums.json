@@ -1,0 +1,88 @@
+{
+  "research_name": "Prop/algo forums (r/algotrading, Elite Trader, Futures.io) verified backtests",
+  "topic": "transparent replicable intraday edges for cheap bot-allowed 5K/10K prop accounts (FundedNext Stellar Instant)",
+  "date": "2026-11-20",
+  "result_summary": "No forum thread (r/algotrading, Elite Trader, Futures.io) with full rules plus out-of-sample or broker-verified live results was found; the futures.io thread itself did not surface in search. Best-evidenced item is an open-source TradingView NQ 1-minute London-session liquidity-sweep script with stated rules, costs, and an admitted losing period, but it is in-sample only and has no broker statement.",
+  "name": "NQ CISD London 2R (TradingView open-source script by Bystry1991) [uncertain]",
+  "source_url": "https://www.tradingview.com/script/JQJf42H0/",
+  "author_year": "Bystry1991; 2026 (script listing; backtest May-Oct 2026) [uncertain]",
+  "instrument": "CME_MINI:NQ1! (Nasdaq-100 E-mini), 1 contract; Maven MT5 US100 equivalence not verified [uncertain]",
+  "timeframe": "1-minute strategy tester (Bar Magnifier enabled); signals on intraday session structure",
+  "entry_rule": "Liquidity sweep, then confirmed shift in price delivery, then strong displacement candle; entries only 09:00-10:00 Europe/Warsaw; at most one trade per London session. Exact thresholds for sweep, delivery shift, and displacement not given. [uncertain]",
+  "exit_rule": "Initial stop-loss; take-profit at 2R (before costs); any open position closed at 12:00 Europe/Warsaw. Session exits can land below 2R.",
+  "stop_rule": "Initial stop-loss stated but its distance in points or ATR multiple is not given. [uncertain]",
+  "holding_time": "Intraday; maximum until 12:00 Europe/Warsaw. Average duration not reported. [uncertain]",
+  "trades_per_year": "Not reported as annual; 124 closed trades in six months (about 250 per year if extrapolated, my calculation, not reported). [uncertain]",
+  "overnight_weekend": "No. Positions closed by 12:00 Europe/Warsaw each day.",
+  "signal_window_definition": "Fixed 09:00-10:00 Europe/Warsaw window, one trade per London session, exit 12:00 Warsaw. Timezone-based, so DST is handled by the zone database; the script's explicit DST treatment is not described. [uncertain]",
+  "sample_period": "1 May 2026 to 31 Oct 2026 (six months), default London configuration",
+  "out_of_sample": "None. Page states the result is a selected historical research result, not an independently validated out-of-sample track record.",
+  "cost_assumption": "$3 commission per contract per side; one tick slippage; one contract; 1% margin is a simulation assumption, not a verified broker requirement.",
+  "reported_metrics": "124 closed trades; win rate 42.74%; profit factor 1.45; net profit $12,651 on $10,000 initial capital; max equity drawdown $5,753. Expectancy not reported (about $102 per trade by division, my calculation).",
+  "third_party_replication": "None found. Public script with visible source link; replication not reported.",
+  "evidence_grade": "kodlu backtest",
+  "decay_status": "Not assessed; only one six-month in-sample window plus one earlier losing six-month test.",
+  "regime_split": "Earlier six-month test lost $5,357 (dates, trade count, and win rate not given); page states profitability was not consistent across both periods.",
+  "data_source_requirement": "NQ 1-minute OHLC with TradingView Bar Magnifier; roll and gap handling not described. Maven MT5 US100 feed equivalence not verified. [uncertain]",
+  "min_lot_fit_5k10k": "Not computable: stop distance not published, so risk % per 0.01 lot cannot be derived. [uncertain]",
+  "fn_rule_fit": "Intraday only (no overnight), no grid, HFT, or tick-scalp pattern; stop-loss present. News +-5 min rule not addressed; London 08:00-09:00 local window may coincide with UK/EU releases. [uncertain]",
+  "bot_policy_compliance": "Pine script: runs as a TradingView strategy, not directly as an MT5 EA; porting and bot-permission status not verified. [uncertain]",
+  "event_overlap": "London session 09:00-10:00 Warsaw (08:00-09:00 London) may overlap UK and EU morning releases; not checked against calendar.",
+  "overlap_with_existing": "No overlap with Sweep (US100 Sweep alarm), Donchian XAU, or BTC 21-23 by design; overlaps conceptually with other NQ intraday models if run together.",
+  "rejected_catalog_hit": "Not checked against elenenler catalog; run python -m intraday.elenenler --kontrol liquidity sweep in the main session. [uncertain]",
+  "base_rate_check": "Win rate 42.74% with 2R target: breakeven win rate is about 33%, so result is above breakeven before costs, but no baseline random-entry comparison given.",
+  "pitfall_risk": "In-sample only; small six-month sample (124 trades, overlapping context); earlier losing test shows regime sensitivity; sweep and displacement thresholds undefined (post-hoc tuning risk); single symbol; no OOS or forward record.",
+  "priority_score": 2,
+  "notes": [
+    {
+      "candidate": "Automated Trading Strategies (Substack) 2024 live forward test",
+      "source_url": "https://automatedtradingstrategies.substack.com/p/ats-2024-live-test-final-tally-up",
+      "reason_not_chosen": "Forward test with a dated 196% six-month result, but the post is paywalled, rules are not disclosed, the account type is unclear, and no broker statement is shown."
+    },
+    {
+      "candidate": "ATS strategy index (Substack)",
+      "source_url": "https://automatedtradingstrategies.substack.com/p/strategy-descriptions",
+      "reason_not_chosen": "Index only; instrument, timeframe, entry, exit, and stop are not disclosed for any listed strategy. Paid subscribers only."
+    },
+    {
+      "candidate": "XP Trading NQ Intraday Trading Strategy (Whop)",
+      "source_url": "https://whop.com/joined/xp-trading-1b94/products/nq-intraday-trading-strategy-a-repeatable-edge/",
+      "reason_not_chosen": "Paid product; claims 700+ trades, about 81% win rate, and live results Jan-Apr 2026, but no broker statement or full rules visible. Sales page."
+    },
+    {
+      "candidate": "NQ Alpha Engine (MNQ, Collective2)",
+      "source_url": "https://nq-alpha-engine.pages.dev/",
+      "reason_not_chosen": "Claims 62.4% win rate over 197 trades since March 2026 with AMP/CQG execution, but Collective2 record is hypothetical signal-based and the source is a sales site."
+    },
+    {
+      "candidate": "Elite Trader Futures Signals thread",
+      "source_url": "https://elitetrader.com/et/threads/futures-signals.312752/",
+      "reason_not_chosen": "Signal service with rules in a PDF; no out-of-sample or live statement in the snippet. Not verifiable."
+    },
+    {
+      "candidate": "Reddit r/algotrading walk-forward live comparison thread (8k account)",
+      "source_url": "https://axebps-redlib.hf.space/r/algotrading/comments/1jj15c5/i_made_and_lost_over_500k_algotrading",
+      "reason_not_chosen": "Anecdotal claim that live matched backtest over the live period; no broker statement; thread title says the author lost money. Rules not shown."
+    },
+    {
+      "candidate": "The Swing Trader (ES and TY futures, walk-forward)",
+      "source_url": "https://www.slideshare.net/slideshow/swing-trading-system-by-algorithmictradingnet/78634892",
+      "reason_not_chosen": "Walk-forward period 2015-2017 separate from in-sample 2003-2015 with stated split; swing horizon, not intraday; vendor deck with unverified results."
+    }
+  ],
+  "uncertain": [
+    "name",
+    "author_year",
+    "instrument",
+    "entry_rule",
+    "stop_rule",
+    "holding_time",
+    "trades_per_year",
+    "signal_window_definition",
+    "data_source_requirement",
+    "min_lot_fit_5k10k",
+    "fn_rule_fit",
+    "bot_policy_compliance",
+    "rejected_catalog_hit"
+  ]
+}

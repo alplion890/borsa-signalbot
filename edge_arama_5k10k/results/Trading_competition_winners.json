@@ -1,0 +1,90 @@
+{
+  "research_name": "Trading competition winners (Robbins World Cup, US Investing Championship) with disclosed rules",
+  "topic": "transparent replicable intraday edges for cheap bot-allowed 5K/10K prop accounts (FundedNext Stellar Instant)",
+  "date": "2026-11-20",
+  "result_summary": "No competition winner with a full, testable intraday rulebook was found. The best partial disclosure is a 2023 US Investing Championship top-4 trader summarized by Financial Wisdom TV; its rules are vague and swing-based, not intraday. Other winners have only secondhand or non-testable descriptions.",
+  "name": "Marios - 2023 US Investing Championship top-4 swing method (Classic Breakout, Episodic Pivot, Parabolic Short) [uncertain]",
+  "source_url": "https://www.financialwisdomtv.com/post/the-winning-stock-trading-strategy-from-the-2023-us-trading-champion",
+  "author_year": "Marios (surname not confirmed in fetched text) [uncertain]; 2023 championship, summary page undated [uncertain]",
+  "instrument": "US cash equities; no verified Maven MT5 symbol equivalent [uncertain]",
+  "timeframe": "Daily bars, swing horizon; no intraday timeframe disclosed [uncertain]",
+  "entry_rule": "Classic Breakout: alert set at consolidation trendline; trigger type (touch, close, or volume) not stated [uncertain]. Episodic Pivot: gap of 5% or more on a catalyst; entry described as may vary [uncertain]. Parabolic Short: short after price breaks the opening-range low, the only session-anchored entry stated.",
+  "exit_rule": "Not stated for any setup. [uncertain]",
+  "stop_rule": "Classic Breakout example: stop at 2.40 on 2.80 entry (about 11% risk, single example). Episodic Pivot: low of day. Parabolic Short: day high or entry-candle high with no formula. Stated risk 0.25-0.4% of account per trade.",
+  "holding_time": "Swing; examples span two weeks to one month, presented as illustrations not rules [uncertain]",
+  "trades_per_year": "About 400 per year (page claim, unverified) [uncertain]",
+  "overnight_weekend": "Implied overnight holding for swing trades; not explicitly stated [uncertain]",
+  "signal_window_definition": "Not applicable for swing setups; the opening-range-low short has no stated window length and no DST handling.",
+  "sample_period": "2023 championship period (under one year)",
+  "out_of_sample": "None reported; results are live championship returns with no out-of-sample split.",
+  "cost_assumption": "Not stated; unclear whether commissions, slippage, and taxes are included [uncertain]",
+  "reported_metrics": "291% return in under one year; win rate 32% (25% in poor markets to 40% in favorable); average gain-to-loss 5:1; max drawdown 4% claimed through a ten-loss streak; no leverage claimed.",
+  "third_party_replication": "None found.",
+  "evidence_grade": "pratisyen ozet",
+  "decay_status": "Not assessed; single-year result (2023) only.",
+  "regime_split": "Not reported as a split; page states win rate varies by market condition (25% to 40%).",
+  "data_source_requirement": "US stock daily OHLCV plus a scanner for consolidation and gap criteria; not available on Maven MT5 [uncertain]",
+  "min_lot_fit_5k10k": "Not computable for 0.01 index lot: the only stop example is about 11% on a single stock. [uncertain]",
+  "fn_rule_fit": "Swing style: HFT, grid, and tick-scalp risk not applicable. Behaviour around high-impact news (+-5 min, 40% rule) not addressed. [uncertain]",
+  "bot_policy_compliance": "Setups rely on alerts and discretionary judgment; automation feasibility not verified. The source sells a paid scanner, not an EA. [uncertain]",
+  "event_overlap": "Gap-on-catalyst setup overlaps with earnings and news events; timing not quantified.",
+  "overlap_with_existing": "No overlap with Sweep, NB, BTC 21-23, or Donchian (equity swing, different instrument and horizon).",
+  "rejected_catalog_hit": "Not checked against elenenler catalog; run python -m intraday.elenenler --kontrol breakout in the main session. [uncertain]",
+  "base_rate_check": "Breakout claims not compared to base rate; the 291% figure is not baseline-adjusted.",
+  "pitfall_risk": "Single-year result; finalist survivorship; no exit rule so result cannot be reproduced; post-hoc selection of the winner.",
+  "priority_score": 1,
+  "notes": [
+    {
+      "candidate": "Vibha Jha (US Investing Championship)",
+      "source_url": "https://www.financialwisdomtv.com/post/how-vibha-jha-won-the-us-investing-championship",
+      "reason_not_chosen": "CANSLIM stock selection plus TQQQ swing; entry about 8% from stop and exit discretionary (business or conviction change). Not testable."
+    },
+    {
+      "candidate": "Martin Luk (US Investing Championship 2025, reported 1358%)",
+      "source_url": "https://www.financialwisdomtv.com/post/martin-luk-s-1358-swing-trading-strategy-from-gamestop-blow-up-to-us-investing-champion",
+      "reason_not_chosen": "Trailing exit on 9 or 21 EMA and trim at 3R; 1-4% risk per trade. Entry trigger secondhand and vague; return claim unverified."
+    },
+    {
+      "candidate": "Mark Minervini (US Investing Championship 2021)",
+      "source_url": "https://caseystubbs.substack.com/p/how-mark-minervini-won-the-us-investing",
+      "reason_not_chosen": "SEPA low-risk entry (small flag, retracement, reclaim of prior candle). The analysis itself notes no exact entry, exit, or sizing disclosed."
+    },
+    {
+      "candidate": "J Law (US Investing Championship 2024 $1M category)",
+      "source_url": "https://tools.prnewswire.com/en-us/live/20813/release/20260226EN96390",
+      "reason_not_chosen": "States only 'high risk-reward' and 'follows trading rules'; no rule text."
+    },
+    {
+      "candidate": "Larry Williams (Robbins World Cup 1987, 11,376%)",
+      "source_url": "https://completetradersedge.com/larry-williams-11376-percent-trading-record/",
+      "reason_not_chosen": "Result confirmed by several sources but attributed to COT framework, not an intraday rule; no rule text found. Profit vs ending balance figures inconsistent across sources."
+    },
+    {
+      "candidate": "Eduardo Ramos (World Cup, 258.1% in Q2 per Neofeed)",
+      "source_url": "https://neofeed.com.br/negocios/na-copa-do-mundo-de-day-trade-um-brasileiro-sobe-ao-podio-pela-quarta-vez/zh/",
+      "reason_not_chosen": "One micro/E-mini S&P trade per day described qualitatively; no entry or exit rule; date of the result unclear."
+    },
+    {
+      "candidate": "Paul Skarp (World Cup futures 2025, 256% per third-party site)",
+      "source_url": "https://twc-dlc.pages.dev/champions/2025",
+      "reason_not_chosen": "Winner claim comes from a third-party site with unclear ties to official standings; no strategy found."
+    }
+  ],
+  "uncertain": [
+    "name",
+    "author_year",
+    "instrument",
+    "timeframe",
+    "entry_rule",
+    "exit_rule",
+    "holding_time",
+    "trades_per_year",
+    "overnight_weekend",
+    "cost_assumption",
+    "data_source_requirement",
+    "min_lot_fit_5k10k",
+    "fn_rule_fit",
+    "bot_policy_compliance",
+    "rejected_catalog_hit"
+  ]
+}

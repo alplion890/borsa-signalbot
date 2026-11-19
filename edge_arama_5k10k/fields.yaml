@@ -1,0 +1,137 @@
+field_categories:
+- category: temel
+  fields:
+  - name: name
+    description: Strateji/fikir adi
+    detail_level: brief
+    required: true
+  - name: source_url
+    description: Birincil kaynak URL (makale, kod, resmi sayfa)
+    detail_level: brief
+    required: true
+  - name: author_year
+    description: Yazar ve yil
+    detail_level: brief
+    required: true
+  - name: instrument
+    description: Enstruman(lar); Maven MT5 sembol karsiligi
+    detail_level: brief
+    required: true
+  - name: timeframe
+    description: Bar/zaman dilimi
+    detail_level: brief
+    required: true
+- category: kurallar
+  fields:
+  - name: entry_rule
+    description: Giris kurali, tam metin
+    detail_level: detailed
+    required: true
+  - name: exit_rule
+    description: Cikis kurali
+    detail_level: detailed
+    required: true
+  - name: stop_rule
+    description: Stop tanimi ve tipik mesafe (puan/pip, ATR kati)
+    detail_level: moderate
+    required: true
+  - name: holding_time
+    description: Tutma suresi
+    detail_level: brief
+    required: true
+  - name: trades_per_year
+    description: Yillik islem sayisi
+    detail_level: brief
+    required: true
+  - name: overnight_weekend
+    description: Gece/hafta sonu tasima var mi
+    detail_level: brief
+    required: true
+  - name: signal_window_definition
+    description: Tam saat, gece getirisi dahil mi, DST (ABD/AB yaz-kis) nasil ele
+      alindi
+    detail_level: moderate
+    required: true
+- category: kanit
+  fields:
+  - name: sample_period
+    description: Ornek donemi
+    detail_level: brief
+    required: true
+  - name: out_of_sample
+    description: Ornek disi test var mi, sonucu
+    detail_level: moderate
+    required: true
+  - name: cost_assumption
+    description: Kaynagin maliyet varsayimi
+    detail_level: brief
+    required: true
+  - name: reported_metrics
+    description: Sharpe, beklenti, kazanma orani (kaynaktan aynen)
+    detail_level: moderate
+    required: true
+  - name: third_party_replication
+    description: Bagimsiz tekrar var mi
+    detail_level: moderate
+    required: true
+  - name: evidence_grade
+    description: hakemli / calisma kagidi / pratisyen ozet / kodlu backtest
+    detail_level: brief
+    required: true
+  - name: decay_status
+    description: Etki zamanla kuculuyor mu
+    detail_level: moderate
+    required: true
+  - name: regime_split
+    description: 2022 oncesi/sonrasi ayrimi varsa sonuc
+    detail_level: moderate
+    required: true
+- category: uyum
+  fields:
+  - name: data_source_requirement
+    description: Gerekli veri; Maven MT5/Dukascopy'de var mi (opsiyon, VIX vadesi,
+      TICK, funding gerekiyorsa yaz)
+    detail_level: moderate
+    required: true
+  - name: min_lot_fit_5k10k
+    description: Tipik stop ile 0.01 lotta 5K/10K hesap riski (%)
+    detail_level: moderate
+    required: true
+  - name: fn_rule_fit
+    description: FN %3 acik risk, haber +-5 dk %40 kurali, HFT/grid/tick-scalp riski
+    detail_level: moderate
+    required: true
+  - name: bot_policy_compliance
+    description: Bot ile uygulanabilir mi, mesajlasma baglantisi gerekir mi
+    detail_level: brief
+    required: true
+  - name: event_overlap
+    description: Fix, settlement, makro release, opex saatleriyle cakisma
+    detail_level: brief
+    required: true
+  - name: overlap_with_existing
+    description: Sweep/NB/BTC/Donchian ile tahmini ortusme
+    detail_level: brief
+    required: true
+- category: veto
+  fields:
+  - name: rejected_catalog_hit
+    description: elenenler katalogunda benzer fikir (python -m intraday.elenenler
+      --kontrol ile ana oturum dogrular)
+    detail_level: brief
+    required: true
+  - name: base_rate_check
+    description: Iddia baz orandan farkli mi
+    detail_level: moderate
+    required: true
+  - name: pitfall_risk
+    description: post-hoc filtre, baz orani, ortusen bacak, kucuk orneklem riski
+    detail_level: brief
+    required: true
+- category: oncelik
+  fields:
+  - name: priority_score
+    description: '1-5: kanit gucu x veri erisimi x 5K/10K uyumu x siklik'
+    detail_level: brief
+    required: true
+uncertain: []

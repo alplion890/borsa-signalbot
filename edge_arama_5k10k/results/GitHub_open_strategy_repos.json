@@ -1,0 +1,90 @@
+{
+  "research_name": "GitHub open strategy repos (freqtrade-strategies, backtrader/vectorbt intraday examples, Jesse) with reproducible backtests",
+  "topic": "transparent replicable intraday edges for cheap bot-allowed 5K/10K prop accounts (FundedNext Stellar Instant)",
+  "date": "2026-11-20",
+  "result_summary": "Best-evidenced item is the Mroziewicz and Slepaczuk walk-forward study (arXiv 2602.10785, repo tmr-crypto/wf_optim_crypto): intraday, out-of-sample, 0.1% fee, reproducible R pipeline. It is Bitcoin (crypto, not futures), the EMA rule and slippage are not stated, and no numeric OOS metrics appear in the abstract. No open GitHub freqtrade, vectorbt, or Jesse repo with a futures intraday walk-forward and fully stated rules was found.",
+  "name": "Mroziewicz and Slepaczuk EMA walk-forward double out-of-sample (BTC intraday) [uncertain]",
+  "source_url": "https://arxiv.org/abs/2602.10785",
+  "author_year": "Tomasz Mroziewicz, Robert Slepaczuk; 2026 (arXiv v1 11 Feb 2026)",
+  "instrument": "Bitcoin primary (BTC); BNB and ETH used for cross-asset check. No Maven MT5 futures equivalent; crypto CFD mapping not verified. [uncertain]",
+  "timeframe": "Intraday; six bar intervals 1, 5, 10, 15, 30, 60 minutes; OOS runs use 60 minutes per repo README",
+  "entry_rule": "EMA-based signal. The crossover or signal logic is not stated in the abstract, arXiv page, or repo README. [uncertain]",
+  "exit_rule": "Not stated. [uncertain]",
+  "stop_rule": "No stop-loss rule stated. [uncertain]",
+  "holding_time": "Not stated; position duration implied by the signal logic. [uncertain]",
+  "trades_per_year": "Not reported. [uncertain]",
+  "overnight_weekend": "Not stated; crypto trades 24/7, so holding across weekends is implied. [uncertain]",
+  "signal_window_definition": "Not applicable: crypto trades continuously; no session window, gap-return, or DST handling described.",
+  "sample_period": "In-sample training 2018-01-01 to 2019-09-30 (filename); unseen OOS 2019-10-01 to 2021-09-20 (filename). Abstract says 19-month train and 21-month test, which conflicts with filename date spans of about 21 and 24 months. [uncertain]",
+  "out_of_sample": "Yes. Two best-performing training parameter sets applied once to unseen period; window pairs 14-day train/10-day test and 7-day train/28-day test. Abstract: performance similar to Buy-and-Hold with lower drawdown and higher Information Ratio.",
+  "cost_assumption": "0.1% per transaction (called conservative in the abstract); break-even about 0.4% per transaction. Slippage not modelled or not stated.",
+  "reported_metrics": "No numeric OOS return, Sharpe, or drawdown in abstract. Qualitative: training - all walk-forward window combinations beat Buy-and-Hold; testing - lower drawdown and higher Information Ratio than Buy-and-Hold; combined portfolio claims 50% drawdown reduction. Robust Sharpe Ratio used. Numbers sit in figures not extracted.",
+  "third_party_replication": "None found. Companion analysis repo tmr-crypto/wf_optim_crypto_analysis exists but is by the same authors per the README link.",
+  "evidence_grade": "calisma kagidi",
+  "decay_status": "Not assessed; OOS period 2019-2021 only, no post-2021 check.",
+  "regime_split": "Train (2018-2019) and test (2019-2021) are time-separated but the split is not analysed by regime; test period includes the 2020-2021 crypto bull cycle. [uncertain]",
+  "data_source_requirement": "Bitcoin intraday OHLCV 1-60 min (CSV packaged, 830 MB zip on Google Drive); data vendor and exchange not named. Maven MT5 BTC feed not verified. [uncertain]",
+  "min_lot_fit_5k10k": "Not computable: no stop distance or position sizing published.",
+  "fn_rule_fit": "Stellar Instant FN rules are not evaluated by the study. Crypto is not an FN instrument mapping that was verified. Holding and news rules not addressed. [uncertain]",
+  "bot_policy_compliance": "Research code is R with DVC pipeline; not an EA. Automation feasibility on MT5 not verified. [uncertain]",
+  "event_overlap": "Not addressed; crypto has no fixing, settlement, or macro-release windows in the study.",
+  "overlap_with_existing": "Overlaps with BTC_21_23 module in concept (BTC intraday trend). Not tested against Donchian or Sweep.",
+  "rejected_catalog_hit": "Not checked; run python -m intraday.elenenler --kontrol EMA in the main session. [uncertain]",
+  "base_rate_check": "Study compares to Buy-and-Hold, not to a random-entry baseline; no base-rate test given.",
+  "pitfall_risk": "Parameter selection from many walk-forward combinations (81) with no multiple-testing correction; abstract's 19/21-month and filename date discrepancy; slippage omitted; crypto bull regime in test period; no statistical significance test.",
+  "priority_score": 2,
+  "notes": [
+    {
+      "candidate": "pandianmn/freqtrade-strategies",
+      "source_url": "https://github.com/pandianmn/freqtrade-strategies/blob/master/README.md",
+      "reason_not_chosen": "Crypto spot strategy collection; README recommends static backtest ranges but no walk-forward, no OOS result, and no fee or overfit analysis found."
+    },
+    {
+      "candidate": "nateemma/strategies",
+      "source_url": "https://github.com/nateemma/strategies",
+      "reason_not_chosen": "Crypto freqtrade strategies with a shell script that has OOS-style windows; method and results not verified from snippets."
+    },
+    {
+      "candidate": "webclinic017/strategies-freqtrade-",
+      "source_url": "https://github.com/webclinic017/strategies-freqtrade-",
+      "reason_not_chosen": "Crypto strategy collection; the README claim about maintenance came from an unofficial Scribd copy, not verified. No walk-forward results."
+    },
+    {
+      "candidate": "Freqtrade official backtesting docs (fee and overfit warnings)",
+      "source_url": "https://www.freqtrade.io/en/stable/backtesting/",
+      "reason_not_chosen": "Not a strategy. Confirms backtests use the exchange default fee unless --fee is set, and warns that hyperopt over many strategies can give low p-values by chance. Walk-forward is not covered. Useful as a flag on freqtrade hyperopt results, not as an edge."
+    },
+    {
+      "candidate": "vectorbt (polakowo/vectorbt) examples",
+      "source_url": "https://vectorbt.dev/getting-started/resources/",
+      "reason_not_chosen": "Walk-forward example in the open-source docs is a general pattern; the intraday and walk-forward worked examples are in the PRO edition. No open intraday NQ example with fees found."
+    },
+    {
+      "candidate": "Jesse (jesse-ai) walk-forward",
+      "source_url": "https://glama.ai/mcp/servers/bkuri/jesse-mcp/tools/optimization_walk_forward",
+      "reason_not_chosen": "Only an MCP wrapper listing exposing a walk-forward tool; no strategy, results, or Jesse GitHub example with OOS was found."
+    },
+    {
+      "candidate": "NQ ORB event-driven project (mrjerm project_kintoun)",
+      "source_url": "https://mrjerm.github.io/project_kintoun.html",
+      "reason_not_chosen": "Intraday Nasdaq-100 futures ORB with regime filter and 9:30 timezone handling, relevant to the target market, but no repo link, no walk-forward or fee statement found, and the result is not verified."
+    }
+  ],
+  "uncertain": [
+    "name",
+    "instrument",
+    "timeframe",
+    "entry_rule",
+    "exit_rule",
+    "stop_rule",
+    "holding_time",
+    "trades_per_year",
+    "overnight_weekend",
+    "sample_period",
+    "regime_split",
+    "data_source_requirement",
+    "fn_rule_fit",
+    "bot_policy_compliance",
+    "rejected_catalog_hit"
+  ]
+}

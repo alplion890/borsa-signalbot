@@ -1,0 +1,67 @@
+topic: "Yeni edge arama — bota izin veren ucuz 5K/10K prop hesaplara (FN Stellar Instant 5K/10K) sigacak, seffaf kurallı, tekrar test edilebilir gun ici stratejiler"
+date: 2026-11-20
+time_range: "2023'ten beri (klasik makaleler referans olarak serbest)"
+target_account:
+  firm: "FundedNext Stellar Instant 5K / 10K"
+  rules_note: "6% trailing (baslangicta kilit), anlik acik risk <=3%, EA serbest (her EA farkli strateji; Telegram/WhatsApp bagli EA yasak), hafta sonu tutma serbest, yuksek etkili haber +-5 dk islem kari %40 sayilir (ucuncu taraf+help, satin almadan once resmi sayfa kontrol)"
+  min_lot_fit: "0.01 lot endeks = $0.10/puan; %0.5 risk 5K=$25 -> stop <=~250 NQ puan; 10K=$50 -> <=~500 puan"
+items:
+  # A. Gun ici zaman/momentum
+  - id: 1
+    name: "ITSM ABD disi endeksler (DAX, FTSE, Nikkei, HSI, EuroStoxx)"
+    note: "Gao-Han-Li-Zhou; 'ilk yarim saat' gece getirisini iceriyor — saf gun ici ile ayir; 16 piyasanin 12'sinde anlamli iddiasi dogrulanacak"
+  - id: 2
+    name: "Gece-gunduz ters donusu (tug of war, Lou-Polk-Skouras)"
+    note: "hisse duzeyi; endeks uyarlamasi ve maliyet sorunu kontrol"
+  - id: 3
+    name: "Endeks acilis boslugu doldurma (gap fill)"
+    note: "ORB elendi — veto kontrolu; baz oran tuzagi (ORB kirilma 46/49 seans)"
+  - id: 4
+    name: "FX fix etrafi momentum/geri donus (London 4pm WMR, Tokyo, Frankfurt)"
+    note: "en guclu literatur (Krohn-Mueller-Whelan, Pragma, Panagiotou); Maven MT5 EURUSD/GBPUSD/USDJPY ile test edilebilir; DST"
+  - id: 5
+    name: "Altin gun ici mevsimselligi (London AM/PM fix)"
+    note: "kanit zayif — dusuk oncelik"
+  # B. Takvim/akis
+  - id: 6
+    name: "Ucuncu Cuma a.m. settlement spike + opex haftasi amplification (pinning yerine)"
+    note: "Whelan AEA 2025 (charm kanali), Elms SSRN 2026 (pinning yok 2016-2025); tam metin dogrulanacak"
+  - id: 7
+    name: "Ay/ceyrek sonu rebalans akislari"
+  - id: 8
+    name: "Tatil oncesi etkisi"
+  - id: 9
+    name: "Kaldiracli ETF gun sonu rebalansi (son saat momentumu)"
+    note: "Barbon vd.: etki zamanla azalmis — decay kontrol"
+  # C. Pozisyonlanma/piyasa yapisi
+  - id: 10
+    name: "GEX (dealer gamma) rejimi / 0DTE"
+    note: "kanit karisik; opsiyon verisi Maven'de yok — veri gereksinimi kritik"
+  - id: 11
+    name: "Breadth (NYSE TICK, A/D) gun ici"
+    note: "hakemli kanit bulunamadi — kanitsiz isaretli"
+  - id: 12
+    name: "VIX vade yapisi rejimi"
+  - id: 13
+    name: "Kripto funding rate / perp basis, BTC hafta sonu"
+    note: "BTC_21_23 modulu ile ortusme riski"
+  # D. Kaynak havuzlari
+  - id: 14
+    name: "QuantConnect Strategy Library"
+  - id: 15
+    name: "SSRN/arXiv gun ici makaleleri 2023-2026"
+  - id: 16
+    name: "Trade yarismasi kazananlari (Robbins Cup, US Investing Championship)"
+  - id: 17
+    name: "GitHub acik strateji repolari (freqtrade-strategies vb.)"
+  - id: 18
+    name: "Prop/algo forumlari (r/algotrading, Elite Trader) dogrulanmis backtestler"
+execution:
+  batch_size: 6
+  items_per_agent: 3
+  agent_model: haiku
+  output_dir: ./results
+  rules:
+    - "Resmi/birincil kaynak once; ucuncu taraf etiketlenir; hafizadan doldurma yok, 'bulunamadi' yazilir"
+    - "Yorum/yon onerisi yok; yalniz olgu ve kural metni"
+    - "Test sonucu degil, ON-KAYIT ADAYI cikarilir; test ana oturumda, olculmus Maven maliyetiyle"
