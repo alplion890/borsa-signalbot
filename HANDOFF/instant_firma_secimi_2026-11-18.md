@@ -119,3 +119,12 @@ Sim (fn1step.py), challenge risk xN / funded x1: 6K (5 modül, %1 kapı) x2 118g
 x6 42g · $510 · %7 (4 hesap). 15K 7 modül x4 58g · $1,273 · %7; x6 38g · $1,310. Funded x2 zarar %14–21'e çıkar.
 Sıfır edge x4: +$32 / +$27 (%47–49 zarar) → yüksek challenge riskinde değerin bir kısmı piyango. x4 (%2/işlem) ve x6 (%3/işlem) %3 max risk
 kuralı challenge'da da geçerliyse ihlal eder (doğrulanmadı). 10–20 güne inmiyor: en hızlı ~38–42 gün.
+
+## Ek (2026-11-20): FN Stellar Lite + citadel-fastfill
+- Lite (fundednext.com/cfds/stellar-lite): 5K $29.99 (NOVSTR, liste $32.99), 10K $59.99. %8+%4, %4 günlük, %8 statik, min gün 2 (sayfada 5 de geçiyor),
+  funded %3 max risk, tutarlılık yok, ödeme 10 iş günü (sayfada 21 gün de geçiyor), %80, ücret 3. ödemede iade, hafta sonu serbest, endeks 1:25.
+  Sim (fnlite.py), challenge xN / funded x1: 5K x3 117g · $341 · %9; x4 96g · $392 · %8; x6 72g · $401 · %8 (3.5 hesap).
+  10K 7 modül x4 92g · $792 · %6; x6 68g · $829 · %7. Sıfır edge x4: −$4 / +$39 (%47–50). Min gün 2 vs 5 sonucu değiştirmiyor.
+- Not: "zarar %X" = 12 ayın sonunda net eksi olma olasılığı; hesap patlama değil. x6'da yılda ~3.5–4 challenge alınıyor (~2.5–3 patlama).
+- citadel-fastfill (github Carm1ne6, 2026-11-18, 4 yıldız): SEC'in Citadel FastFill/SmartProvide tarifinin BTC emir defteri üzerinde
+  simülasyonu; emir göndermiyor, müşteri emir akışı olmadan işlem yapılamaz (README FAQ). Bizim prop/MT5 işine yaramaz; repo .claude/CLAUDE.md içerdiği için kurulmadı.
