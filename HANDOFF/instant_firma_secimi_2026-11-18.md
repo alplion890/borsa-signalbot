@@ -111,3 +111,11 @@ reset'e geçmez; EA/VPS/swap-free eklentileri indirimsiz ve fiyatsız. FN ana sa
 Sim (ideal lot, fn510.py): 5K 7 modül x1 21g · $273 · %9 (12 ayda ort 2.6 hesap alımı), x2 16g · $412 · %15; 10K x1 21g · $546 · %9,
 x2 16g · $823 · %15. B7+Ay dönümü'süz 5 modül neredeyse aynı (5K x1 23g · $251). Sıfır edge: 5K −$55, 10K −$109 (%59 zarar).
 Lot: 5K'da NB %0.6, altın medyan %0.64, B7/Ay dönümü ~%2.4; 10K'da NB %0.3, altın %0.32, B7/Ay dönümü ~%1.2 (endeks kontrat 10, min 0.01 varsayım).
+
+## Ek (2026-11-20): FN Stellar 1-Step (fundednext.com/cfds/stellar-1-step)
+6K $44.99 (NOVSTR, liste $65.99, bitiş yazmıyor), 15K $129.99, 25K $219.99. %10 hedef, %3 günlük, %6 statik, min 2 gün; funded %3 max risk,
+tutarlılık yok, ilk ödeme 5 iş günü, %80, ücret 3. ödemede iade, hafta sonu serbest, endeks 1:10. MT5 sayfada yazmıyor; yardım merkezi 403.
+Sim (fn1step.py), challenge risk xN / funded x1: 6K (5 modül, %1 kapı) x2 118g · $409 · %9; x3 80g · $484 · %6; x4 62g · $499 · %6 (3.1 hesap);
+x6 42g · $510 · %7 (4 hesap). 15K 7 modül x4 58g · $1,273 · %7; x6 38g · $1,310. Funded x2 zarar %14–21'e çıkar.
+Sıfır edge x4: +$32 / +$27 (%47–49 zarar) → yüksek challenge riskinde değerin bir kısmı piyango. x4 (%2/işlem) ve x6 (%3/işlem) %3 max risk
+kuralı challenge'da da geçerliyse ihlal eder (doğrulanmadı). 10–20 güne inmiyor: en hızlı ~38–42 gün.
