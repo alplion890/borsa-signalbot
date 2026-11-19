@@ -128,3 +128,8 @@ kuralı challenge'da da geçerliyse ihlal eder (doğrulanmadı). 10–20 güne i
 - Not: "zarar %X" = 12 ayın sonunda net eksi olma olasılığı; hesap patlama değil. x6'da yılda ~3.5–4 challenge alınıyor (~2.5–3 patlama).
 - citadel-fastfill (github Carm1ne6, 2026-11-18, 4 yıldız): SEC'in Citadel FastFill/SmartProvide tarifinin BTC emir defteri üzerinde
   simülasyonu; emir göndermiyor, müşteri emir akışı olmadan işlem yapılamaz (README FAQ). Bizim prop/MT5 işine yaramaz; repo .claude/CLAUDE.md içerdiği için kurulmadı.
+
+## Ek (2026-11-20): tek hesap, 30 gün (oneshot.py) — FN Instant 2K $41.99, yeniden alım yok
+Sweep+NB(min lot)+BTC 21–23+BTC gece: x1 → 30 günde payout %67 (gün medyan 14, tutar medyan $23), patlama %1, bekleyen %32;
+x2 → %74 ($34), patlama %15; x3 → %69 ($53), patlama %28. Sıfır edge x1: payout %49 (14 günlük ≥%1 eşiği gürültüyle de tetiklenir).
+BTC'siz: x1 %60 ($22), x2 %69 ($31), x3 %70 ($44, patlama %20). İlk ödeme medyanı ücretin ($41.99) altında; 2K'da %5 = $100 → %70 = $70 tavan.
