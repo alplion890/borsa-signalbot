@@ -104,3 +104,10 @@ Kaynak: propfirmdeals.org (16 Kas), quantvps BF listesi (14–17 Kas), propfirmm
 - Elenen (araştırma): Top One Trader (Türkiye yasaklı + EA yok), Alpha Direct (EA yok), Hola Prime (EA yok), FunderPro/FT+/FTMO (bütçe üstü),
   FundingPips Zero (hafta sonu+haber yasak, $60), Blueberry Lite 1.25K (yalnız onaylı kendi EA, %4 kayan + %2 günlük), IF PRO $625 hesap (lot imkânsız, VPS yasak).
 - NOVINS 22 Kasım 17:00 GMT+6'da bitiyor.
+
+## Ek (2026-11-20): FN Instant 5K/10K bugünkü fiyat ve simülasyon
+Resmi: 5K $104.99 (liste $149.99), 10K $209.99 (liste $299.99), NOVINS %30, 22 Kas 17:00 GMT+6'ya kadar, kişi başı 1 kullanım,
+reset'e geçmez; EA/VPS/swap-free eklentileri indirimsiz ve fiyatsız. FN ana sayfasında Black Friday duyurusu yok (20 Kas).
+Sim (ideal lot, fn510.py): 5K 7 modül x1 21g · $273 · %9 (12 ayda ort 2.6 hesap alımı), x2 16g · $412 · %15; 10K x1 21g · $546 · %9,
+x2 16g · $823 · %15. B7+Ay dönümü'süz 5 modül neredeyse aynı (5K x1 23g · $251). Sıfır edge: 5K −$55, 10K −$109 (%59 zarar).
+Lot: 5K'da NB %0.6, altın medyan %0.64, B7/Ay dönümü ~%2.4; 10K'da NB %0.3, altın %0.32, B7/Ay dönümü ~%1.2 (endeks kontrat 10, min 0.01 varsayım).
