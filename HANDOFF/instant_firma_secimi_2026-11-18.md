@@ -92,3 +92,15 @@ Kaynak: propfirmdeals.org (16 Kas), quantvps BF listesi (14–17 Kas), propfirmm
 - Elenen: Maven 2-Step/Omo ($15–21 5K) — "EAs and automated trading are prohibited". NLF Instant Flex 10K $9.90 — %4 DD, %1 max risk,
   %15 tutarlılık, tek payout. Blue Guardian 1-Step 5K $28 — güvenilirlik. FXIFY BLACK35 — instant'ta EA yasak. Top One Trader %80 — fiyat/güven doğrulanmadı.
 - Black Friday 27 Kasım; çoğu firma BF kodunu henüz yayınlamadı (14 Kas itibarıyla).
+
+## Ek (2026-11-20): yalnız gün içi senaryo (gece/hafta sonu modülleri çıkarılınca)
+- Tutma ölçümü (hold.py, 2022+): Donchian XAU işlemlerinin %89'u günlük arayı, %69'u hafta sonunu geçiyor (medyan 102 saat) → gün içi değil.
+  Sweep %20 günlük ara, ~%14 hafta sonu (medyan 2.2 saat); sarkanlar daha iyi (+1.03R vs +0.83R maliyetsiz).
+- Kalan gün içi set: Sweep + NB + BTC 21–23 → yıl %8.0, Sharpe 1.34 (7'li %13.1). Çıkanlar: Donchian, B7, Ay dönümü, BTC gece.
+- Firma simülasyonu (intraday_firms.py), risk x1 / x2:
+  Instant Funding Evolve 10K $49 (4% EOD kayan, %40 tutarlılık, hafta sonu yasak, VPS yasak): 178g · $438 · %26 / 168g · $834 · %24.
+  FTM Instant Pro 5K ~$37.95 (3% statik + 3% günlük, %15 tutarlılık, %50 pay): zarar %96 — elenir.
+  FN 2K $41.99 gün içi set: 38g · $69 · %14 / 24g · $135 · %9 (FN gece taşımaya izin verdiği için BTC gece'li set 21g · $102 · %9 daha iyi).
+- Elenen (araştırma): Top One Trader (Türkiye yasaklı + EA yok), Alpha Direct (EA yok), Hola Prime (EA yok), FunderPro/FT+/FTMO (bütçe üstü),
+  FundingPips Zero (hafta sonu+haber yasak, $60), Blueberry Lite 1.25K (yalnız onaylı kendi EA, %4 kayan + %2 günlük), IF PRO $625 hesap (lot imkânsız, VPS yasak).
+- NOVINS 22 Kasım 17:00 GMT+6'da bitiyor.
