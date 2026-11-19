@@ -600,6 +600,29 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("turtle soup", "williams oops", "oops", "gold trend breakout", "ema trend cross",
                     "pullback overlay", "noise band overlay", "mql5 codebase"),
     ),
+    Elenen(
+        id="edge5k_c1_c8",
+        statu="rejected",
+        baslik="Derin tarama adaylari C1-C8 (ay sonu rebalans, tatil oncesi, 3. Cuma settlement, VIX contango, "
+               "VIX filtresi NB, kucuk bosluk doldurma, bosluk fade, altin Asya long)",
+        iddia="NBER 33554 ay sonu rebalans; Ariel tatil oncesi; Terstegge-Whelan 3. Cuma; VIX vade yapisi; "
+              "tradingstats bosluk doldurma; WGC altin Asya saatleri.",
+        olcum="On-kayit b3bf8ef, 2012-2026, olculmus Maven maliyeti (2026-11-12), Bonferroni 0.05/16. "
+              "bp/islem maliyetsiz/merkez/2x [CI]: C1 SP +20/+17/+14 [-24,60] NQ +11/+9/+7 (11.7/yil, swap'li); "
+              "C2 SP +12/+9/+6 [-10,27] NQ +14/+12/+10 (9.3/yil); C3 4 test merkez -3..-5; "
+              "C4 SP -1.2 NQ +0.7, sinyalsiz gunler daha iyi (12.8/18.1bp) kosul FAIL; C5 filtre degeri -8.1 "
+              "(atlanan NB islemleri karli); C6 NQ -0.6/-2.8/-5.0 [-4.0,-1.6] SP -3.3; C7 NQ -2.6 SP -3.1; "
+              "C8 XAU +1.2/-1.5/-4.2. 16/16 GECMEDI.",
+        neden="Hicbirinde CI alt siniri > 0 degil. C1/C2 pozitif ama seyrek ve gurultu icinde; gun ici sik "
+              "olanlar (C4, C6, C7, C8) maliyet oncesi ~0, sonrasi negatif.",
+        tarih="2026-11-20",
+        kaynak="edge5k_adaylari.py + HANDOFF/edge5k_adaylari_onkayit_2026-11-20.md",
+        kapsam="Yalniz on-kayitta sabitlenen kurallar. C1/C2'nin farkli pencere/enstruman hali yeni on-kayit "
+               "ister; sonuca bakip pencere degistirmek yasak.",
+        anahtarlar=("ay sonu", "month end", "rebalans", "rebalance", "tatil", "holiday", "pre-holiday",
+                    "settlement", "ucuncu cuma", "third friday", "vix", "contango", "backwardation",
+                    "gap fill", "bosluk", "gap fade", "asya", "asia", "altin asya"),
+    ),
 )
 
 

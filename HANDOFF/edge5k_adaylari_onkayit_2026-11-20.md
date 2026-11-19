@@ -77,3 +77,9 @@ Her hafta içi gün 00:00 UTC bar açılışı → 08:00 UTC bar açılışı (0
 ## Tuzaklar
 Post-hoc filtre yasak; C3'te iki yön önceden 4 test olarak sayıldı; C4/C8'de baz oran şartı önceden yazıldı.
 16 test birlikte → 1 tanesinin şansla geçme ihtimali Bonferroni ile ~%5'e sınırlı.
+
+## EK (2026-11-20, sonuçlar görülmeden önce, uygulama düzeltmesi — kural değişikliği değil)
+- C6 hedef limit emirdir: fiyat girişte hedefin ötesindeyse dolum o barın açılışından (daha iyi fiyat) olur;
+  "hedef fiyatından dolum" yazımı, limit emrin gerçekleşmeyecek kötü dolumunu üretiyordu.
+- C8 baz oran şartında iki taraf aynı günler üzerinden hesaplanır (24 saatlik getirisi olmayan Cuma'lar şartta
+  iki taraftan da düşer; işlem serisi değişmez).
