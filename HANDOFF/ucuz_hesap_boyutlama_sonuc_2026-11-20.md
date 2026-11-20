@@ -56,3 +56,26 @@ I2K R1.0 piyango (sıfır-edge +$13). En kötü blokta hiçbiri pozitif değil. 
 | Felaket stopu + yeniden giriş (#3) | Önceki stop testi: B7'ye her mesafede zarar | Önerdi | Daha önce yanlışlandı, tekrar test edilmedi |
 | İki hesaba modül bölme (#5) | Test edilmedi (gece modülleri bu motorda yok; FN "farklı strateji/EA" şartı yazılı teyit ister) | Önerdi | Açık |
 | Tampon orantılı risk (B) | Patlamayı 2022 öncesi bloklarda %38–67 → %0'a indiriyor | — (ters yönlü merdiven önerdi) | Rejimden bağımsız çıkan tek etki; kârı artırmıyor |
+
+## Düzeltme (aynı gün): Sweep maliyeti geçmişe yanlış taşınmıştı
+`trades_SWEEP_CORE.csv` içindeki `cost_r` = bugünkü fiyattaki (27.757) ölçülmüş maliyet PUANI / işlemin risk puanı. Bu puan 2013'teki
+~3.000'lik NQ'ya aynen uygulanınca eski yılların maliyeti oransal ~9 kat şişiyor; `prop_fit.load_sources` bir de ×(cn/0.00009)=×1.229 çarpıyor.
+Oransal ölçülmüş maliyetle Sweep ortalama R (se):
+
+| | maliyetsiz | ölçülmüş merkez | kötümser (2× high) |
+|---|---|---|---|
+| <2022 (n143) | −0.087 (0.157) | −0.327 (0.158) | −0.583 |
+| 2022–23 (n35) | +0.565 (0.422) | +0.430 (0.421) | +0.287 |
+| ≥2024 (n52) | +1.078 (0.359) | +0.864 (0.355) | +0.635 |
+
+Eski yöntem <2022: −0.810 (artefakt). Vault'taki −0.357 ile oransal sonuç uyumlu.
+cheap_sizing.py oransal maliyete geçirildi, yeniden koşuldu (`cheap_sizing_v2.txt`): en kötü blok hâlâ hiçbir yöntemde pozitif değil
+(en iyi I2K F1.5 −$9, piyango; piyango olmayanlarda L5K F1.5 −$23). Sonuç değişmedi, büyüklükler küçüldü.
+**Açık:** `prop_fit.load_sources` aynı hatayı taşıyor (para kodu → düzeltme property test + mutation_check ister, yapılmadı).
+
+## Sweep kanıtının kaynağı (git + vault)
+- Sweep kuralı repo açılmadan (2026-06-19, `70bab56`) önce, 2026-06-11..14 strategy-lab keşfinde **3 yıllık** veriyle seçildi
+  (3 yıllık backtest exp_R +0.855; [[Borsa - 14 Yillik Yeniden Test]]). Parametreler (ADX 25, RR 4/6/8) örneklem içinde seçilmiş
+  ([[Borsa - Edge Mekanizma ve Zayiflik Analizi 2026-11-05]]).
+- Yani 2022+ sonucu (n87) büyük ölçüde **örneklem içi**. Örneklem dışı kanıt: 2013–2021 (n143, −0.33R ölçülmüş maliyet, maliyetsiz −0.09R)
+  ve Maven forward (SWEEP_CORE n18, +0.02R, Mayıs–Kasım 2026).

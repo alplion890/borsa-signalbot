@@ -34,7 +34,14 @@ def trade_table(cmult: float) -> pd.DataFrame:
     """One row per trade: day, module, R (net, 1R = stop distance), stop fraction of price."""
     cn, cb = cost_of("NASDAQ100", cmult), cost_of("BTCUSDT", cmult)
     sw = pd.read_csv("outputs/intraday/meta_label/trades_SWEEP_CORE.csv")
-    sw_r = sw["r0"] - sw["cost_r"] * (cn / 0.00009)
+    # cost_r = 2 * (today's measured cost in POINTS at today's price) / risk_pts. Carrying today's points back to
+    # 2013 (NQ ~3000) inflates old cost ~9x; prop_fit's extra x(cn/0.00009) adds 23%. Fix: proportional cost.
+    prof = pd.read_csv("outputs/intraday/mt5_bridge/reality_profile.csv").set_index("symbol").loc["NASDAQ100"]
+    risk_pts = 2 * (prof.spread_one_side_now + prof.slippage_p90) * prof.price_now / sw["cost_r"]
+    P0, D0, _ = st.nq_context()
+    close = pd.Series(D0["close"].to_numpy(), index=pd.DatetimeIndex(D0.index))
+    px = close.reindex(pd.to_datetime(sw["timestamp"]).dt.normalize(), method="ffill").to_numpy()
+    sw_r = sw["r0"] - 2 * cn * px / risk_pts
     rows = [pd.DataFrame(dict(day=pd.to_datetime(sw["timestamp"]).dt.normalize(), mod="SWEEP", R=sw_r, sf=1.0))]  # sf: presence marker only
     P, D, AT = st.nq_context()
     nb = st.apply_stop(P, st.base_nb(D, AT), 1.0).dropna(subset=["atr", "gross"])
