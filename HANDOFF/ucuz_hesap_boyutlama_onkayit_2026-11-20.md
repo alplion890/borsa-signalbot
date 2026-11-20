@@ -42,3 +42,7 @@ piyasa rejimine en az bağlı sonuç verir?
 2. Kalanlar arasında "en dayanıklı" = 4 rejim bloğunun **en kötüsündeki** 12 ay net ortalaması en yüksek olan (maximin), 1x maliyetle;
    2x maliyette de en kötü blok ortalaması ≥ −ücret olmalı (yani beklenen kayıp ücreti aşmamalı).
 3. Rapor: her firma × yöntem için en kötü blok, en iyi blok, tüm 2022+ ve sıfır-edge. Sonuç LIVE kuralını veya riski kendiliğinden değiştirmez.
+
+## Ek ön-kayıt (Argon fikri #4, sonuçlar görülmeden önce; ilk koşu yalnız F/B/BT içeriyordu)
+- R(b) "kâr merdiveni": bakiye ≤ +%1.5 → risk b; +%1.5..+%3.5 → 1.7b; > +%3.5 → 2.2b (challenge'da faz bakiyesi, funded/instant'ta payout sonrası sıfırlanan bakiye).
+  b ∈ {%0.5, %1.0}. Aynı karar kuralı, aynı veri, aynı seed. Gün içi devre kesici modellenmez (yalnız %3 açık risk kapısı).
