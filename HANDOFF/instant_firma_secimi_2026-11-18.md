@@ -181,3 +181,9 @@ prohibited-trading-practice, what-trading-platforms-are-available-for-use). Fiya
   Deneme: ücretsiz değil; ilk 5.000 kişiye bedava $5K One-Phase kampanyası (giriş + sadakat kartı). Sim (gün içi set): 178g · $438 · %26
   → ilk payout ≤30 gün hedefinden çok uzak.
 - Ölçüm sırası: FN deneme (resmi, MT5) → Blueberry Markets demo (vekil, etiketli) → IF yalnız Türkiye teyidinden sonra.
+
+## Ek (2026-11-20): $100 senaryosu + Gemini 4 Argon ikinci görüş
+- $100: FN Instant 5K $104.99 sınırda; asıl fark lot inceliği (NB %1.49 → ~%0.6, Donchian %1.59 → ~%0.64). Yeni edge vermez, icra riskini kaldırmaz.
+- Gemini (HANDOFF/gemini_firma_2026-11-20/): FN EA kopya yasağı → 6K x2/x3 simleri botla uygulanamaz; x1 6K sonucu yok.
+  EA eklenti ücreti bilinmiyor. Blueberry "işlem fikri" tanımı belirsiz. Sıra: yazılı teyit → deneme hesabında ölçüm → sim → bot trial → alım.
+- Vault: [[Borsa - Firma Secimi ve Butce Senaryosu 2026-11-20]].
