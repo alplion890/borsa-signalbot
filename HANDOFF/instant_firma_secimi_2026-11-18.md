@@ -159,3 +159,25 @@ Futures commission NOT measured (r carries CFD cost model) — "maliyet ölçül
 - Futures FN Rapid Pro 25K $44.99: 30-day payout ~0–1%.
 - Futures loses because: (1) evaluation before funded, (2) funded consistency + $500 cycle, (3) MNQ granularity too coarse for NB (CFD 0.01 lot is ~20x finer per $ of drawdown), (4) BTC modules not mapped (CME MBT daily break 22–23 UTC overlaps BTC_21_23 window — not tested), (5) nearly all futures firms restrict Turkey.
 - Futures advantages that remain: account size (25K vs 2K), 90% split, no swap, $250 min payout. Not usable under ≤30-day constraint.
+
+## Ek (2026-11-20): aday listesi + deneme hesabı (maliyet ölçümü için)
+Amaç: her firmanın gerçek spread'i o firmanın MT5 sunucusunda `reality_profiler` ile ölçülsün (Maven maliyeti başka firmayı temsil etmez).
+Resmi okuma 2026-11-20: help.blueberryfunded.com (11874076, 9550892, 16385107, 9550574), instantfunding.com/help (instant-funding-evolve,
+prohibited-trading-practice, what-trading-platforms-are-available-for-use). Fiyatlar resmi sayfada yok → 3. taraf, doğrulanmadı.
+
+- **FN Stellar Instant 2K** $41.99 (NOVINS, 22 Kas 17:00 GMT+6). Kurallar yukarıda. Deneme: **resmi ücretsiz deneme, MT5**, 14 günde bir.
+  Sim (Maven maliyeti): 21g · $102 · %9. FN maliyeti ölçülmedi.
+- **Blueberry Instant Elite 2.5K** (en küçük 2.5K, bir tabloda 1.25K da var). Fiyat resmi değil: 3. taraf ~$100, kuponla ~$50 iddiası.
+  %10 kayan-kilit, günlük yok (tablo çelişkili), tutarlılık yok, işlem fikri başına %1.5, min 5 aktif gün (%0.5), 14 günde payout, %80,
+  hafta sonu serbest, yüksek etkili haber yasak (±2 dk), MT5 + TradeLocker. EA: yalnız kendi (proprietary) + **önceden açıklama ve yazılı onay**.
+  Türkiye kısıtlı listede yok (liste "evaluation" başlıklı). Swap-free/VPS yazmıyor. Deneme: prop için yazmıyor; Blueberry Markets
+  (aracı kurum) ücretsiz MT5 demo var — aynı sunucu/spread olduğu doğrulanmadı (vekil ölçüm). **Simüle edilmedi.**
+- **Blueberry Instant Lite 1.25K**: %4 kayan-kilit + %2 günlük + %15 tutarlılık + %1.5 fikir başı; fiyat yok. Daha önce elendi (dar).
+- **Instant Funding Evolve 10K** ~$49 (3. taraf; %10 indirimle $44.10). Instant DEĞİL: 1 aşama, %6 hedef + 5 kârlı gün (%0.25).
+  %4 EOD kayan-kilit, günlük yok, %40 en iyi gün, **gece ve hafta sonu taşıma yasak** (16:55 EST'de kapanır → Sweep sarkanları ve
+  BTC 21–23 UTC ile çakışır), haber serbest, payout talep üzerine ama min $250, istek başı kârın %50'si / $2K tavan, en fazla 5 payout.
+  EA: "Public third-party EAs restricted; first-party EAs you build yourself are allowed". MT5 + cTrader + Match-Trader (ABD dışı).
+  Türkiye: resmi sayfada liste yok, bir 3. taraf dizin Türkiye'yi kısıtlı sayıyor (AML PDF okunmadı) → **yazılı teyit şart**.
+  Deneme: ücretsiz değil; ilk 5.000 kişiye bedava $5K One-Phase kampanyası (giriş + sadakat kartı). Sim (gün içi set): 178g · $438 · %26
+  → ilk payout ≤30 gün hedefinden çok uzak.
+- Ölçüm sırası: FN deneme (resmi, MT5) → Blueberry Markets demo (vekil, etiketli) → IF yalnız Türkiye teyidinden sonra.
