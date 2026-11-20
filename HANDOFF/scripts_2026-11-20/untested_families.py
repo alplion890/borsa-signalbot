@@ -84,10 +84,11 @@ def h2_xsmom(px: pd.DataFrame) -> pd.DataFrame:
         w = _xs_class(px, cols, me)
         wd = hold_monthly(w, px.index)
         pr = (wd * r[cols]).sum(axis=1)
-        v = np.sqrt(pr.pow(2).ewm(com=60, min_periods=60).mean() * 261)
+        v = np.sqrt(pr.pow(2).ewm(com=60, min_periods=60).mean() * 261).replace(0.0, np.nan)  # bug fix: 0 vol -> inf
         scale = (0.10 / v).reindex(me).reindex(px.index).ffill().shift(1)  # scale fixed at month-end, known then
         out.append(wd.mul(scale, axis=0) / 2)
-    return pd.concat(out, axis=1).reindex(columns=px.columns).fillna(0)
+    w = pd.concat(out, axis=1).reindex(columns=px.columns)
+    return w.replace([np.inf, -np.inf], np.nan).fillna(0)
 
 
 def h3_pairs(px: pd.DataFrame) -> pd.DataFrame:
