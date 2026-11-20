@@ -43,3 +43,19 @@ Dönem: 2013-01 – 2026-10 ay sonları (veri sonu ne ise; tarih kesimi sonuca b
 ## Uygulanabilirlik (geçse bile)
 LIVE'a girmez. Sıradaki adım: Maven forward PAPER + prop uygunluğu (yılda 12 işlem/döviz, 1 saat tutuş, haber kuralı:
 ay sonu 15:00 Londra = 10:00 ET, bazı aylarda ISM/tüketici güveni açıklamasıyla çakışır → FN haber kısıtı kontrol edilecek).
+
+## SONUÇ (2026-11-21, ön-kayıt 0d6b456 sonrası tek koşu) — GEÇMEDİ
+Kod `scripts_2026-11-21/melvin_prins.py`, ham çıktı `strategy-lab/outputs/intraday/melvin_prins/result.json`.
+164 ay sonu, 2013-01-31 – 2026-08-28 (önbellek sonu), 492 işlem, eksik fix barı 0.
+
+| bp / ay (3 döviz sepeti) | ortalama | se | isabet | 2013–17 | 2018–21 | 2022–23 | 2024–26 |
+|---|---|---|---|---|---|---|---|
+| maliyetsiz | +1.22 | 1.26 | %57 | +3.87 | −3.30 | +4.56 | +0.51 |
+| ölçülmüş merkez (1x) | +0.79 | 1.26 | %55 | +3.45 | −3.73 | +4.13 | +0.08 |
+| kötümser (2x) | +0.36 | 1.26 | %53 | +3.02 | −4.16 | +3.70 | −0.35 |
+
+p(1x) = 0.27 → birincil şart sağlanmadı (blok 3/4 ve 2x > 0 sağlandı). Döviz bazında brüt: EUR +0.78, GBP +2.88, JPY −0.01 bp.
+Eğim r_pre ~ s = −0.0049 (makale −0.0142; yön aynı, büyüklük ~1/3). Fix anı spread açılması ölçülmedi.
+Keşif (karar vermez): K1 fix sonrası dönüş brüt +5.04 bp/ay se 2.85 n128 (bloklar +4.4/+0.9/+13.1/+5.6);
+K2 doğrusal ağırlık brüt +2.26 bp. K1'i bu veride ana teste çevirmek post-hoc olur; yalnız forward ölçümle sınanabilir.
+Katalog: `elenenler.py` → melvin_prins_month_end_fx (rejected).

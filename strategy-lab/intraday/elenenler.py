@@ -623,6 +623,25 @@ KATALOG: tuple[Elenen, ...] = (
                     "settlement", "ucuncu cuma", "third friday", "vix", "contango", "backwardation",
                     "gap fill", "bosluk", "gap fade", "asya", "asia", "altin asya"),
     ),
+    Elenen(
+        id="melvin_prins_month_end_fx",
+        statu="rejected",
+        baslik="Melvin-Prins ay sonu FX hedge akisi: son gun 15-16 Londra, goreli hisse getirisinin tersi (EUR/GBP/JPY)",
+        iddia="Melvin-Prins JFM 2015 (2004-2012): ayin hisse getirisi yabanci > ABD ise yabanci para fix'ten onceki "
+              "saatte duser; katsayi -0.0142 (%10 -> 14bp).",
+        olcum="On-kayitli (0d6b456), Dukascopy 5m, 164 ay sonu 2013-01..2026-08 (tamami yayin sonrasi), Maven "
+              "olculmus maliyet. Sepet bp/ay maliyetsiz +1.22 / merkez +0.79 / 2x +0.36, se 1.26, p 0.27. "
+              "Bloklar 1x +3.4/-3.7/+4.1/+0.1. Egim -0.0049 (makalenin ~1/3'u). Kesif K1 (fix sonrasi donus 16:00->"
+              "ertesi 12:00) brut +5.0bp se 2.85 n128 -- karar vermez.",
+        neden="Yon makaleyle ayni ama etki ~1/3'e inmis, gurultu icinde; 2018-21 negatif.",
+        tarih="2026-11-21",
+        kaynak="HANDOFF/scripts_2026-11-21/melvin_prins.py + HANDOFF/melvin_prins_onkayit_2026-11-21.md",
+        kapsam="Yalniz on-kayitli 15-16 penceresi ve isaret kurali. K1 fix sonrasi donus test EDILMEDI (kesif); "
+               "ayni veride sonuca bakip ana teste cevirmek post-hoc olur, yalniz forward PAPER ile sinanabilir. "
+               "Canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band ve BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("melvin", "prins", "ay sonu fx", "month end fx", "hedge akisi", "equity hedging",
+                    "london fix", "wm fix"),
+    ),
 )
 
 
