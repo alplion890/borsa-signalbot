@@ -673,6 +673,39 @@ KATALOG: tuple[Elenen, ...] = (
                "Band ve canli SWEEP_CORE_AVOID_MID_VWAP, BTC 21-23 UTC bu maddenin disinda.",
         anahtarlar=("baltussen futures", "oops futures", "williams oops", "son 30 dk futures", "futures tasima"),
     ),
+    Elenen(
+        id="futures_transfer3_sweep_donchian",
+        statu="rejected",
+        baslik="Sweep NQ, Donchian GC N=20 ve Sweep RTY'yi CME vadeli maliyetiyle yeniden yargilamak",
+        iddia="CFD'de maliyetsiz pozitif bu uc kural futures maliyetiyle gecer.",
+        olcum="On-kayitli (d4efb82, EK 46233b2), Databento CME, olculmus bbo-1m + $0.61. R/islem merkez: Sweep NQ "
+              "-0.162 (n146, CI [-0.555,+0.270], 2012-21 -0.509); Donchian GC +0.008 (n849, CI [-0.100,+0.112]); "
+              "Sweep RTY +0.221 (n81, CI [-0.370,+0.850], 2017-21 -0.145). Ucu de 2x'te <=0 ya da yarida negatif.",
+        neden="Brut etki zaten ~0 (Sweep NQ maliyetsiz -0.004R) veya CI cok genis; 2022+ pozitifligi tek basina karar "
+              "vermez (post-hoc). Sweep tetigi feed-hassas: CME 15m 146 islem, Dukascopy 237.",
+        tarih="2026-11-22",
+        kaynak="HANDOFF/scripts_2026-11-21/futures_transfer3.py + HANDOFF/futures_tasima3_onkayit_2026-11-21.md",
+        kapsam="Yalniz bu uc kuralin futures tasima testi. Canli SWEEP_CORE_AVOID_MID_VWAP (CFD, LIVE taahhudu ayri "
+               "sayilir), NQ Noise Band, BTC 21-23 UTC ve IBS bu maddenin disinda.",
+        anahtarlar=("sweep futures", "sweep nq futures", "donchian gc", "donchian futures", "sweep rty", "m2k", "mgc"),
+    ),
+    Elenen(
+        id="futures_volume_rules_carry",
+        statu="rejected",
+        baslik="Gercek hacim kurallari (B1 yuksek hacim devami, B2 dusuk hacim donusu) ve sinif ici carry (A1)",
+        iddia="CME gercek hacmi gun ici yon bilgisi tasir; vade yapisi carry'si 23 vadelide getiri verir.",
+        olcum="On-kayitli (4348418, EK 46233b2), Bonferroni 5. bp/islem merkez: B1 NQ -1.50, B1 ES -2.06, B2 NQ "
+              "+2.14 CI [-3.1,+7.7] 2012-21 -0.79, B2 ES +2.67 CI [-1.5,+7.3] 2012-21 -0.01. A1 carry aylik "
+              "-7.6bp (SR -0.24, maliyet olculmedi: 1 tick alt sinir); 2012-21 -17.0bp.",
+        neden="Hicbiri merkezde CI alt siniri >0 degil; B2 pozitifligi yalniz 2022+ dilimde, 2010-11 negatif. Carry "
+              "maliyetsiz bile ~0.",
+        tarih="2026-11-22",
+        kaynak="HANDOFF/scripts_2026-11-21/futures_round4.py + HANDOFF/futures_hacim_carry_onkayit_2026-11-21.md",
+        kapsam="Yalniz B1/B2 (NQ/ES, RTH) ve A1 carry (23 kok, v.0/v.1). Order flow (CVD, OFI, footprint) test "
+               "edilmedi; canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band, BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("rvol", "gercek hacim", "hacim soku", "volume shock", "carry", "vade yapisi", "term structure",
+                    "kmpv"),
+    ),
 )
 
 

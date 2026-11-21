@@ -48,3 +48,16 @@ Sweep NQ'nun 2012–21 yarısı CFD Maven maliyetiyle negatifti (−0.417R); kur
   `instrument_id` değişimi, aynı oranla geriye ayarlama. Kural ve maliyet değişmez.
 - **RTY CME'de 2017-07'den beri var**: T3'ün 2012–21 yarısı fiilen 2017-07 – 2021; 2010–11 görülmemiş dilimi yok.
   Karar kuralı aynı (iki yarı > 0).
+
+## SONUÇ (2026-11-22, `futures_transfer3.py`, çıktı `outputs/intraday/futures_transfer3/result.json`)
+Ölçülmüş maliyet/yön: MNQ 0.555, MGC 0.161 (yarım spread 0.10 + $0.61/10), M2K 0.222 (0.10 + $0.61/5) puan.
+R/işlem, değerlendirme 2012-01-01 – 2026-11-19, Bonferroni (3) CI:
+
+| Test | n | maliyetsiz | merkez | 2× | Maven CFD | merkez CI | 2012–21 / 2022+ | 2010–11 |
+|---|---|---|---|---|---|---|---|---|
+| T1 Sweep NQ | 146 | −0.004 | −0.162 | −0.321 | −0.256 | [−0.555, +0.270] | −0.509 / +0.334 | −0.697 (n9) |
+| T2 Donchian GC | 849 | +0.026 | +0.008 | −0.010 | +0.002 | [−0.100, +0.112] | −0.007 / +0.038 | +0.008 (n88) |
+| T3 Sweep RTY | 81 | +0.425 | +0.221 | +0.017 | +0.197 | [−0.370, +0.850] | −0.145 / +0.473 | yok |
+
+**Üçü de GEÇMEDİ.** T3'ün ilk yarısı fiilen 2017-07 – 2021. Not: Sweep tetiği CME 15m'de 146, Dukascopy'de 237 işlem
+(feed hassasiyeti, önceden bilinen). Elenenler: `futures_transfer3_sweep_donchian`.

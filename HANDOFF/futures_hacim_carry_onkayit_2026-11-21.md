@@ -71,3 +71,31 @@ işaret tanımı aynı formülle korunur (gün farkı negatif → yıllık carry
 `NQ.c.0` takvim önayı 2026-09-15 … 09-18'de vadesi dolan Eylül kontratı (günlük 2–69 bin işlem; diğer günler ~350 bin).
 Hacim Aralık'a geçmiş; bu günlerde vekil kotasyon bayat. **C'de RTH işlem sayısı tüm günlerin medyanının %50'sinden az
 olan günler atlanır** ve sayısı raporlanır. Başka değişiklik yok. B1/B2/A1 sonuçları bu EK'ten önce görüldü; EK yalnız C'yi kapsar.
+
+## SONUÇ (2026-11-22, `futures_round4.py` + `limit_vs_market.py`)
+### B1/B2 — bp/işlem, 2012-01-01 – 2026-11-19, Bonferroni (5) CI
+| Test | n | maliyetsiz | merkez | 2× | merkez CI | 2012–21 / 2022+ | 2010–11 (merkez) |
+|---|---|---|---|---|---|---|---|
+| B1 NQ | 621 | +0.66 | −1.50 | −3.65 | [−6.1, +3.2] | −2.16 / +2.03 | −10.43 (n85) |
+| B1 ES | 685 | −0.13 | −2.06 | −3.99 | [−5.7, +1.7] | −2.69 / +0.01 | −9.62 (n94) |
+| B2 NQ | 289 | +3.98 | +2.14 | +0.31 | [−3.1, +7.7] | −0.79 / +8.73 | −11.99 (n40) |
+| B2 ES | 295 | +4.62 | +2.67 | +0.71 | [−1.5, +7.3] | −0.01 / +9.75 | −6.29 (n47) |
+
+### A1 carry — aylık portföy bp, 176 ay (maliyet ölçülmedi: 1 tick/yön alt sınır)
+| | ortalama | CI | 2012–21 / 2022+ | yıllık SR |
+|---|---|---|---|---|
+| maliyetsiz | −0.2 | [−21.4, +21.1] | −10.0 / +20.2 | −0.01 |
+| merkez | −7.6 | [−28.6, +13.3] | −17.0 / +11.9 | −0.24 |
+| 2× | −15.0 | [−36.2, +5.9] | −24.0 / +3.7 | −0.48 |
+
+**B1, B2, A1: beşi de GEÇMEDİ.** Elenenler: `futures_volume_rules_carry`.
+
+### C — limit vs market (betimleyici), NQ.c.0 trades 2026-09-01 – 11-19, 52 gün (EK 2: 5 ince gün atlandı)
+Puan/emir, giriş anı vekil orta fiyata göre; limit = kendi tarafta 60 sn, dolum yalnız bir tick geçilirse.
+| Olay | n | dolum | market maliyeti | limit (1m / 5m / 15m) | ters seçim 1m |
+|---|---|---|---|---|---|
+| 5 dk ızgara | 7.800 | %93.9 | −0.38 | −0.50 / −0.53 / −0.57 | 0.91 |
+| NB NQ girişleri | 96 | %90.6 | −0.44 | −1.81 / −2.10 / −1.99 | 2.44 |
+
+Bu tanımla limit emir market'ten pahalı: dolan limitlerde fiyat aleyhe yürüyor (ters seçim > yarım spread).
+Kuyruk önceliği modellenmedi (tick geçme şartı kötümser tarafta); gerçek kuyrukta dolum oranı ve sonuç değişebilir.
