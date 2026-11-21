@@ -659,6 +659,20 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("futures", "vadeli", "mes", "mnq", "cme maliyet", "futures maliyet", "noise band es",
                     "ema12 futures"),
     ),
+    Elenen(
+        id="futures_transfer_baltussen_oops",
+        statu="rejected",
+        baslik="Baltussen son 30 dk ve Williams Oops'u CME vadeli maliyetiyle yeniden yargilamak",
+        iddia="CFD maliyetine yenilen bu kurallar futures maliyetiyle pozitif kalir.",
+        olcum="On-kayitli (4f78b05), Databento CME 2012-2026, olculmus futures maliyeti. bp/islem merkez: Baltussen NQ "
+              "-1.26, ES -1.15 (maliyetsiz +0.46/+0.65); Oops NQ +2.84 CI [-4.15,+9.72] 2010-11 -14.6; Oops ES -0.38.",
+        neden="Baltussen brut etkisi futures maliyetinden de kucuk; Oops CI 0'i kapsiyor ve gorulmemis dilimde negatif.",
+        tarih="2026-11-21",
+        kaynak="HANDOFF/scripts_2026-11-21/futures_transfer_retest.py + HANDOFF/futures_tasima_onkayit_2026-11-21.md",
+        kapsam="Yalniz Baltussen son 30 dk (NQ/ES) ve Williams Oops (NQ/ES) futures testi. IBS (B7) NQ/ES, NQ Noise "
+               "Band ve canli SWEEP_CORE_AVOID_MID_VWAP, BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("baltussen futures", "oops futures", "williams oops", "son 30 dk futures", "futures tasima"),
+    ),
 )
 
 
