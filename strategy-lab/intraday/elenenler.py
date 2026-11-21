@@ -642,6 +642,23 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("melvin", "prins", "ay sonu fx", "month end fx", "hedge akisi", "equity hedging",
                     "london fix", "wm fix"),
     ),
+    Elenen(
+        id="futures_cost_retest_nb_es_ema12",
+        statu="rejected",
+        baslik="CFD maliyetine yenilen NB ES ve EMA12 NQ'yu CME vadeli maliyetiyle yeniden yargilamak",
+        iddia="Futures (MES/MNQ) maliyeti CFD'nin ~1/5'i; brut pozitif bu iki kural vadelide gecer.",
+        olcum="On-kayitli (57bf0ba), Databento CME 1m 2012-2026, olculmus bbo-1m spread + $0.61/yon komisyon, puan "
+              "olarak gecmise tasindi. NB ES merkez +0.88bp/gun Bonf CI [-0.49,+2.26], 2x -0.81. EMA12 NQ merkez "
+              "+0.032R CI [-0.044,+0.105], 2012-21 -0.006, 2x -0.052. 2010-11 gorulmemis: NB ES +0.82, EMA12 -0.199R.",
+        neden="Puan maliyeti sabit; dusuk fiyatli eski yillarda oransal maliyet yuksek. Iki kural da merkezde CI 0'i "
+              "kapsiyor, 2x negatif. 2022+ pozitif dilim post-hoc, karar vermez.",
+        tarih="2026-11-21",
+        kaynak="HANDOFF/scripts_2026-11-21/futures_cost_retest.py + HANDOFF/futures_maliyet_onkayit_2026-11-21.md",
+        kapsam="Yalniz NB ES ve EMA12 NQ'nun vadeli maliyetiyle 2012-2026 testi. NQ Noise Band (CME'de de gecti, "
+               "2010-11 negatif) ve canli SWEEP_CORE_AVOID_MID_VWAP, BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("futures", "vadeli", "mes", "mnq", "cme maliyet", "futures maliyet", "noise band es",
+                    "ema12 futures"),
+    ),
 )
 
 

@@ -41,3 +41,29 @@ Yön başına maliyet puanı = **yarım spread** + **komisyon puanı**.
 - Değerlendirme dönemi 2012-01-01 – 2026-11-19 (Dukascopy testleriyle aynı). 2010-06 – 2011 görülmemiş dilim ayrıca
   raporlanır; karar şartı değil (n ~370 gün, güç düşük), işareti yazılır.
 - Geçen olursa bile LIVE'a girmez: sonraki adım futures prop uygunluğu (bot izni, Türkiye kabulü) + forward PAPER.
+
+## SONUÇ (2026-11-21, ön-kayıt 57bf0ba sonrası tek koşu) — H1 ve H2 GEÇMEDİ
+Kod `scripts_2026-11-21/futures_cost_retest.py`, çıktı `strategy-lab/outputs/intraday/futures_cost_retest/result.json`.
+Ölçülmüş maliyet (bbo-1m 2025-01-02 – 2026-11-19, NY seansı, n≈184k dakika): MES yarım spread 0.125 puan (1 tick spread),
+MNQ yarım spread 0.25 puan (medyan spread 2 tick). Komisyon $0.61/yön → yön başına MES 0.247, MNQ 0.555 puan.
+Bugünkü fiyatla yön başına: MES ~0.33 bp (Maven SP500 1.60 bp), MNQ ~0.20 bp (Maven NQ 1.11 bp).
+**Ama puan maliyeti geçmişe sabit taşındığı için düşük fiyatlı eski yıllarda oransal maliyet yüksek** (NQ 2012 ~2.600 → ~2 bp/yön).
+Roll günü 66 (her sembol) dışarıda.
+
+| | maliyetsiz | futures merkez | futures 2× | Maven CFD | Bonf. CI (merkez) | 2012–21 / 2022+ (merkez) | 2010–11 görülmemiş (merkez) |
+|---|---|---|---|---|---|---|---|
+| H1 NB ES (bp/gün) | +2.57 | +0.88 | −0.81 | −0.39 | [−0.49, +2.26] | +0.37 / +1.91 | +0.82 (n357) |
+| H2 EMA12 NQ (R/işlem) | +0.117 | +0.032 | −0.052 | +0.018 | [−0.044, +0.105] | −0.006 / +0.109 | −0.199 (n400) |
+| REF NB NQ (bp/gün) | +4.48 | +2.95 | +1.42 | +2.53 | [+1.25, +4.69] | +1.86 / +5.17 | −4.19 (n357) |
+
+- H1: CI alt sınırı < 0 ve 2× negatif → GEÇMEDİ. H2: CI 0'ı kapsıyor, 2012–21 negatif, 2× negatif → GEÇMEDİ.
+- REF NB NQ (hipotez değil): CME verisinde de geçer kriterlerini sağlıyor (Dukascopy sonucu veri kaynağına bağlı değil);
+  ama 2010–11 görülmemiş dilimde merkez −4.19 bp/gün (n357, güç düşük) ve 2× maliyette 2012–21 negatif.
+- Gözlem (karar değil, post-hoc): 2022+ fiyat seviyesinde futures maliyeti bugünküne yakın; H1 2022+ +1.91, H2 2022+ +0.109R.
+  Bu dilimi sonradan seçip "geçti" demek post-hoc filtre olur; yalnız forward ölçümle sınanabilir.
+
+## Veri kalitesi: Dukascopy vs CME (aynı gün, data_quality_cme.py)
+5m getiri korelasyonu NQ 0.992, ES 0.948; saat kayması yok (en iyi gecikme her yıl 0). Kapsam ~%98.6 her ikisi.
+**Dukascopy SP500 2012 bozuk (5m korelasyon 0.03), 2013 zayıf (0.77)**; NQ 2013 0.87. 2014+ ≥0.96, 2018+ ≥0.995.
+Sıfır aralıklı mum: Dukascopy NQ 1211 / ES 1798, CME 8 / 6. Yalnız Dukascopy'de olan sıçrama: ES 7 (2012–13, :50 barları).
+Etki: SP500/US500 Dukascopy 2012–13 sonuçları güvenilmez; NB SP500 brüt etkisi CME'de de var (+2.57 vs +2.37), artefakt değil.
