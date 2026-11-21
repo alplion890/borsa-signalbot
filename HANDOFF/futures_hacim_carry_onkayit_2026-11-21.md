@@ -66,3 +66,8 @@ c.0 (takvim önayı) GC/SI/HG'de neredeyse işlem görmüyor (günlük medyan ha
 üzerinden: v.0 `instrument_id` değiştiği gün getiri = F_v0(t) / F_v1(t−1) − 1 (dünkü v.1 aynı kontratsa), değilse
 o kontratın dünkü fiyatı yoksa 0. Carry tanımı (F0−F1)/F1 × 365/gün(exp1−exp0); exp1 < exp0 olursa (v.1 daha yakın vade)
 işaret tanımı aynı formülle korunur (gün farkı negatif → yıllık carry doğru yönde). Diğer her şey aynı.
+
+## EK 2 (2026-11-22, C koşulmadan önce) — C roll haftası
+`NQ.c.0` takvim önayı 2026-09-15 … 09-18'de vadesi dolan Eylül kontratı (günlük 2–69 bin işlem; diğer günler ~350 bin).
+Hacim Aralık'a geçmiş; bu günlerde vekil kotasyon bayat. **C'de RTH işlem sayısı tüm günlerin medyanının %50'sinden az
+olan günler atlanır** ve sayısı raporlanır. Başka değişiklik yok. B1/B2/A1 sonuçları bu EK'ten önce görüldü; EK yalnız C'yi kapsar.
