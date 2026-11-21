@@ -59,3 +59,10 @@ aynen alındı, veriye bakılarak değiştirilmedi.
   limitin bir tick ötesine geçerse (alış için limit − 0.25 veya altında işlem) sayılır (kuyruk iyimserliği yok).
 - Raporlanan: dolum oranı; dolan/dolmayan için 1, 5, 15 dk sonra orta fiyat değişimi; ters seçim
   AS = E[ΔM] − E[ΔM | dolum]; market'e göre net tasarruf = dolum oranı × yarım spread − AS.
+
+## EK (2026-11-22, sonuç görülmeden, kod çalışmadan önce) — carry verisi
+c.0 (takvim önayı) GC/SI/HG'de neredeyse işlem görmüyor (günlük medyan hacim 18–65 kontrat) → kapanış fiyatları bayat.
+**A1, c.0/c.1 yerine v.0/v.1 (hacim sıralı 1. ve 2. kontrat) ile koşulur**, 23 kökün hepsinde. Getiri yine aynı kontrat
+üzerinden: v.0 `instrument_id` değiştiği gün getiri = F_v0(t) / F_v1(t−1) − 1 (dünkü v.1 aynı kontratsa), değilse
+o kontratın dünkü fiyatı yoksa 0. Carry tanımı (F0−F1)/F1 × 365/gün(exp1−exp0); exp1 < exp0 olursa (v.1 daha yakın vade)
+işaret tanımı aynı formülle korunur (gün farkı negatif → yıllık carry doğru yönde). Diğer her şey aynı.

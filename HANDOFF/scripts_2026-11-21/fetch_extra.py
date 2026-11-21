@@ -18,7 +18,7 @@ OUT = Path("outputs/databento")
 END = "2026-11-20"
 ROOTS = ["ES", "NQ", "YM", "RTY", "CL", "BZ", "GC", "SI", "HG", "NG", "ZN", "ZB", "ZF", "ZT",
          "6E", "6B", "6J", "6A", "6C", "6S", "ZC", "ZS", "ZW"]
-CAP_USD = {"gc1m": 1.5, "rty1m": 12.0, "c1daily": 1.5, "nqtrades": 34.0, "bbomicro": 2.0}
+CAP_USD = {"gc1m": 1.5, "rty1m": 12.0, "c1daily": 1.5, "nqtrades": 34.0, "bbomicro": 2.0, "gc1h": 1.5, "vdaily": 3.0}
 
 
 def load_key() -> None:
@@ -37,6 +37,10 @@ def chunks(pkg: str) -> tuple[str, str, list[str], list[tuple[str, str]]]:
         return "ohlcv-1m", pkg, [sym], yrs
     if pkg == "c1daily":
         return "ohlcv-1d", pkg, [f"{r}.c.1" for r in ROOTS], [("2010-06-06", END)]
+    if pkg == "gc1h":
+        return "ohlcv-1h", pkg, ["GC.v.0"], [("2010-06-06", END)]
+    if pkg == "vdaily":
+        return "ohlcv-1d", pkg, [f"{r}.v.{k}" for r in ROOTS for k in (0, 1)], [("2010-06-06", END)]
     if pkg == "bbomicro":
         return "bbo-1m", pkg, ["MGC.c.0", "M2K.c.0"], [("2025-01-01", "2026-01-01"), ("2026-01-01", END)]
     if pkg == "nqtrades":

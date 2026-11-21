@@ -41,3 +41,10 @@ Geçen olursa bile LIVE'a girmez; sonraki adım forward PAPER.
 ## Bilinen tuzak
 Sweep NQ'nun 2012–21 yarısı CFD Maven maliyetiyle negatifti (−0.417R); kural iki yarıyı da şart koşuyor, 2022+ tek başına
 "geçti" sayılmaz (post-hoc filtre).
+
+## EK (2026-11-22, sonuç görülmeden, kod çalışmadan önce) — veri düzeltmesi
+- **GC.c.0 takvim önayı ince**: 2024'te yalnız 9.721 dakikalık bar (günlük medyan hacim 53 kontrat). Donchian bu
+  seride anlamsız. **T2 GC.v.0 (hacim sıralı önay) ohlcv-1h** ile koşulur; roll = ardışık saat barlarında
+  `instrument_id` değişimi, aynı oranla geriye ayarlama. Kural ve maliyet değişmez.
+- **RTY CME'de 2017-07'den beri var**: T3'ün 2012–21 yarısı fiilen 2017-07 – 2021; 2010–11 görülmemiş dilimi yok.
+  Karar kuralı aynı (iki yarı > 0).
