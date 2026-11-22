@@ -706,6 +706,58 @@ KATALOG: tuple[Elenen, ...] = (
         anahtarlar=("rvol", "gercek hacim", "hacim soku", "volume shock", "carry", "vade yapisi", "term structure",
                     "kmpv"),
     ),
+    Elenen(
+        id="futures_tur5_orderflow_footprint",
+        statu="rejected",
+        baslik="NQ footprint order flow kurallari (OF1 emilim, OF2 stacked imbalance, OF3 5m delta sapmasi)",
+        iddia="CME agresor tarafli trades verisinde 1m emilim, 300% 3-seviye stacked imbalance ve 5m delta sapmasi pozitif beklenti uretir.",
+        olcum="On-kayitli (1df1cd7), CME NQ trades 2026-03-01..11-19 (176 gecerli RTH gunu, 11 ince gun atlandi), +150ms gecikme, "
+              "tick-by-tick cikis, MNQ olculmus maliyet 0.555 puan/yon, Bonferroni 11. OF1 emilim n=0; OF2 stacked n=16 "
+              "maliyetsiz -0.345R / merkez -0.459R / 2x -0.574R; OF3 delta sapmasi n=259 maliyetsiz -0.057R / merkez -0.104R "
+              "/ 2x -0.150R (iki yari da negatif). Betimleyici MBO 10 gun: native iceberg 1dk +0.437p (<1.11p maliyet), "
+              "sentetik refill 1dk -0.076p / 5dk -0.574p.",
+        neden="Maliyetsiz bile negatif veya 0 sinyal; 150ms gecikme ve 1.11 puanlik gidis-donus maliyeti mikroyapi etkisini asiyor.",
+        tarih="2026-11-22",
+        kaynak="HANDOFF/scripts_2026-11-23/run_orderflow.py + HANDOFF/futures_tur5_onkayit_2026-11-23.md",
+        kapsam="Yalniz on-kayitli OF1/OF2/OF3 footprint kurallari. Canli SWEEP_CORE_AVOID_MID_VWAP, NQ Noise Band, "
+               "BTC 21-23 UTC ve IBS NQ/ES bu maddenin disinda.",
+        anahtarlar=("footprint", "stacked imbalance", "delta sapmasi", "delta divergence", "emilim", "absorption",
+                    "iceberg", "mbo", "order flow"),
+    ),
+    Elenen(
+        id="futures_tur5_opex_pinning_cross_asset",
+        statu="rejected",
+        baslik="Opex 3. Cuma gun-ici pinning (NQ/ES) ve CL/ZN/6E capraz varlik (IBS, Donchian 1h)",
+        iddia="3. Cuma 09:30-11:00 >=1 sigma hareketin tersi (Ni-Pearson-Poteshman) ve IBS/Donchian 1h kurallari CL/ZN/6E vadelilerinde calisir.",
+        olcum="On-kayitli (1df1cd7), CME 2012-2026, olculmus bbo-1m + $0.61, Bonferroni 11. O1 pinning: NQ n=37 merkez -20.82bp "
+              "(2012-21 -17.1, 22+ -24.7), ES n=29 merkez -14.62bp. X1 IBS: CL n=321 +66.28bp CI [-2.47,+140.81] (83 roll atildi, "
+              "Bonf. alt sinir <0), ZN -1.05bp, 6E -5.30bp. X2 Donchian 1h: CL +0.006R (22+ -0.089, 2x -0.001), ZN -0.021R, "
+              "6E -0.017R. 8/8 GECMEDI.",
+        neden="Opex pinning her iki donemde de negatif; ZN/6E IBS ve tum Donchian 1h maliyetsiz ~0 / merkez negatif. "
+              "X1 CL ortalamasi pozitif ama petrol oynakligi yuzunden Bonferroni CI sifiri kapsiyor ve islemlerin %23'u roll'a takiliyor.",
+        tarih="2026-11-22",
+        kaynak="HANDOFF/scripts_2026-11-23/run_opex_cross.py + HANDOFF/futures_tur5_onkayit_2026-11-23.md",
+        kapsam="Yalniz Opex 5B pinning (NQ/ES) ve CL/ZN/6E IBS/Donchian 1h. IBS NQ/ES (gecti), canli SWEEP_CORE_AVOID_MID_VWAP, "
+               "NQ Noise Band ve BTC 21-23 UTC bu maddenin disinda.",
+        anahtarlar=("opex pinning", "ucuncu cuma pinning", "ibs cl", "ibs zn", "ibs 6e", "donchian cl", "donchian zn",
+                    "donchian 6e", "ham petrol ibs"),
+    ),
+    Elenen(
+        id="fintek_btc_fvg_supertrend_video",
+        statu="rejected",
+        baslik="YouTube 'Fintek Mustafa' BTC stratejisi: 15m doji+boga + 5m FVG + 1m Supertrend(10,3), 2R",
+        iddia="15m dipte doji+boga mumu sonrasi 5m FVG ustunden 1m Supertrend(10,3) onayiyla giris ve 1:2 RR ile BTC'de edge.",
+        olcum="On-kayitli (20f58b2), Binance BTCUSDT 1m 2024-11..2026-10 (1.05M bar), Maven BTCUSD olculmus maliyet. "
+              "Long (ana test): n=204, maliyetsiz +0.074R, merkez -0.069R CI [-0.262,+0.137], y1 -0.117 / y2 -0.025, "
+              "2x -0.211R, WR %35.8. Short (bilgi): n=221, maliyetsiz -0.063R, merkez -0.207R.",
+        neden="Mekanik cekirdek maliyetsiz bile gurultu icinde, olculmus maliyetle her iki yilda da negatif. "
+              "Videodaki sonuc tek bir canli islemde 4 hesaba ayni anda girmekten (kucuk orneklem) geliyor.",
+        tarih="2026-11-22",
+        kaynak="HANDOFF/scripts_2026-11-23/fintek_btc_fvg_st.py + HANDOFF/fintek_btc_fvg_st_onkayit_2026-11-22.md",
+        kapsam="Yalniz bu mekanik cekirdek (videodaki elle cizilen paralel kanal ve elle BE cekme test disi). "
+               "BTC 21-23 UTC, BTC Donchian (B2), canli SWEEP_CORE_AVOID_MID_VWAP ve NQ Noise Band bu maddenin disinda.",
+        anahtarlar=("fintek mustafa", "breakout spark", "fvg supertrend", "15m doji", "5m fvg", "1m supertrend"),
+    ),
 )
 
 

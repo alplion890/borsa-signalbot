@@ -39,3 +39,17 @@ Bu dosya Binance BTCUSDT 1m verisi üzerinde test koşulmadan ÖNCE commit edili
 ## Karar Kuralı (Tek Test, `alpha = 0.05` iki yönlü)
 - **GEÇER =** Merkez maliyette işlem başı net R için bootstrap (`10.000` tekrar, `seed = 20261122`, blok = 1) iki yönlü %95 CI (`0.025` kuantil) **alt sınırı > 0** **VE** İlk Yıl (`2024-11..2025-10`) > 0 **VE** İkinci Yıl (`2025-11..2026-10`) > 0 **VE** `2×` maliyet ortalaması > 0.
 - Geçerse bile LIVE'a girmez; sonraki adım forward PAPER. Geçmezse `elenenler.py` kataloğuna eklenir.
+
+---
+
+## SONUÇ (2026-11-22, ön-kayıt `20f58b2` sonrası tek koşu) — **GEÇMEDİ (ELENDİ)**
+
+Kod: `HANDOFF/scripts_2026-11-23/fintek_btc_fvg_st.py`, çıktı: `strategy-lab/outputs/intraday/fintek_btc_fvg_st/result.json`.
+Veri: Binance Spot `BTCUSDT` 1m, 2024-11-01 – 2026-10-31 (1.051.200 bar). Maliyet: Maven `BTCUSD` `real_cost_per_side_central = 0.000285` (gidiş-dönüş ~5.7 bp).
+
+| Test | n | Maliyetsiz | Merkez | 2× | %95 CI (Merkez) | Yıl 1 / Yıl 2 | WR (Merkez) | Sonuç |
+|---|---|---|---|---|---|---|---|---|
+| **LONG (Ana Test)** | 204 | +0.074R | **−0.069R** | −0.211R | [−0.262, +0.137] | −0.117 / −0.025 | %35.8 | **GEÇMEDİ** |
+| **SHORT (Bilgi)** | 221 | −0.063R | **−0.207R** | −0.351R | [−0.389, −0.019] | −0.194 / −0.221 | %31.2 | **GEÇMEDİ** |
+
+Mekanik çekirdek maliyetsiz bile gürültü içinde, ölçülmüş maliyetle her iki yılda da negatif. Elenenler: `fintek_btc_fvg_supertrend_video`.

@@ -140,3 +140,40 @@ Bu dosya gerçek veriler indirilmeden ve `HANDOFF/scripts_2026-11-23/` betikleri
   - Dönem tek yıl içinde (~8.5 ay) olduğundan iki yarı ayrımı kronolojik ortanca tarihten (`2026-07-10` öncesi = İlk Yarı, `2026-07-10` ve sonrası = İkinci Yarı) yapılır.
   - **GEÇER =** Merkez maliyette işlem başı net R için bootstrap (`10.000` tekrar, `seed = 20261123`, blok = 1) iki yönlü Bonferroni (`0.05 / 22` kuantil) **CI alt sınırı > 0** **VE** İlk Yarı (`< 2026-07-10`) > 0 **VE** İkinci Yarı (`>= 2026-07-10`) > 0 **VE** `2×` maliyet ortalaması > 0.
 - Geçen çıkarsa bile LIVE'a girmez; sonraki adım forward PAPER ölçümüdür. Geçmeyenler `strategy-lab/intraday/elenenler.py` kataloğuna eklenir.
+
+---
+
+## SONUÇ (2026-11-22, ön-kayıt `1df1cd7` sonrası tek koşu)
+
+Kodlar: `HANDOFF/scripts_2026-11-23/{run_opex_cross.py, run_orderflow.py, run_mbo_iceberg.py}`.
+Çıktılar: `strategy-lab/outputs/intraday/futures_round5/{opex_cross_result.json, orderflow_result.json, mbo_iceberg_desc.json}`.
+
+### Ölçülmüş maliyetler (`bbox` bbo-1m, 2025-01-01 – 2026-11-19, NY RTH, + $0.61/yön komisyon)
+- **MNQ:** `0.555` puan/yön · **MES:** `0.247` puan/yön (önceki ölçüm).
+- **CL.c.0:** yarım spread `0.005`, komisyon `0.00061` → **`0.00561` puan/yön** (`MCL.c.0` bilgi: yarım spread `0.010`, toplam `0.01610`).
+- **ZN.c.0:** yarım spread `0.0078125`, komisyon `0.00061` → **`0.00842` puan/yön**.
+- **6E.c.0:** yarım spread `0.00005`, komisyon `0.00000488` → **`0.0000549` puan/yön** (`M6E.c.0` bilgi: toplam `0.0000988`).
+
+### 11 Ön-Kayıtlı Hipotez — **11/11 GEÇMEDİ** (Bonferroni `alpha = 0.05 / 11`)
+
+| Kod | Aile / Varlık | Birim | n | Maliyetsiz | Merkez | 2× | Bonf. CI (Merkez) | 1. Yarı / 2. Yarı | 2010–11 Holdout | Sonuç |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **OF1** | Footprint Emilim NQ | R | 0 | — | — | — | — | — | — | **GEÇMEDİ** (0 sinyal) |
+| **OF2** | Stacked Imbalance NQ | R | 16 | −0.345 | −0.459 | −0.574 | [−1.015, +0.263] | −0.353 / −0.779 | — | **GEÇMEDİ** |
+| **OF3** | Delta Sapması 5m NQ | R | 259 | −0.057 | −0.104 | −0.150 | [−0.283, +0.087] | −0.063 / −0.136 | — | **GEÇMEDİ** |
+| **O1_NQ** | Opex 3. Cuma Pinning | bp | 37 | −19.42 | −20.82 | −22.21 | [−41.98, +0.65] | −17.14 / −24.70 | +44.56 (n3) | **GEÇMEDİ** |
+| **O1_ES** | Opex 3. Cuma Pinning | bp | 29 | −13.11 | −14.62 | −16.13 | [−30.91, +2.29] | −10.35 / −19.19 | +35.86 (n5) | **GEÇMEDİ** |
+| **X1_CL** | Günlük IBS CL | bp | 321 | +68.09 | +66.28 | +64.47 | [−2.47, +140.81] | +54.60 / +89.31 | +41.54 (n33) | **GEÇMEDİ** (CI alt −2.47; 83 roll atıldı) |
+| **X1_ZN** | Günlük IBS ZN | bp | 382 | +0.33 | −1.05 | −2.42 | [−10.33, +8.16] | +1.46 / −5.84 | +5.02 (n43) | **GEÇMEDİ** |
+| **X1_6E** | Günlük IBS 6E | bp | 367 | −4.35 | −5.30 | −6.24 | [−19.98, +9.21] | −9.42 / +2.14 | +31.24 (n45) | **GEÇMEDİ** |
+| **X2_CL** | Donchian 1h CL | R | 848 | +0.013 | +0.006 | −0.001 | [−0.122, +0.130] | +0.052 / −0.089 | +0.043 (n96) | **GEÇMEDİ** |
+| **X2_ZN** | Donchian 1h ZN | R | 839 | +0.016 | −0.021 | −0.057 | [−0.145, +0.109] | −0.072 / +0.082 | +0.145 (n87) | **GEÇMEDİ** |
+| **X2_6E** | Donchian 1h 6E | R | 805 | −0.000 | −0.017 | −0.034 | [−0.145, +0.112] | −0.045 / +0.038 | +0.118 (n82) | **GEÇMEDİ** |
+
+- Order flow verisi: 187 RTH günü, medyan 279.927 işlem/gün; 11 ince gün (`< %50 medyan`) atlandı → 176 geçerli gün.
+- Opex 5A Referans (CME, brüt haftalık): NQ Opex haftası `+26.8 bp` vs diğer haftalar `+40.7 bp` (fark `−13.8 bp`, 2022+ `−24.9 bp`); ES Opex `+22.0 bp` vs diğer `+30.5 bp` (fark `−8.5 bp`, 2022+ `−8.6 bp`).
+
+### OF4 — MBO Iceberg Betimleyici Ölçüm (10 Gün, 2026-10-05..16, ~147M RTH satırı, karar kuralı yok)
+- **Native Iceberg (borsa yönetimli):** `n = 1.067` (~107/gün). `t_detect → +150ms` kayma: ort. `+0.184` puan (medyan `0.25` = 1 tick). `+150ms → +1 dk` pasif yöne sürüklenme: **`+0.437` puan** (WR `%53.6`), `+5 dk`: `+0.058` puan (WR `%52.6`). **Kritik:** `+0.437` puanlık brüt 1 dk hareket, MNQ gidiş-dönüş maliyetinin (`1.11` puan) yarısından bile küçüktür.
+- **Sentetik Refill (algoritmik yenileme):** `n = 4.370` (~437/gün). `+150ms` kayma: ort. `+0.463` puan (medyan `0.50` = 2 tick). `+150ms → +1 dk`: **`−0.076` puan** (WR `%49.2`), `+5 dk`: **`−0.574` puan** (WR `%49.0`) — pasif tarafın tersine (kırılım/toksik akış).
+- **OF1 örtüşmesi:** OF1 `n = 0` olduğu için örtüşme yok.
