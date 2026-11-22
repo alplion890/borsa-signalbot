@@ -1,0 +1,25 @@
+{
+  "price_by_size": "Instant sizes $5K,$10K,$25K,$50K,$100K,$200K,$400K,$800K,$1.6M,$2.5M,$5M (help.fundedtradingplus.com/instant-program-information/). Prices not shown on official help pages; third party (not verified) lists 5K $119-249, 10K $199-429 [uncertain].",
+  "turkey_accepted": "No official restricted-country page reached; third party Propvator (not verified) says Turkey is not named in help-centre or terms lists [uncertain].",
+  "turkey_payout_kyc": "Payout requires valid KYC and researcher contract; methods not specified on payouts overview [uncertain].",
+  "platform": "MT5 and Match-Trader (help centre has MT5 login and Match-Trader sections).",
+  "ea_clause_text": "Help: 'You can also use EAs, Algos or Bots.' Prohibited: abuse of simulated environment such as arbitrage, grid trading, tick scalping; group copy trading and hedging across accounts not permitted; FT+ does not support third-party EAs; full rules referred to Terms and Conditions (not read) [uncertain].",
+  "overnight_weekend": "Instant: trades must be closed by 4:30 PM EST on Friday or the system closes them automatically; new trades allowed after market reopens. Weekend position holding therefore NOT allowed. Weekday overnight holding allowed.",
+  "swap_free_scope": "Swap-free since February 2026 on 1-Step Express, 2-Step Classic and Instant; crypto not mentioned specifically [uncertain].",
+  "us100_btc": "Leverage Instant: indices 1:20, crypto 1:2, forex 1:30, gold/silver 1:20, oil 1:5. Symbol list not fetched; US100/BTCUSD not confirmed [uncertain].",
+  "drawdown": "6% relative trailing max drawdown (balance-based, stops trailing at initial balance); 6% daily loss from prior day closed balance or equity (higher), reset 17:00 EST. Stop loss not required.",
+  "consistency_min_days": "No consistency rule or min trading days stated; 30-day inactivity breach (one trade open+close in any 30 days).",
+  "first_payout": "Withdrawals available as soon as in profit from day 1, $50 minimum, then every 7 days; 80% split; review 2 business days (5-7 if risk review).",
+  "news_gambling": "News trading not mentioned on instant page [uncertain]; gambling rule not found [uncertain]; arbitrage/grid/tick scalping prohibited.",
+  "sources": "https://help.fundedtradingplus.com/ ; /instant-program-information/ ; /ft-swap-free-accounts-2026/ ; /does-your-simulated-live-environment-support-the-use-of-eas-algos-or-bots/ ; /ft-leverage/ ; /trading-rules/ ; /payouts-overview/ (checked 2026-11-23). Main site fundedtradingplus.com returned 403.",
+  "fits_all_hard": "HAYIR - weekend holding not allowed on Instant (positions closed by Friday 4:30 PM EST). Also unverified: Turkey list, BTC symbol, price in $100-150.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "ea_clause_text",
+    "swap_free_scope",
+    "us100_btc",
+    "news_gambling"
+  ]
+}

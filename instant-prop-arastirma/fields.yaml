@@ -1,0 +1,25 @@
+categories:
+  price:
+    - {name: price_by_size, description: "Instant hesap boyutlari ve liste fiyati (5K/10K/25K); yayinlanmis kupon ayri; reset/ek ucret", detail_level: moderate}
+  eligibility:
+    - {name: turkey_accepted, description: "Turkiye ikametli kabul; resmi yasakli ulke sayfasi URL + alinti", detail_level: detailed}
+    - {name: turkey_payout_kyc, description: "Turk kullanicida KYC ve odeme yontemi calisiyor mu", detail_level: brief}
+  platform:
+    - {name: platform, description: "MT5/cTrader/diger", detail_level: brief}
+    - {name: ea_clause_text, description: "EA/bot/VPS kurali resmi metin alintisi; HFT/copy yasaklari", detail_level: detailed}
+  holding:
+    - {name: overnight_weekend, description: "Gece ve hafta sonu pozisyon; BTC hafta sonu ozel kurali", detail_level: detailed}
+    - {name: swap_free_scope, description: "Swap-free var mi, kripto/BTC kapsiyor mu, ucret", detail_level: detailed}
+  instruments:
+    - {name: us100_btc, description: "US100/NAS100 ve BTCUSD sembolleri, kaldirac, lot siniri", detail_level: moderate}
+  risk_rules:
+    - {name: drawdown, description: "DD tipi (statik/kayan/kilitli), max DD %, gunluk limit %, islem basi risk siniri", detail_level: detailed}
+    - {name: consistency_min_days, description: "Tutarlilik kurali, min islem gunu, min karli gun", detail_level: moderate}
+  payout:
+    - {name: first_payout, description: "Ilk payout talebine kadar sure, dongu, kar payi, min tutar", detail_level: moderate}
+  restrictions:
+    - {name: news_gambling, description: "Haber penceresi yasagi, tek yonlu pozisyon/kumar kurali", detail_level: moderate}
+  meta:
+    - {name: sources, description: "Her iddia icin resmi URL + kontrol tarihi; 3. taraf ise 'dogrulanmadi'", detail_level: detailed}
+    - {name: fits_all_hard, description: "requirements_hard'in hepsini resmi kaynakla sagliyor mu: EVET/HAYIR/BELIRSIZ + hangi madde", detail_level: brief}
+uncertain: []

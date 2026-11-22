@@ -1,0 +1,23 @@
+{
+  "price_by_size": "Official (help.atmosfunded.com/en/articles/12380563-instant-funding, checked 2026-11-23): $5K $75, $10K $124, $25K $240, $50K $374, $100K $649 (max allocation $200K). Only $10K ($124) falls in the $100-150 band; $5K is below. Published coupons not verified; reset fee not stated.",
+  "turkey_accepted": "[uncertain] No official restricted-country list found in the Atmos help center (taxes article only says some jurisdictions may have restrictions on prop trading or FX). Turkey not confirmed as accepted.",
+  "turkey_payout_kyc": "[uncertain] Official payment-methods article lists cards, Apple/Google Pay, crypto (BTC, ETH, USDT, USDC), PayPal, Revolut. Payouts are paid gross. No KYC or payout-method detail for Turkey found.",
+  "platform": "MetaTrader 5 (help center MT5 login/install articles).",
+  "ea_clause_text": "Official (article 12381265): 'Atmos supports the use of Expert Advisors (EAs), bots, but some strategies are not allowed.' Allowed: EAs you build yourself (purchased/public/third-party EAs do not qualify), copy trading only between own Atmos accounts. Not allowed: latency arbitrage, high-frequency bots that overload execution, tick scalping/toxic flow. Prohibited-strategies article also lists HFT rule violation (fewer than half of trades held over two minutes). VPS not mentioned [uncertain].",
+  "overnight_weekend": "Official (article 12381252): Atmos Funded allows traders to hold trades overnight and over weekends across all account types. Prohibited-strategies article: holding overnight/weekends is permitted. No BTC-specific weekend rule found.",
+  "swap_free_scope": "[uncertain] No swap-free offering found. Official text says standard rollover/swap charges may apply (check MT5). BTC swap not confirmed as 0.",
+  "us100_btc": "Official: instrument categories Forex, Metals, Indices, Crypto; leverage Indices 1:10, Crypto 1:2 (Instant: Forex 1:50, Metals 1:15). [uncertain] No full symbol list, so US100/NAS100 and BTCUSD not confirmed by name; lot limit not found.",
+  "drawdown": "Official: Instant max daily loss 3%, max total drawdown 5% trailing; drawdown locks at initial balance once a payout is requested. Per-trade risk cap not found.",
+  "consistency_min_days": "Official: 20% consistency (no single day above 20% of total profit, equity-based); minimum trading days: none.",
+  "first_payout": "Official: 14-day payout cycle, first payout 14 days after start, then every 14 days; profit split up to 90% with add-ons. Minimum payout amount not stated [uncertain].",
+  "news_gambling": "Official: no opening/closing trades within +/-2 minutes of high-impact news on Instant (funded-stage rule from the start); holding through news allowed. Anti-gambling policy exists; all-in gambling-style trading and cross-account hedging prohibited.",
+  "sources": "help.atmosfunded.com articles 12380563 (Instant Funding), 12381265 (EA), 12381252 (overnight/weekend), 12381237 (news), 12394478 (leverage), 12380605 (payouts), 12381281 (prohibited strategies), 12381211 (drawdowns), 12380615 (taxes), 12380823 (payments); all checked 2026-11-23. atmosfunded.com main pages returned truncated content. Third-party (not verified): traderssecondbrain.com shows no mapped restriction for Turkey.",
+  "fits_all_hard": "BELIRSIZ - Met: MT5 + own EAs, overnight/weekend allowed, instant $10K at $124. Unconfirmed: Turkey acceptance (no official list), BTCUSD swap-free/swap 0 (swap charges may apply), US100 and BTCUSD symbol confirmation.",
+  "uncertain": [
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "swap_free_scope",
+    "us100_btc",
+    "first_payout"
+  ]
+}

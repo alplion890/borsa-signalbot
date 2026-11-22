@@ -1,0 +1,24 @@
+{
+  "price_by_size": "Official (citytradersimperium.com/instant-funding/, checked 2026-11-23): one-time fees $2.5K $79, $5K $139, $10K $259, $20K $449, $40K $849, $80K $1,599. Only $5K ($139) is in the $100-150 band. Reset on Failure gives 15% discount; full reset fee not stated. Coupons not verified.",
+  "turkey_accepted": "Official Terms PDF clause 6.5.1 (City-Traders-Imperium-Terms-Conditions.pdf) restricts nationals/residents of Syria, North Korea, Cuba, or Iran; site also lists Russia and sanctioned persons. Turkey not listed, so accepted. https://citytradersimperium.com/terms-conditions-of-service/",
+  "turkey_payout_kyc": "[uncertain] No Turkey-specific KYC/payout method info found; help center returned 403.",
+  "platform": "MetaTrader 5 and Match-Trader.",
+  "ea_clause_text": "[uncertain] Official instant page rules table: 'Personal EAs only - no third-party.' Terms clause 6.4: services not designed for traders copying signals from other traders. Martingale not allowed. HFT and VPS not mentioned.",
+  "overnight_weekend": "Official instant page: overnight holds and weekend holds both listed as allowed. No BTC-specific rule found.",
+  "swap_free_scope": "[uncertain] Swap-free not mentioned on official instant page or Terms. Terms 8.19: crypto has no commission; indices commission $0.25/lot/side.",
+  "us100_btc": "[uncertain] Official pages do not list symbols, leverage or lot limits; Terms mention indices and crypto categories only.",
+  "drawdown": "Official: max drawdown 6% static from initial balance (balance-based, not equity-based per FAQ); max daily drawdown: none; time limit: none. Per-trade risk cap not found.",
+  "consistency_min_days": "Official: 20% consistency score required to scale (calculation not defined); minimum profitable days none (shown as dash); min trading days not stated.",
+  "first_payout": "[uncertain] Official: first payout 5 days (fully funded); profit share starts 50%, 70-100% when fully funded/VIP (Bronze 90% weekly, Silver 100% anytime); minimum payout not stated.",
+  "news_gambling": "[uncertain] Official: news trading allowed, no restrictions before or after major news. Martingale prohibited; gambling clause not found.",
+  "sources": "https://citytradersimperium.com/ (home); https://citytradersimperium.com/instant-funding/; https://citytradersimperium.com/terms-conditions-of-service/; https://citytradersimperium.com/wp-content/uploads/2026/08/City-Traders-Imperium-Terms-Conditions.pdf (clauses 6.4, 6.5.1, 8.19); all checked 2026-11-23. helpcenter.citytradersimperium.com returned 403, not read.",
+  "fits_all_hard": "BELIRSIZ - Met: Turkey accepted, MT5, personal EAs, overnight/weekend allowed, $5K at $139. Unconfirmed: BTCUSD swap-free/swap 0, US100 and BTCUSD symbols.",
+  "uncertain": [
+    "turkey_payout_kyc",
+    "ea_clause_text",
+    "swap_free_scope",
+    "us100_btc",
+    "first_payout",
+    "news_gambling"
+  ]
+}

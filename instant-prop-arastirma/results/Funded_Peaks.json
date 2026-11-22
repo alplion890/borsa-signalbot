@@ -1,0 +1,30 @@
+{
+  "price_by_size": "Not available: official site (fundedpeaks.com) does not resolve (DNS failure on 2026-11-23); third-party pages say firm is marked CLOSED and list no instant product [uncertain].",
+  "turkey_accepted": "Not verified - no official page reachable [uncertain].",
+  "turkey_payout_kyc": "Not verified [uncertain].",
+  "platform": "Not verified [uncertain].",
+  "ea_clause_text": "Not verified [uncertain].",
+  "overnight_weekend": "Not verified [uncertain].",
+  "swap_free_scope": "Not verified [uncertain].",
+  "us100_btc": "Not verified [uncertain].",
+  "drawdown": "Not verified [uncertain].",
+  "consistency_min_days": "Not verified [uncertain].",
+  "first_payout": "Not verified [uncertain].",
+  "news_gambling": "Not verified [uncertain].",
+  "sources": "fundedpeaks.com and fundedpeaks.io fetch attempts failed (ENOTFOUND, 2026-11-23). Third-party only (not verified): thetrustedprop.com/prop-firms/fundedpeaks reports firm CLOSED.",
+  "fits_all_hard": "HAYIR - firm appears closed, no instant product and no reachable official page; no hard requirement can be verified.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "platform",
+    "ea_clause_text",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "first_payout",
+    "news_gambling"
+  ]
+}

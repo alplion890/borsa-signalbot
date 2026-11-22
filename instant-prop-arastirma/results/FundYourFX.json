@@ -1,0 +1,26 @@
+{
+  "price_by_size": "Instant Funding Classic prices on fundyourfx.com/program-instant-funding: 5K $39.60, 10K $71.60, 25K $131.60 (also 50K $331.60, 100K $639.60, 200K $999.60, 400K $1,947.60, 800K $3,755.20); page also shows a higher crossed-out figure and 60% promo wording, so list vs discounted price is unclear [uncertain]. 25K falls in $100-150.",
+  "turkey_accepted": "Trading Rules clause 24.1: prohibited jurisdictions currently Hong Kong, North Korea and Iran only; Turkey not listed (list may be updated).",
+  "turkey_payout_kyc": "KYC: government ID, proof of address (<3 months), selfie/liveness, banking/tax details. Payouts by bank transfer or crypto, to account in user's name. Turkey-specific operation not verified [uncertain].",
+  "platform": "Match-Trader (FAQ platform section) and 'Platform 5' (Match-Trader platform). MT5/cTrader not mentioned anywhere on official pages.",
+  "ea_clause_text": "General trading rules: 'All other EAs and algorithmic strategies are allowed as long as they follow the risk rules.' Prohibited: HFT (trades must be held at least 60 seconds), arbitrage, grid, martingale, tick scalping, copy trading (copying trades across multiple accounts), hedging 'under any circumstances', gambling. Instant page says EAs welcome.",
+  "overnight_weekend": "'Overnight and weekend holding is allowed.' No BTC-specific rule found [uncertain].",
+  "swap_free_scope": "Swap not mentioned on official pages [uncertain].",
+  "us100_btc": "No symbol list on fetched pages; US100/BTCUSD not confirmed [uncertain]. Leverage 1:100 on instant page.",
+  "drawdown": "Instant Classic: static max loss 6%, daily loss 4% (one block lists daily as 'None' - conflicting [uncertain]). Instant Pro details not verified.",
+  "consistency_min_days": "Min trading days: 6 (Classic), 3 (Pro). Consistency rule not stated; a 'profit balance rule 4x best day' is mentioned [uncertain].",
+  "first_payout": "Classic payouts weekly; processed within 24h (up to 5 business days with review); split 50% rising to 95%; payout target $150.",
+  "news_gambling": "News trading allowed; trades may not be modified within 5 minutes before/after high-impact news (existing trades may be held). Gambling-style trading prohibited.",
+  "sources": "https://fundyourfx.com ; /program-instant-funding ; /faqs ; /faqs/trading-rules-guide/general-trading-rules ; /terms-conditions (checked 2026-11-23).",
+  "fits_all_hard": "HAYIR - hard requirement 'MT5 or cTrader' not met (Match-Trader only per official pages). Turkey OK, EA OK, weekend OK, 25K price OK; swap/BTC and symbols unverified [uncertain].",
+  "uncertain": [
+    "price_by_size",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "fits_all_hard"
+  ]
+}

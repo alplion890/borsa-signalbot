@@ -1,0 +1,28 @@
+{
+  "price_by_size": "Official pages could not be fetched (help.fundingpips.com returned 403, fundingpips.com 429). Third-party (fundedtrading.com, updated 2026-09-24, with affiliate code applied; dogrulanmadi) [uncertain]: $5K $60, $10K $88, $25K $188, $50K $244, $100K $444, $200K $888. Sizes $5K-$200K. List prices without coupon not verified.",
+  "turkey_accepted": "No Zero-specific list found. Search snippets of official help (Get Started) show FundingPips does not accept traders from sanctions-list/FATF jurisdictions, Iran, Vietnam, UAE; Turkey not named, and Turkey (TR) is listed among countries supporting traditional rewards on the rewards page. Full official list could not be fetched [uncertain].",
+  "turkey_payout_kyc": "Official rewards page snippet lists Turkey (TR) under 'Other' countries for traditional reward methods [uncertain, page not fetched]. KYC details not verified.",
+  "platform": "FundingPips site: MT5, cTrader, TradeLocker, Match-Trade across the firm; Zero platform list not verified. Third-party: Zero swap-free add-on exists for MT5 only (forex and metals) [uncertain].",
+  "ea_clause_text": "Zero-specific EA clause not found. Official general rule (search snippet of help.fundingpips.com, not fetched): third-party EAs permitted only as trade/risk manager; own EA full automation allowed with proof of ownership; 1K Instant allows third-party EAs; Monthly Competition bans all EAs [uncertain for Zero].",
+  "overnight_weekend": "Official Zero article (help.fundingpips.com/hc/en-us/articles/34502157694865, via search result summary; page itself returned 403) states all positions must be closed before Friday market close on all instruments including crypto; leaving positions into weekend is a hard breach and closes the account. Swap-free add-on does not allow weekend holds on Zero. FAILS the weekend-holding requirement.",
+  "swap_free_scope": "Master accounts: swap-free add-on exists (third-party: MT5 only, forex and metals) [uncertain]. Crypto/BTC swap coverage not verified. Moot because weekend holding is prohibited.",
+  "us100_btc": "Third-party (unverified): Zero leverage forex 1:50, metals/indices/energies 1:10, crypto 1:1, crypto commission 0.04% of notional, max 1 lot per trade for crypto [uncertain]. Symbol names US100/BTCUSD not verified on official page.",
+  "drawdown": "Third-party (consistent across sources, official page not fetched) [uncertain]: 5% trailing max loss, 3% daily loss (from higher of opening balance or equity), 1% max open (floating) risk, all hard breaches.",
+  "consistency_min_days": "Third-party [uncertain]: 15% consistency rule; min trading days not verified.",
+  "first_payout": "Third-party [uncertain]: 95% profit split, bi-weekly payouts; official first-payout timing not verified.",
+  "news_gambling": "Official Zero article (via search summary): no position may be opened, closed, or held within 10 minutes before/after high-impact news on the affected currency; hard breach. Gambling/one-sided rules not verified.",
+  "sources": "1) https://help.fundingpips.com/hc/en-us/articles/34502157694865-FundingPips-Zero (content only via search summary, 2026-11-23; direct fetch 403); 2) https://help.fundingpips.com/hc/en-us/articles/34504137479441-News-Trading-Weekend-Holding (search summary only, 403); 3) https://help.fundingpips.com/hc/en-us/articles/44390730743825-Get-Started (search summary only); 4) https://fundedtrading.com/fundingpips-zero-instant-funding-rules/ (third-party, dogrulanmadi, 2026-09-24). Official pages direct-fetch failed (403/429), so most numeric fields unverified.",
+  "fits_all_hard": "HAYIR. Fails weekend/overnight requirement: official Zero rule says any position open over the weekend is a hard breach (including crypto), so BTC cannot be held across weekend. Other items unverified.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "platform",
+    "ea_clause_text",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "first_payout"
+  ]
+}

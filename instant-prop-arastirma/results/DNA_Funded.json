@@ -1,0 +1,31 @@
+{
+  "price_by_size": "[uncertain] Official pages (dnafunded.com) returned 403/503 to automated fetch, so not verified from the official page. Third-party reviews (unverified) conflict: roughly $199 for Instant 5K, sizes $5K-$200K; one-time vs monthly unclear.",
+  "turkey_accepted": "[uncertain] Official FAQ and Rules PDF (dnafunded.com/faqs/, DNA-Funded-Ltd-Rules-and-Conditions-V.2.pdf) could not be fetched. A search-engine excerpt of the FAQ says a long restricted list exists (Australia, Cuba, Iran, Russia, Syria and others; US residents restricted per V.2 rules). Whether Turkey is on it is NOT confirmed.",
+  "turkey_payout_kyc": "[uncertain] Not verified; official pages inaccessible.",
+  "platform": "[uncertain] Not verified from official page.",
+  "ea_clause_text": "Search-engine excerpt of the official FAQ (dnafunded.com/faqs/, not directly fetched): EAs and algorithmic trading are permitted on standard challenges but prohibited on Instant Funding accounts, which are manual trading only; use of automated scripts or EAs on these accounts results in a breach. [uncertain] because the page itself could not be opened.",
+  "overnight_weekend": "[uncertain] Not verified from official page.",
+  "swap_free_scope": "[uncertain] Not verified from official page.",
+  "us100_btc": "[uncertain] Not verified from official page.",
+  "drawdown": "[uncertain] Third-party only (unverified): Instant 4% trailing max drawdown (one source says 6% trailing until 3% profit then locked), no daily loss limit.",
+  "consistency_min_days": "[uncertain] Not verified from official page.",
+  "first_payout": "[uncertain] Third-party only (unverified): default 80% split, up to 90% with add-on.",
+  "news_gambling": "[uncertain] Third-party only (unverified): news trading restricted around high-impact events.",
+  "sources": "Official dnafunded.com pages (home, /faqs/, /product-category/instant-funding/, Rules PDF) returned HTTP 403 or 503 to automated access on 2026-11-23; they were not read. Only a search-engine excerpt of the official FAQ was seen (EA ban on Instant). Everything else is third-party and NOT VERIFIED: thetrustedprop.com, dailyforex.com, fundedtrading.com.",
+  "fits_all_hard": "HAYIR - fails hard requirement 2 (EA/bot free): excerpt of official FAQ says EAs/algos prohibited on Instant Funding. Remaining items unverified. [uncertain] because the official page was not directly readable.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "platform",
+    "ea_clause_text",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "first_payout",
+    "news_gambling",
+    "fits_all_hard"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "price_by_size": "Instant Funding PRO sizes $625 to $4,000,000 (official homepage); prices not published on fetched pages, shown only at checkout [uncertain]. IF Micro Lite and other programs exist; IF30 (30% off PRO and LITE) is a coupon, not list price. $100-150 band not verified [uncertain].",
+  "turkey_accepted": "No official restricted-country list found on fetched Instant Funding pages (trading-rules, clarity, help index); Turkey not mentioned [uncertain]. General Terms PDF not read.",
+  "turkey_payout_kyc": "Not verified. Withdrawals from $25, processed within 48 business hours; payout cycle varies by program [uncertain].",
+  "platform": "MetaTrader 5, cTrader, Match-Trader (ZAR accounts: MT5 only).",
+  "ea_clause_text": "Official help (prohibited-trading-practice and clarity pages): 'Public third-party EAs are restricted. First-party EAs you build yourself are allowed.' HFT prohibited (profitable trades held 60 s or less, or unusually high trades per hour; third violation breaches). Copying others' accounts restricted; grid and martingale prohibited. Older terms PDFs mention VPN/VPS restrictions (conflict, current VPS rule not verified) [uncertain].",
+  "overnight_weekend": "Instant Funding PRO: overnight included; weekend holding requires the paid Swing add-on selected at purchase (cannot be added later); without it all positions must be closed before Friday close (not a breach). Crypto program weekend rules not verified [uncertain].",
+  "swap_free_scope": "Not stated on fetched pages; overnight swap fees apply on some programs (triple swap Wednesdays) [uncertain].",
+  "us100_btc": "PRO leverage (no swing/with swing): indices 1:20/1:10, crypto 1:2/1:1. Max lot at $10K: indices 2, crypto 1. US100 and BTCUSD symbols not named [uncertain].",
+  "drawdown": "Instant Funding PRO: smart drawdown 10% of start balance, tightens to 5% after 5% gain lock-in; no daily limit; risk 3% of start balance per trade idea (hard breach). Micro Lite: 6% smart DD + 3% daily.",
+  "consistency_min_days": "PRO: no consistency stated on fetched page; Micro Lite 20% best-day, IF1 15% [uncertain]. No min trading days stated for PRO.",
+  "first_payout": "PRO: first payout 14 days after initial trade, then every 7 days; min withdrawal $25; base split 80% (90% in promos); requires smart drawdown locked in and all trades closed.",
+  "news_gambling": "Without Swing add-on: trades within 4 minutes of major news restricted (profits may be adjusted). Grid/martingale/one-sided bets prohibited. Official page states all accounts are demo accounts with fictitious funds.",
+  "sources": "https://instantfunding.com/ (2026-11-23); https://instantfunding.com/help/ (2026-11-23); https://instantfunding.com/help/prohibited-trading-practice/ (2026-11-23); https://instantfunding.com/help/instant-funding-program/ (2026-11-23); https://instantfunding.com/help/weekend-holding-swing-trading/ (2026-11-23); https://instantfunding.com/help/is-high-frequency-trading-hft-allowed/ (2026-11-23); https://instantfunding.com/trading-rules/ (2026-11-23); https://instantfunding.com/help/instant-funding-clarity/ (2026-11-23).",
+  "fits_all_hard": "BELIRSIZ - own EAs allowed but weekend holding needs paid Swing add-on; swap-free, Turkey, US100/BTCUSD and $100-150 pricing not verified from official sources.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "ea_clause_text",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "consistency_min_days"
+  ]
+}

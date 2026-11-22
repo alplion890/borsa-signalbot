@@ -1,0 +1,146 @@
+## Task
+Research name: FundedNext Stellar Instant
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundedNext_Stellar_Instant.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundedNext_Stellar_Instant.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundedNext_Stellar_Instant.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: Blue Guardian Instant
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blue_Guardian_Instant.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blue_Guardian_Instant.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blue_Guardian_Instant.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: Blueberry Funded Instant (Elite)
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blueberry_Funded_Instant_Elite.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blueberry_Funded_Instant_Elite.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Blueberry_Funded_Instant_Elite.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: FundingPips Zero
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundingPips_Zero.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundingPips_Zero.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FundingPips_Zero.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: The5ers (Hyper Growth / instant program)
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/The5ers_Hyper_Growth__instant_program.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/The5ers_Hyper_Growth__instant_program.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/The5ers_Hyper_Growth__instant_program.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: Funded Trader Markets
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Funded_Trader_Markets.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Funded_Trader_Markets.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Funded_Trader_Markets.json
+Task is complete only after validation passes.

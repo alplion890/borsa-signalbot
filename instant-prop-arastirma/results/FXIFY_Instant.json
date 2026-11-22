@@ -1,0 +1,26 @@
+{
+  "price_by_size": "Instant Funding Standard: $1,000 to $100,000, from $69 for $1K (fxify.com blog); 5K/10K/25K list prices not found on official pages [uncertain]. Instant Funding Lite: $2.5K $19, $5K $39, $10K $79, $25K $149, $50K $249, $100K $399 (official newsroom). Promo codes FUNDED40 and BLACK35 are coupons, not list prices. Crypto Instant: from $125 for $5K.",
+  "turkey_accepted": "Official FAQ footer: FXIFY does not establish accounts for residents of certain jurisdictions incl. United States, Zimbabwe, Iran, Iraq, Kenya, Ghana, Russia, Venezuela; Turkey not named in the visible list (full list not fully visible) [uncertain].",
+  "turkey_payout_kyc": "Not verified for Turkey; Instant Funding payout every 14 days, up to 90% split; payout methods not confirmed from official page [uncertain].",
+  "platform": "Standard: MT5, DXTrade, TradingView. Lite: MT5, DXtrade, TradingView (RAW feed).",
+  "ea_clause_text": "Official FAQ: 'No, on Instant Funded accounts, the use of EA's, bots and copy traders is prohibited.' Lite page: 'Expert Advisors, automated strategies, and copy trading are not permitted. Trading must be manual.' (Standard quote seen via search result of https://fxify.com/faqs/all-faqs/instant-funded-faq/can-i-use-expert-advisors-eas-or-bots-for-trading/; page not fetched directly [uncertain]).",
+  "overnight_weekend": "Weekend holding not allowed on Instant Funding Standard or Lite: all positions must be closed before Friday market close and are force-closed by the system. No weekend add-on found. Crypto Instant runs 24/7 but is USDT-quoted crypto pairs only.",
+  "swap_free_scope": "Paid Swap-Free Add-On exists at checkout per FXIFY swap-fee article (crypto coverage and fee not verified) [uncertain].",
+  "us100_btc": "Standard: leverage up to 50:1; US100/BTCUSD symbols not confirmed [uncertain]. Crypto Instant: 81 USDT-quoted coins, 5:1 on BTC/ETH/SOL; Lite does not list crypto.",
+  "drawdown": "Standard: 8% trailing max DD (locks at starting balance at 8% profit or first payout); FAQ says daily DD 8% on previous-day balance while program page says no daily limit (conflict) [uncertain]. Lite: 3% daily, 4% trailing. Crypto Instant: 3% daily, 6% trailing.",
+  "consistency_min_days": "Standard: none stated, no min days. Lite: 20% best-day, 10 payout-cycle trading days. Crypto Instant: 25% consistency.",
+  "first_payout": "Standard: every 14 days, up to 90% split. Lite: 80% (90% upgrade), first payout after 10 trading days, cycle 10 days, min $50. Crypto: 80%, every 2 weeks, min $50 (5K) to $750 (100K).",
+  "news_gambling": "Crypto Instant: trades within 5 min of high-impact news do not count. Lite/Standard news rule not verified [uncertain].",
+  "sources": "https://fxify.com/ (2026-11-23); https://fxify.com/programs/instant-funding/ (2026-11-23); https://fxify.com/faqs/ (2026-11-23); https://fxify.com/faqs/instant-funded-faq/ (2026-11-23); https://fxify.com/newsroom/introducing-fxify-instant-funding-lite/ (2026-11-23); https://fxify.com/blog/prop-firms-with-instant-funding/ (2026-11-23); https://fxify.com/blog/best-prop-firms-for-crypto-trading/ (2026-11-23); https://fxify.com/blog/best-fxify-program-for-swing-traders/ (2026-11-23).",
+  "fits_all_hard": "HAYIR - EAs/bots prohibited on Instant Funding (and Lite) and weekend holding not allowed.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "ea_clause_text",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "news_gambling"
+  ]
+}

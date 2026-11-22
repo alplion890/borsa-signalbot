@@ -1,0 +1,96 @@
+## Task
+Research name: DNA Funded
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/DNA_Funded.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/DNA_Funded.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/DNA_Funded.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: Atmos Funded Instant
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Atmos_Funded_Instant.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Atmos_Funded_Instant.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/Atmos_Funded_Instant.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: FunderPro
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FunderPro.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FunderPro.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/FunderPro.json
+Task is complete only after validation passes.
+
+
+---
+
+## Task
+Research name: City Traders Imperium (instant)
+category: Instant funding prop firm
+description: hard requirements are listed under requirements_hard in C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/outline.yaml (use them for fits_all_hard); official firm pages only count as verified, today is 2026-11-23, output structured JSON to C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/City_Traders_Imperium_instant.json
+
+## Field Definitions
+Read C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml to get all field definitions
+
+## Output Requirements
+1. Output JSON according to fields defined in fields.yaml
+2. Mark uncertain field values with [uncertain]
+3. Add uncertain array at the end of JSON, listing all uncertain field names
+4. All field values must be in English
+
+## Output Path
+C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/City_Traders_Imperium_instant.json
+
+## Validation
+After completing JSON output, run validation script to ensure complete field coverage:
+python ~/.claude/skills/research/validate_json.py -f C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/fields.yaml -j C:/Users/quantum/OneDrive/Masaüstü/borsa/instant-prop-arastirma/results/City_Traders_Imperium_instant.json
+Task is complete only after validation passes.

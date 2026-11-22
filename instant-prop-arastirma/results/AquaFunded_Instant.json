@@ -1,0 +1,24 @@
+{
+  "price_by_size": "Instant Funding Pro/Standard/Flex sizes about $2.5K to $400K (Flex $5K-$100K). Only data point: Pro Instant 100K $560 list, $364 with 35% Black Friday discount (coupon, separate from list). 5K/10K/25K list prices not found [uncertain]. Fee 100% refundable; swap-free/100% split are add-ons.",
+  "turkey_accepted": "Official help article 'Are there any countries we cannot trade from?' (dated 2026-07-07, https://help.aquafunded.com/en/articles/9251052-are-there-any-countries-we-cannot-trade-from): restricted Cuba, Iran, Syria, Vietnam, Kenya, Albania, Algeria, North Korea, Senegal, Myanmar, Russia, Belarus, Sudan, South Sudan, Venezuela, Crimea, Donetsk, Luhansk. Turkey not listed. Another FAQ list (start.aquafunded.com) differs slightly [uncertain].",
+  "turkey_payout_kyc": "Rewards paid by bank transfer via Rise or crypto; processing about 24 business hours per FAQ. Turkey-specific KYC not verified [uncertain].",
+  "platform": "MatchTrader, TradeLocker, MetaTrader 5, cTrader (help article 'What platforms are available?').",
+  "ea_clause_text": "Official: 'Yes, EAs are allowed, provided they are used as part of your own personal trading strategy.' 'Trade copiers are also permitted if you are using them to manage your own AquaFunded accounts.' HFT, tick scalping, latency arbitrage prohibited; copying other traders prohibited. VPS not mentioned.",
+  "overnight_weekend": "Official: 'There are no restrictions on holding positions outside of regular market hours.' Crypto accounts trade 24/7 including weekends (BTC not named specifically).",
+  "swap_free_scope": "Swap-free listed as a paid add-on on homepage; scope (crypto/BTC, fee) not verified; help articles do not describe it [uncertain]. Third parties conflict.",
+  "us100_btc": "Instruments: forex, indices, commodities, crypto (symbols US100/BTCUSD not named) [uncertain]. Leverage funded/instant: indices 1:10, crypto 1:2; indices and crypto $0 commission, ECN spreads.",
+  "drawdown": "Instant Pro: daily 3% (00:00 UTC), max 6% trailing, floating loss limit 2% (1% on 300K/400K). Instant Standard: daily 3%, 5% trailing, floating -1%. Flex: 2% daily, 4% trailing, floating 1%.",
+  "consistency_min_days": "Pro: 20% (accounts from 2026-09-08; 15% before); Standard 15%; Flex none. Min 5 days at >=0.5% (Flex 7 days).",
+  "first_payout": "Bi-weekly (every 14 days); 90% split standard (100% add-on); first payout on demand add-on; Flex capped 5% initial balance per cycle.",
+  "news_gambling": "Accounts opened after 2026-04-27: news trading allowed; profit from trades within 5 min of red-folder news capped at 0.5% of starting balance per payout cycle (excess removed, no breach). Hedging/martingale policy page not read [uncertain].",
+  "sources": "https://aquafunded.com/ (2026-11-23); https://aquafunded.com/forex-rules (2026-11-23); https://help.aquafunded.com/en/articles/9251052-are-there-any-countries-we-cannot-trade-from (2026-11-23); https://help.aquafunded.com/en/articles/11831659-are-eas-trade-copiers-allowed (2026-11-23); https://help.aquafunded.com/en/articles/11831680-can-i-hold-trades-overnight-and-over-the-weekend (2026-11-23); https://help.aquafunded.com/en/articles/15281078-instant-funding-pro (2026-11-23); https://help.aquafunded.com/en/articles/17066639-instant-flex (2026-11-23); https://help.aquafunded.com/en/articles/10476448-instant-funding-standard (2026-11-23); https://help.aquafunded.com/en/articles/9250960-what-platforms-are-available (2026-11-23); https://help.aquafunded.com/en/articles/14785740-is-news-trading-allowed (2026-11-23).",
+  "fits_all_hard": "BELIRSIZ - Turkey not restricted, MT5/cTrader, EAs and weekend/overnight allowed; but swap-free (paid add-on, BTC scope), US100/BTCUSD symbols and a $100-150 Instant size price are not verified from official pages.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "swap_free_scope",
+    "us100_btc",
+    "news_gambling"
+  ]
+}

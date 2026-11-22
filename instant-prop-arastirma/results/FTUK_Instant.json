@@ -1,0 +1,26 @@
+{
+  "price_by_size": "Official ftuk.com/instant shows no per-size table (an unlabeled $599.99 normal / $296.41 today block) [uncertain]. TradeLocker Hub listings (third party, not verified): 5K $65.40 (list $109), 10K $139.30 (list $199), 25K $174.50 (list $349) [uncertain]. Sizes 5K,10K,25K,50K,100K,200K.",
+  "turkey_accepted": "Official FAQ 'Do you onboard traders from my country' (faq.ftuk.com/en/articles/12290623): restricted list is DR Congo, Algeria, Iran, Libya, North Korea, Russia, Somalia, South Sudan, Sudan, Vietnam, Yemen. Turkey not listed.",
+  "turkey_payout_kyc": "Payouts via RiseWorks (verification on Rise site) or USDT-TRC20 / USDC-ERC20. FTUK reviews login/trading activity with each payout and may request interviews; Turkey-specific operation not verified [uncertain].",
+  "platform": "MetaTrader 5 (not for US traders), TradeLocker, Match-Trader.",
+  "ea_clause_text": "FAQ: 'Yes. Expert Advisors (EAs) and trading bots are allowed on both forex and futures accounts.' Banned regardless: martingale, tick scalping, reverse/latency/hedge arbitrage, grid, HFT (opening and closing trades within 30 seconds). VPS allowed with one fixed IP; VPN to hide location = termination. Copy trading allowed between external accounts and one FTUK account (third party).",
+  "overnight_weekend": "Instant page: holding overnight and over weekends allowed; no stop-loss required. No BTC-specific rule found [uncertain].",
+  "swap_free_scope": "FAQ 'What Are the Swap Fees': FTUK eliminated swap fees for 'all instruments on TradeLocker, MetaTrader 5 (MT5), and Match-Trader'; crypto not named separately but covered by 'all instruments'.",
+  "us100_btc": "Instruments (TradeLocker Hub, third party): forex, indices, commodities, crypto; leverage forex 1:30, commodities 1:10, indices 1:5, crypto 1:2. Official pages do not list US100 or BTCUSD symbols [uncertain]. No commission on indices/crypto (official FAQ).",
+  "drawdown": "Instant Funding: 6% relative trailing on balance, locks at starting balance (official FAQ). Daily drawdown 5% per TradeLocker Hub (official FAQ lists daily only for Instant PRO: 5% max trailing, 3% daily) [uncertain]. Stop loss not required.",
+  "consistency_min_days": "Consistency 20% on instant page (20-40% by level per TradeLocker Hub); min trading days: 1 per TradeLocker Hub, none on official page [uncertain].",
+  "first_payout": "Payouts on demand once consistency score met; split 65% rising to 90% (official page says up to 90%); min amount and first-payout wait not stated [uncertain]. PRO needs 7 profitable days of >=0.5% with a 3% buffer.",
+  "news_gambling": "News trading allowed. Gambling and account churning restricted; martingale/tick scalping/arbitrage/grid/HFT banned.",
+  "sources": "https://ftuk.com/instant ; https://faq.ftuk.com/en/articles/12290623 ; /14364398 ; /12339837 ; /12333289 ; /12339829 ; /12339852 ; /14364125 ; /12339813 ; /18247501 ; /12290578 ; third party (not verified): https://tradelocker.com/hub/prop-firms/ftuk/5k-instant-263 (checked 2026-11-23).",
+  "fits_all_hard": "BELIRSIZ - Met by official text: Turkey not restricted, MT5 + EAs allowed, overnight/weekend allowed, swap eliminated on all instruments. Not verified officially: US100 and BTCUSD symbols, and official 5K/10K/25K price in $100-150 (third party shows 5K $65, 10K $139, 25K $175) [uncertain].",
+  "uncertain": [
+    "price_by_size",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "first_payout",
+    "fits_all_hard"
+  ]
+}

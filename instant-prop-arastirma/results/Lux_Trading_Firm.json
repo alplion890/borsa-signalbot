@@ -1,0 +1,27 @@
+{
+  "price_by_size": "Instant Funding only $100K for GBP 299 and $400K for GBP 499 (luxtradingfirm.com/instant-funding/; page also shows $9,600/$38,400 figures, currency presentation unclear [uncertain]); 80% profit share, 12% target bonus. No 5K/10K/25K size; price above $150.",
+  "turkey_accepted": "No restricted-country list found on fetched official pages (T&C https://luxtradingfirm.com/t_c-2/ not fetched) [uncertain].",
+  "turkey_payout_kyc": "Not verified [uncertain].",
+  "platform": "Trades are copied to a Lux account on MatchTrader; page also lists MT4, TradingView, Trader Evolution. MT5/cTrader not stated.",
+  "ea_clause_text": "Rules of engagement: HFT strictly prohibited (>2,500 server messages in 24h); other well-behaving robots and EAs can be used in a trade-copy setup or on MatchTrader via Level2.",
+  "overnight_weekend": "Not stated on fetched pages [uncertain].",
+  "swap_free_scope": "Not stated [uncertain].",
+  "us100_btc": "'Any asset class' with linked PDF symbol list (not read); US100/BTCUSD not confirmed [uncertain].",
+  "drawdown": "6% static drawdown on all accounts ($94,000 floor on 100K); risk consistency: max 5% of RRC risk, single-position profit cap 5% of profit target.",
+  "consistency_min_days": "Single trade max realized profit 5% of profit target per stage; min days not stated [uncertain].",
+  "first_payout": "Only a one-time bonus on reaching 12% target described; payout schedule not stated; 80% share [uncertain].",
+  "news_gambling": "No SL adjustments within 30 seconds of news; news bracketing prohibited (termination). Gambling rule not stated [uncertain].",
+  "sources": "https://www.luxtradingfirm.com/ ; https://luxtradingfirm.com/instant-funding/ ; https://luxtradingfirm.com/rules-of-engagement-3/ (checked 2026-11-23).",
+  "fits_all_hard": "HAYIR - hard requirements 'instant size priced $100-150 (5K/10K/25K)' and 'MT5/cTrader' not met (smallest is GBP 299 for $100K, MatchTrader copy setup).",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "consistency_min_days",
+    "first_payout",
+    "news_gambling"
+  ]
+}

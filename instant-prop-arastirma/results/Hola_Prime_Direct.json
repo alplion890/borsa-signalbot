@@ -1,0 +1,30 @@
+{
+  "price_by_size": "Direct account sizes/prices not retrieved: holaprime.com returned HTTP 429 to direct fetches [uncertain].",
+  "turkey_accepted": "Not verified. Official futures prohibited-practices page lists excluded countries (Afghanistan, Belarus, Burundi, China, Cuba, Congo, Sudan, Sri Lanka, North Korea, Yemen, etc.; page about a year old); Turkey not seen in the snippet; forex rules mention a $90K cap for certain countries [uncertain].",
+  "turkey_payout_kyc": "Not verified [uncertain].",
+  "platform": "Not verified from a fetched official page [uncertain].",
+  "ea_clause_text": "Per search-result snippets of official pages (https://holaprime.com/de/trading-rules-list/trading-rules-prohibited-trading-practices/, https://holaprime.com/blogs/trading-education/forex-prop-firm-rules-drawdown-scaling/): any form of Expert Advisor is banned on Direct-model funded accounts. Pages were not fetchable (429), so wording is not directly quoted [uncertain].",
+  "overnight_weekend": "Per Direct Account FAQ and rulebook snippets: weekend holding not allowed on Direct funded accounts (hard breach; positions open at 15:45 EST Friday are closed and account terminated); overnight generally allowed [uncertain, not directly fetched].",
+  "swap_free_scope": "Forex rules page mentions a swap-free add-on for some sizes; Direct and BTC coverage not verified [uncertain].",
+  "us100_btc": "Not verified [uncertain].",
+  "drawdown": "Not retrieved [uncertain].",
+  "consistency_min_days": "Not retrieved [uncertain].",
+  "first_payout": "Not retrieved [uncertain].",
+  "news_gambling": "Per snippet: Direct funded accounts cannot open/close orders on affected instruments from 5 min before to 5 min after high-impact news [uncertain].",
+  "sources": "https://holaprime.com/forex/faq/hola-prime-challenges/hola-prime-direct-account/ (not fetched, 429; search snippet only, 2026-11-23); https://holaprime.com/rulebook/market-conduct-news-weekends-sessions/ (snippet only); https://holaprime.com/forex/faq/trading-conditions/policy-on-news-trading-and-weekend-position-holding/ (snippet only); https://holaprime.com/futures/prohibited-trading-practices/ (snippet only). Unverified.",
+  "fits_all_hard": "HAYIR - official page snippets say EAs are banned and weekend holding not allowed on Direct accounts (not directly fetched; rate-limited).",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "platform",
+    "ea_clause_text",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "consistency_min_days",
+    "first_payout",
+    "news_gambling"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "price_by_size": "Official checkout (funderpro.com/checkout/?mode=instant, checked 2026-11-23): Instant sizes $5K, $10K, $25K, $50K, $100K; only $100K price visible ($799). Homepage says Instant starts from $79. [uncertain] which size is $79 and prices of 5K/10K/25K. Add-ons: Swing Account +$239.70 (at $100K), Second Chance +$199.75, 90% reward +$319.60.",
+  "turkey_accepted": "[uncertain] Official support article 'Are VPN and VPS allowed?' (support.funderpro.com/en/articles/378005) lists restricted countries: Afghanistan, Iran, North Korea, Syria, Belarus, Russia, Central African Republic, South Sudan, Cuba, and Ukraine regions (Donetsk, Zaporizhzhia, Luhansk, Kherson, Crimea, Sevastopol). Turkey is not listed, but the article says Terms and Conditions take precedence and the list may change.",
+  "turkey_payout_kyc": "[uncertain] KYC must be completed before a reward request (article 527824); no Turkey-specific payout method info found.",
+  "platform": "MetaTrader 5, cTrader, TradeLocker.",
+  "ea_clause_text": "Official (article 378021): EAs and trading bots are permitted; you must own the EA (no renting/sharing); must not exploit latency/platform gaps. Instant prohibited-behavior article (527863): third-party EAs not allowed unless you own the source code; HFT strategies and latency arbitrage prohibited; copy trading from external accounts prohibited. VPN/VPS allowed (article 378005).",
+  "overnight_weekend": "[uncertain] Conflicting official text. Instant article 528164 says overnight and weekend holding is allowed. But article 377999: without the Swing Add-On all trades incl. crypto must close by Friday 16:30 EST, with add-on BTC can be held; article 531445: positions must be closed 2 hours before closures of 2+ hours unless Swing Account. Unclear whether Instant needs the paid Swing add-on for weekends.",
+  "swap_free_scope": "[uncertain] No swap-free statement found in official articles.",
+  "us100_btc": "Official instruments article (378025) lists NAS100 and BTCUSD (not specific to Instant). Leverage on Instant: indices 1:10, crypto 1:2 (with News Trading and Holding add-on: indices 1:5, crypto 1:1). Lot limit not found.",
+  "drawdown": "Official (article 527811): daily drawdown 3% (equity or balance, whichever higher, reset 00:00 GMT+3); max drawdown 6% trailing then static at initial balance. Per-trade risk: 2% of balance per trade idea (first breach deducts profit, second terminates); margin use above 80% treated as gambling.",
+  "consistency_min_days": "Official: consistency 15% (best day max 15% of total profit); minimum 5 profitable days each at least +0.5%.",
+  "first_payout": "[uncertain] Official: first two reward requests capped at 5% of balance; min request $100; frequency bi-weekly; processed within 1 working day after approval; default split not stated (90% add-on exists). KYC required.",
+  "news_gambling": "Official: opening a trade within 2 minutes before/after major news is restricted unless the Swing/News add-on is enabled. Martingale/grid, excessive lots, margin above 80% count as gambling; immediate closure possible.",
+  "sources": "funderpro.com home; funderpro.com/checkout/?mode=instant; support.funderpro.com articles 527811, 527816, 527817, 527821, 527822, 527824, 527831, 527863, 528164, 377999, 531445, 378005, 378021, 378025, 532638; all checked 2026-11-23. Third-party restricted-country pages (propvator, traderssecondbrain) not verified and not used.",
+  "fits_all_hard": "BELIRSIZ - Met: MT5 + own EAs, Turkey not on official restricted list. Unclear/at risk: weekend holding may require paid Swing add-on, swap-free not found, instant 5K/10K price not shown (starts $79), BTC leverage 1:2.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "swap_free_scope",
+    "first_payout"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "price_by_size": "Instant Funded sizes $5K,$10K,$25K,$50K,$100K,$200K,$300K,$400K (help.atlasfunded.com/instant-funded). List prices not shown on any fetched official page (priced at checkout) [uncertain]. Coupons/resets: not verified [uncertain].",
+  "turkey_accepted": "Not named as restricted on official pages. Terms (atlasfunded.com/terms-conditions) mention only a US restriction for MT5 ('not intended for United States citizens or residents'); homepage says '140+ countries'; KYC page lists no restricted countries and says residence country is checked. No dedicated restricted-country page found [uncertain].",
+  "turkey_payout_kyc": "KYC (Veriff: government ID, selfie, sanctions/PEP screening) required before payout, not to trade. Payout methods: Rise, USDT ERC20 (max $1,000), Atlas Balance credit. Turkey-specific operation not verified [uncertain].",
+  "platform": "MetaTrader 5, TradeLocker, Match-Trader (free switching).",
+  "ea_clause_text": "Trading rules page: 'EAs are allowed on all account types at all stages, and no approval is required'; trader responsible for compliance. Terms 5.1 (older text) says some EAs need approval - conflicting [uncertain]. Prohibited: latency/tick arbitrage, order flooding, copy trading between Atlas and another prop firm, bug exploitation, hedging across accounts/firms. HFT term not used.",
+  "overnight_weekend": "Overnight and weekend holding allowed on every program. Opening NEW positions on Saturday/Sunday not permitted unless stated for an instrument - BTC weekend opening may therefore be restricted [uncertain].",
+  "swap_free_scope": "Swap/rollover not mentioned on any fetched official page; BTC/crypto swap-free not verified [uncertain].",
+  "us100_btc": "Forex and CFDs on indices/commodities listed generally; no symbol list fetched, US100 and BTCUSD not confirmed [uncertain]. Leverage up to 1:100 (Access on MT5 1:50); margin lower for indices.",
+  "drawdown": "Instant Funded: 5% max drawdown trailing, locks at breakeven (rules page says intraday trailing, help page says end-of-day) [uncertain]; 3% daily loss; 2% net floating loss (first breach closes positions and split drops to 50%, second breaches). Instant Zero is a separate product: 4% EOD trailing, no daily limit.",
+  "consistency_min_days": "Instant Funded: 20% consistency (best day vs profit since last payout; blocks payout, not a breach); min 5 trading days per payout cycle each with >=1% profit. Instant Zero: no consistency rule.",
+  "first_payout": "First payout after 14 days then every 14 days (7 with Weekly Payout add-on); 90% split (100% with add-on); min $100 profit; 24h payout guarantee advertised, methods take 1-5 business days after approval.",
+  "news_gambling": "Funded accounts: profit from trades opened/closed within 5 minutes of high-impact news is deducted (not a breach). No gambling rule found; only a futures all-or-nothing rule.",
+  "sources": "https://www.atlasfunded.com ; https://www.atlasfunded.com/terms-conditions ; https://www.atlasfunded.com/instant ; https://www.atlasfunded.com/platforms ; https://www.atlasfunded.com/trading-rules ; https://help.atlasfunded.com/instant-funded ; /faq ; /kyc ; /payout-methods ; /prohibited-practices ; /news-trading (all checked 2026-11-23). Third-party search snippets: not verified.",
+  "fits_all_hard": "BELIRSIZ - Met by official text: MT5, EA allowed, weekend/overnight holding. Not verified: Turkey list, BTC swap-free, US100/BTCUSD symbols, BTC weekend opening, instant price in $100-150 range (price not published) [uncertain].",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "ea_clause_text",
+    "overnight_weekend",
+    "swap_free_scope",
+    "us100_btc",
+    "drawdown",
+    "fits_all_hard"
+  ]
+}

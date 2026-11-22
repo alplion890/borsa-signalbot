@@ -1,0 +1,37 @@
+topic: "Instant funding prop firmalar ($100-150) - kurallarimiza kesin uyan, resmi sayfadan dogrulanmis"
+date: 2026-11-23
+time_range: "son 3 ay (kurallar resmi sayfanin guncel hali)"
+requirements_hard:
+  - Turkiye ikametli kabul (resmi yasakli ulke listesi)
+  - MT5 (veya cTrader) + EA/bot serbest
+  - Gece ve hafta sonu pozisyon serbest (BTC dahil)
+  - BTCUSD swap-free (veya kripto swap 0)
+  - US100/NAS100 ve BTCUSD islem goruyor
+  - Instant hesap, fiyat $100-150 araliginda bir boyut (5K/10K/25K)
+items:
+  - FundedNext Stellar Instant
+  - Blue Guardian Instant
+  - Blueberry Funded Instant (Elite)
+  - FundingPips Zero
+  - The5ers (Hyper Growth / instant program)
+  - Funded Trader Markets
+  - Goat Funded Trader Instant
+  - FXIFY Instant
+  - Instant Funding
+  - AquaFunded Instant
+  - Hola Prime Direct
+  - Maven Trading Instant
+  - Atlas Funded
+  - Funded Peaks
+  - FundYourFX
+  - Lux Trading Firm
+  - FTUK Instant
+  - Funded Trading Plus (instant tier)
+  - DNA Funded
+  - Atmos Funded Instant
+  - FunderPro
+  - City Traders Imperium (instant)
+execution:
+  batch_size: 4
+  items_per_agent: 6
+  output_dir: ./results

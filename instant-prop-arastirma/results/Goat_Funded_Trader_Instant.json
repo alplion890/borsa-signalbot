@@ -1,0 +1,23 @@
+{
+  "price_by_size": "Instant GOAT 5K/10K/25K list prices not published on official pages fetched (homepage shows only 100K 2-Step $263 and an Instant label; help center instant-goat.html lists no prices) [uncertain]. Instant Daily sizes $1K-$50K (prices not listed). Not verified in $100-150 band [uncertain]. 100% split is a paid add-on.",
+  "turkey_accepted": "No official restricted-country list found on goatfundedtrader.com T&C (sec 7.5 only says GFT may limit sales to any region; only US restricted for MT5/cTrader). Turkey is not named as prohibited, but no explicit prohibited-country page found [uncertain].",
+  "turkey_payout_kyc": "KYC (Veriff, or Rise) at first payout; payout methods Rise, crypto, Skrill; bank transfer only for selected African countries. Turkey not excluded in official text [uncertain]. 3% processing fee on all rewards.",
+  "platform": "MT5, cTrader, TradeLocker, MatchTrader, Volumetrica (MT5/cTrader not for US clients). One platform change allowed before first trade.",
+  "ea_clause_text": "Official trading-rules: only self-developed EAs allowed (proof of ownership/source code on request); purchased/shared/off-the-shelf EAs banned; HFT and gold arbitrage EAs never allowed; trade copier EAs are third-party and banned. 'From October 6, 2026, VPNs, VPSs, proxies and any other hosting service are not allowed during trading on any account.' An EA that needs a VPS cannot be used. Copy trading only via GOAT Trade Copier.",
+  "overnight_weekend": "Weekend holding allowed, but trades opened in last 3 market hours Friday and closed in first 3 hours Monday to exploit the gap are reviewed (profit removed on funded, no breach). Funded min holding time: profits from trades under 1 min (accounts bought on/after 2026-10-06) removed at payout. BTC-specific weekend rule not described [uncertain].",
+  "swap_free_scope": "Not offered: 'We do not offer Islamic or Swap-free accounts at this time.' All accounts incur swap on overnight positions, so BTC swap-free fails.",
+  "us100_btc": "Instrument classes include CFD indices and crypto; US100/NAS100 and BTCUSD not named on fetched pages [uncertain]. Leverage evaluation/funded: indices 1:20 / 1:10, crypto 1:2. Lot limits not specified.",
+  "drawdown": "Instant GOAT: daily DD 3% (resets 5PM EST), max 6% trailing (stops at initial balance, resets after payout), floating loss limit 2% of initial balance permanently closes account. GFT may impose up to 1% risk per trade idea; 80% margin rule.",
+  "consistency_min_days": "15% best-day consistency (blocks payout, no breach); 5 profitable days at >=0.5% of initial balance each before reward.",
+  "first_payout": "Every 14 days after first trade; 80% split (100% add-on); min withdrawal $100; 3% processing fee; KYC at first payout; processed within 2 business days.",
+  "news_gambling": "News trading allowed; per-trade profit cap within 5 min of red-folder news (3% of initial balance for accounts bought on/after 2026-11-10, 1% earlier). Martingale/grid, all-or-nothing (>80% margin) and hedging prohibited.",
+  "sources": "https://goatfundedtrader.com/ (checked 2026-11-23); https://goatfundedtrader.com/legal/terms-and-conditions (2026-11-23); https://help.goatfundedtrader.com/trading-rules.html (2026-11-23); https://help.goatfundedtrader.com/instant-goat.html (2026-11-23); https://help.goatfundedtrader.com/platforms.html (2026-11-23); https://help.goatfundedtrader.com/compare-models.html (2026-11-23); https://help.goatfundedtrader.com/rewards.html (2026-11-23). Third-party sites not used as verification.",
+  "fits_all_hard": "HAYIR - fails swap-free requirement (swap-free not offered) and the VPS ban from 2026-10-06 undermines bot use; Turkey, US100/BTCUSD symbols and $100-150 price unverified.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_accepted",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "us100_btc"
+  ]
+}

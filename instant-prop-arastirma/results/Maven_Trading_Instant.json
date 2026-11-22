@@ -1,0 +1,21 @@
+{
+  "price_by_size": "Instant (maventrading.com/challenges/instant): $2K $15, $5K $19, $10K $37, $20K $68, $50K $170, $100K $380 list; coupon prices $14.25/$18.05/$36/$65/$162/$361 (separate). Refundable on third withdrawal. No 25K size; $50K list $170 is above $150; $20K $68 is below $100.",
+  "turkey_accepted": "Maven FAQ restricted list: Belarus, Cuba, Iran, Myanmar, North Korea, Russia, Saint Lucia, Syria, Venezuela, Crimea, Donetsk, Kherson, Luhansk, Zaporizhzhia. Turkey not listed. MetaTrader not available to US/Canada.",
+  "turkey_payout_kyc": "KYC at first payout request (own government ID, card in own name). Payout methods by country: crypto (USDT-BSC/USDC-ERC20) and Rise Pay; bank transfer for Nigeria/Kenya/Ghana. Turkey-specific not stated.",
+  "platform": "MT5 and Match Trader.",
+  "ea_clause_text": "Official FAQ: EAs and automated trading are prohibited on all platforms; trades must be placed manually. HFT, tick scalping, arbitrage, grid/gap trading prohibited; copy trading only own accounts, manually. At least 50% of trades must last 60 seconds or more.",
+  "overnight_weekend": "Overnight and weekend holding allowed; 24/7 gold trading offered. BTC weekend rule not specifically stated [uncertain].",
+  "swap_free_scope": "FAQ: all Maven plans are swap-free (crypto coverage implied, no fee stated) [uncertain for BTC-specific].",
+  "us100_btc": "Crypto: BTCUSD, BTCEUR, ETHUSD, ETHBTC; crypto leverage 1:2. US100/NAS100 not confirmed on fetched pages [uncertain].",
+  "drawdown": "Instant: trailing max loss 3% from highest equity; daily loss 2% (00:00 UTC, equity-based); floating loss (balance minus equity) capped at 1% of balance.",
+  "consistency_min_days": "Consistency score 20% or below required for payout; 3% profit threshold; at least one trade every 30 days.",
+  "first_payout": "On demand once 3% profit threshold and consistency met; 80% split (90% add-on); cap $10,000 pre-split per two payouts or rolling 30 days.",
+  "news_gambling": "Instant Funding: news trading allowed without restriction (red-folder limits only on Standard plans). Hedging prohibited.",
+  "sources": "https://maventrading.com/ (2026-11-23); https://maventrading.com/faqs (2026-11-23) instant funding, EA, swap, country sections.",
+  "fits_all_hard": "HAYIR - EAs/automated trading prohibited on all platforms; price: no instant size priced $100-150 ($50K $170, $20K $68).",
+  "uncertain": [
+    "us100_btc",
+    "overnight_weekend",
+    "swap_free_scope"
+  ]
+}

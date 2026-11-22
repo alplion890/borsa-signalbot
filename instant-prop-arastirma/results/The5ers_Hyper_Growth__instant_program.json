@@ -1,0 +1,24 @@
+{
+  "price_by_size": "Hyper Growth is a staged 1-Step Growth program (10% profit target per stage), not a true instant account [uncertain, official FAQ does not label it instant; older The5ers article (2023) describes an Instant Funding program with no sizes listed]. Sizes (third-party 2026 guides): $5K, $10K, $20K; official page: Pro tiers $5K/$10K/$20K/$50K, evaluation capital capped at $40K. Fee: official page shows a one-time fee '$52' with unclear column alignment; guides give ~$74 or $260 for 5K [uncertain, conflicting]. Fee non-refundable. $25K not offered.",
+  "turkey_accepted": "Official Terms (the5ers.com/en/terms-and-conditions) Forbidden Territories (non-exhaustive): Afghanistan, Belarus, Bosnia and Herzegovina, Burundi, Central African Republic, Cuba, Congo Republic, Crimea, DR Congo, Eritrea, Guinea, Guinea-Bissau, Iraq, Iran, Israel, Laos, Lebanon, Liberia, Libya, Myanmar, North Korea, Palestinian Territory, Papua New Guinea, Russia, South Sudan, Sudan, Somalia, Syria, Vanuatu, Venezuela, Yemen. Turkey not listed; list non-exhaustive and sanctions-dependent.",
+  "turkey_payout_kyc": "Government ID required before first payout (the5ers.com/funded-account-payouts-eligibility-and-how-to-get-one). Payment methods and Turkey-specific handling not stated [uncertain].",
+  "platform": "MT5 Hedge on desktop, web and mobile (official Hyper Growth page).",
+  "ea_clause_text": "Official FAQ: any EA you own is allowed (must own source code; stop-losses must be visible, no stealth SL) unless it copies signals, tick scalps, does latency/reverse/hedge arbitrage, HFT or uses emulators (banned, no refund). Terms section 11: \"no Automated Trading Software may be used unless the Company has given prior written approval\"; third-party EAs prohibited; EAs scalping rollover prohibited.",
+  "overnight_weekend": "Official: open trades may be held overnight and over the weekend; indices carry a high swap. Crypto weekend specifics not stated; official Hyper Growth page asset list: FX, metals, indices, crypto, stocks, while the FAQ lists FX, metals, indices (BTC not confirmed) [uncertain].",
+  "swap_free_scope": "No swap-free program found; official page says high swap on indices held over the weekend. Crypto swap not stated. Does not meet swap-free requirement on official evidence.",
+  "us100_btc": "Official Hyper Growth page: FX, metals, indices, crypto, stocks; leverage 1:30. Specific US100/BTCUSD symbols not verified [uncertain].",
+  "drawdown": "Official: stop-out 6% below initial balance (static); daily 3% pause that disables trading for the rest of that day only (account not terminated; one official page also says no daily stop-loss, conflicting) [uncertain]; 10% profit target per stage; 30-day inactivity expiry.",
+  "consistency_min_days": "No minimum trading days and no consistency rule stated for Hyper Growth Level 1; no time limit.",
+  "first_payout": "Official FAQ: first payout 14 days after receiving a Pro account, then every two weeks; scaling resets cycle. Profit split starts 50% (75/25 up to $300K, 80% at $350K, up to 100%). Minimum payout amount not stated [uncertain]. Payout only after passing the 10% target (Pro account), so not instant.",
+  "news_gambling": "News trading permitted except bracketing pending orders around high-impact news. Prohibited: gambling-style trading, one-sided bets (consistently same direction), HFT, copy/coordinated trading, tick scalping/rollover scalping, arbitrage, bulk trading, cross-firm hedging, over-leverage.",
+  "sources": "1) https://the5ers.com/hyper-growth/ (checked 2026-11-23); 2) https://the5ers.com/faqs/how-does-the-hyper-growth-program-work/ (2026-11-23); 3) https://the5ers.com/challenge-programs-bootcamp-high-stakes-hyper-growth-explained/ (2026-11-23); 4) https://the5ers.com/faqs/can-i-use-an-ea-expert-advisor-can-i-set-a-stealth-mode-stop-loss/ (2026-11-23); 5) https://www.the5ers.com/faqs/prohibited-trading-practices/ (2026-11-23); 6) https://the5ers.com/en/terms-and-conditions/ (2026-11-23); 7) https://the5ers.com/funded-account-payouts-eligibility-and-how-to-get-one/ (2026-11-23); 8) https://the5ers.com/your-guide-to-passing-the-5ers-evaluation-program/ (2023, outdated). Third-party fee figures (dogrulanmadi).",
+  "fits_all_hard": "HAYIR. Hyper Growth is a staged evaluation (10% target) not an instant account, indices swap is high with no swap-free option, BTC/US100 not confirmed, and $5K fee unclear ($52-$260). Met: Turkey not in forbidden list, MT5, owned EA allowed, weekend holding allowed.",
+  "uncertain": [
+    "price_by_size",
+    "turkey_payout_kyc",
+    "overnight_weekend",
+    "us100_btc",
+    "drawdown",
+    "first_payout"
+  ]
+}
