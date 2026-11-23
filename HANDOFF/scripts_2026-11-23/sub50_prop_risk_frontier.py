@@ -173,6 +173,8 @@ def sim_account(R: np.ndarray, S: np.ndarray, cfg: dict, mode: str, r_chal: floa
         fdays[can_pay] = 0
 
     fp = first_pay[first_pay > 0]
+    alive_pay = npay[alive]
+    alive_cash = cash[alive] + price
     return {
         "rule_min_bday": cfg["rule_min_bday"],
         "p10_fast_bday": int(np.quantile(fp, 0.10)) if len(fp) >= 5 else None,
@@ -182,8 +184,14 @@ def sim_account(R: np.ndarray, S: np.ndarray, cfg: dict, mode: str, r_chal: floa
         "p90_pct": round(float(np.mean((first_pay > 0) & (first_pay <= 64)) * 100), 1),
         "ever_pay_12m_pct": round(float(np.mean(first_pay > 0) * 100), 1),
         "blow_before_pay_pct": round(float(blew_before_pay.mean() * 100), 1),
+        "payouts_per_yr_all": round(float(npay.mean()), 1),
+        "payouts_per_yr_alive": round(float(alive_pay.mean()), 1) if len(alive_pay) else 0.0,
+        "payouts_per_yr_p90": int(np.quantile(npay, 0.90)),
+        "single_payout_avg_usd": round(float((cash + price).sum() / max(1, npay.sum())), 1),
         "net_12m_mean_usd": round(float(cash.mean()), 1),
         "net_12m_med_usd": round(float(np.median(cash)), 1),
+        "gross_12m_alive_usd": round(float(alive_cash.mean()), 1) if len(alive_cash) else 0.0,
+        "gross_12m_p90_usd": round(float(np.quantile(cash + price, 0.90)), 1),
     }
 
 
@@ -215,8 +223,8 @@ def main() -> None:
             all_rows.append(row)
             print(
                 f"  {sname:22s} | EnErken(p10)={str(res['p10_fast_bday']):>3s}g Med={str(res['med_first_bday']):>3s}g "
-                f"| p30={res['p30_pct']:4.1f}% p60={res['p60_pct']:4.1f}% TopPay={res['ever_pay_12m_pct']:4.1f}% "
-                f"| Patlama={res['blow_before_pay_pct']:4.1f}% | 12ay_Ort=${res['net_12m_mean_usd']:+6.1f} (Med=${res['net_12m_med_usd']:+6.1f})",
+                f"| Patlama={res['blow_before_pay_pct']:4.1f}% | YildaPay(Ort/Yasayan/p90)={res['payouts_per_yr_all']:.1f}/{res['payouts_per_yr_alive']:.1f}/{res['payouts_per_yr_p90']} "
+                f"| TekPay=${res['single_payout_avg_usd']:5.1f} | 12ay(NetOrt/YasayanBrut/p90)=${res['net_12m_mean_usd']:+6.1f} / ${res['gross_12m_alive_usd']:5.1f} / ${res['gross_12m_p90_usd']:5.1f}",
                 flush=True,
             )
 
