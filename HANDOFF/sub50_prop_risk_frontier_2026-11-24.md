@@ -71,3 +71,27 @@ Hilesiz, post-hoc filtresiz (`EXACT_T0` — 2 dk ön-uyarılı zamanında giriş
      - **Simülasyon en erken (`p10`):** **10. işgünü (2 hafta)** · **Ortanca:** **14–15 işgünü (3 hafta)**.
      - `BUFFER %1.0` ile **%0.0 patlama**, `FAST_TAPER %1.2` ile **%4.3 patlama** ve 1 ayda çekim alma ihtimali **`%62.0`**.
      - *Satın almadan önce tek doğrulama:* Checkout ekranında (`app.fundednext.com/plans`) Türkiye kabulü ve Swap-Free paketinin BTC'yi kapsayıp kapsamadığını kontrol et.
+
+
+---
+
+## 4. DÜZELTME — Satın Alma Öncesi Sağlamlık Denetimi (`satin_alma_oncesi_denetim.py`)
+
+Yukarıdaki dolar rakamları iyimserdi. İyimser varsayımlar tek tek kaldırıldı (FYFX 5K, BUFFER %1.0):
+
+| Varyant | 2022+ net/yıl | 2022+ 12 ayda ≥1 payout | 2022+ patlama | 2018-21 net/yıl | 2013-17 net/yıl |
+|---|---|---|---|---|---|
+| V0 önceki sim (6 modül, giriş günü kaydı) | +$442 | %86 | %7 | +$199 | +$218 |
+| V1 TOM ve BTC_GECE çıkarıldı (ikisi de elenmiş/swap-free şartlı) | +$392 | %86 | %8 | +$44 | +$180 |
+| V2 V1 + çok günlük işlem kârı çıkış gününe yazıldı | +$388 | %86 | %8 | +$40 | +$180 |
+| **V3 V2 + Sweep forward gerçeği (+0.02R)** | **+$124** | **%62** | **%23** | +$232 | +$178 |
+| V4 sıfır-edge kontrolü (V2 seti) | +$68 | %48 | %29 | +$76 | +$117 |
+
+FN Instant 2K ($59.99): V3 2022+ **+$5/yıl**, sıfır-edge −$17 → başabaş, önerilmez.
+
+Bulgular:
+1. Eski $340–$440/yıl rakamının büyük kısmı Sweep'in 2022+ sonucundan geliyordu. Sweep kuralı 3 yıllık veride seçildi (örneklem içi); Maven forward n18'de +0.02R.
+2. Elenmiş TOM ve swap-free şartlı BTC_GECE portföye yanlışlıkla girmişti.
+3. FYFX 5K'nın sıfır-edge'de bile pozitif çıkması kural geometrisinden: %6 sabit DD'ye karşı %3 hedef, ücret $39.60. Edge'in katkısı 2022+ için yılda ~$56. Bu getiri firmanın gerçekten ödeme yapmasına ve gizli tutarlılık kuralı olmamasına bağlı.
+4. Gerçekçi beklenti (FYFX 5K): 12 ayda en az bir payout ~%60, tek payout ~$130, ilk payout öncesi patlama ~%20–25, yıllık net ~$70–$230.
+5. Atlanan kritik olgu: 14 günlük icra denemesinde (11-09→11-22) kullanıcı hiç emir girmedi. Manuel plan buna dayanıyor.
