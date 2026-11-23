@@ -85,3 +85,21 @@ Kullanıcı haklı olarak sordu: *"Madem bu filtrelerle daha iyiydi, neden en ba
 ### Bağlayıcı Sonuç
 - **`HUMAN_5M_CHECKLIST` (`+$514` / `+$144`) satırı post-hoc seçim yanlılığı içerdiği için GEÇERSİZDİR ve KULLANILAMAZ.**
 - Manuel icrada geçerli ve dürüst olan rakamlar yalnızca **filtresiz `EXACT_T0` (2 dk ön-uyarıyla zamanında giriş: FundYourFX 5K `+$451/yıl`, FN 2K `+$131/yıl`)** ve **filtresiz `HUMAN_5M` (5 dk gecikmeli giriş: FundYourFX 5K `+$335/yıl`, FN 2K `+$91/yıl`)** aralığıdır.
+
+---
+
+## 6. Post-Hoc Olmayan 4 Yapısal İcra Kontrolü (`structural_human_checks.py`) ve Toplu Karar Denetimi
+
+Grafik üzerinden yön tahmini yapmayan (post-hoc olmayan) 4 mekanik/icra kontrolünün ölçümü:
+
+1. **`H1 — Canlı Spread Kapısı` (`bbo-1m` 2025–2026 gerçek ölçüm):**
+   - `NB` karar dakikalarında (`:00` ve `:30`) işlemlerin **`%3.66`'sında spread normalin (`0.50p`) 2 katından fazla açılıyor** ve o anlarda ortalama **`+3.54 puan`** ekstra spread ödeniyor.
+   - Kapanışta `15:55–15:59 NY` (`22:55–22:59 TR`) p95 spread `0.75p` iken, `16:15–18:15 NY` (`23:15–01:15 TR` rollover) p95 spread **`1.75p`**'ye fırlıyor.
+   - **Hilesiz Kural 1:** Ekranda canlı spread normalin `>2×` katıysa o saniye basma (1–2 dk bekle); kapanış işlemlerini (`B7`, `BTC Gece`) `23:00 TR` sonrasına bırakma, `22:55–22:59 TR`'de aç.
+2. **`H2 — 5 Dk Gecikmede Fiyatın Bant İçine Geri Düşmesi (Fakeout İptali)`:**
+   - `NB` kırılım sinyalinden 5 dk sonra ekranı açtığında fiyat sinyal fiyatının gerisine (bandın içine) düşmüşse: **IS `−0.0096R`, OOS `−0.0120R`**; kırılım yönünde devam ediyorsa: **IS `+0.0235R`, OOS `+0.0286R`** (`IS p = 0.0382`, `OOS p = 0.0323`, `14Y p = 0.0053`). (`B7_IBS`'te ise `p = 0.73` → anlamsız).
+   - **Hilesiz Kural 2:** `NB` sinyaline 1–2 dk içinde zamanında gir; eğer 5 dk geç kaldıysan ve fiyat kırılım seviyesinin gerisine düştüyse (kırılım bozulduysa) işlemi açma.
+3. **`H3 — Kırmızı Klasör Haber Saniyesi (±5 Dk)`:**
+   - Yön tahmini için değil, prop firma sözleşmesi (`FundedNext` / `FundYourFX` ±5 dk haber kuralı ve spread patlaması) gereği `CPI / NFP / FOMC` açıklamalarından `±5 dk` içinde emir basma.
+4. **`H4 — Aynı Gün Çoklu-Sinyal / `%3` Açık Risk Kapısı:**
+   - 2022+ günlerinin `%60.1`'inde aynı gün 3+ sinyal geliyor. Açık pozisyonların toplam stop riski `%2.5–%3.0`'e ulaştıysa yeni sinyali pas geç.
