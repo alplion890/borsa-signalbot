@@ -65,3 +65,23 @@
 3. **`$39.60`'lık FundYourFX 5K vs `$59.99`'lık FN Stellar 2K Farkı:**
    - **FundYourFX 5K (`$39.60`):** `%3` (`$150`) minimum çekim eşiği olduğu için ilk çekim biraz daha uzun sürüyor (medyan **31 işgünü = ~1.5 ay**), ama hesap **5K** olduğu ve `%6 sabit (static) DD` verdiği için patlama sadece `%5` ve yıllık net kazanç **`+$514` (`$39.60` bilet parasının `13 katı`!)**. *(Not: FundYourFX'te `"profit balance rule 4x best day"` [%25 tutarlılık] olup olmadığı canlı destekte tek cümleyle sorulmalı.)*
    - **FN Stellar 2K (`$59.99`, EA paketsiz elle):** `%1` (`$20`) çekim eşiği olduğu için ilk çekim çok daha hızlı (**15 işgünü = 3 hafta**), patlama **`%0`**, yıllık net **`+$144`**.
+
+---
+
+## 5. DÜZELTME & ÖZELEŞTİRİ (Kullanıcı İtirazı Sonrası Permütasyon Denetimi)
+
+Kullanıcı haklı olarak sordu: *"Madem bu filtrelerle daha iyiydi, neden en başta öyle çıkmadı? Şu an şansa bağlı seçicilik (post-hoc) mi yapıyoruz?"*
+
+10.000 tekrarlı permütasyon testi ve 14-test Bonferroni düzeltmesi (`p_bonf = min(1, p_raw * 14)`) koşulduğunda yukarıdaki 5 görsel kontrolün gerçek istatistiksel gücü:
+
+| Kontrol | IS (2012–21) `raw_p` | OOS (2022+) `raw_p` (`Bonf_14`) | 14Y Tamamı `raw_p` (`Bonf_14`) | Gerçek Teşhis |
+|---|---|---|---|---|
+| **1. `SWEEP ADX < 38`** | `p = 0.1320` | `p = 0.0215` (`0.3010`) | `p = 0.0049` (`0.0686`) | **POST-HOC / KANIT DEĞİL:** IS'te zaten anlamlı değilmiş (`p=0.13`); 16 Kasım `meta_label` testinde de (`Holm p=0.55`) elenmişti. Simülasyondaki `+$335 → +$514` sıçramasının büyük kısmı Sweep'in 26 kaybeden işlemini sonuca bakıp silmekten ve kalan 61 işlemi `1.25×` ile çarpmaktan geliyor! |
+| **2. `NB Güçlü 5m Mum`** | `p = 0.1926` | `p = 0.5093` (`1.0000`) | `p = 0.1413` (`1.0000`) | **%100 GÜRÜLTÜ (ŞANS):** İki yarıda da işaretin `+` çıkması tamamen yazı-tura (`p=0.51`). |
+| **3. `B7 Geniş Gün > 1.2 ATR`** | `p = 0.6234` | `p = 0.6000` (`1.0000`) | `p = 0.3965` (`1.0000`) | **%100 GÜRÜLTÜ (ŞANS):** Sıfırdan hiçbir farkı yok (`p=0.60`). |
+| **4. `TOM IBS ≥ 0.50`** | `p < 0.0001` | `p < 0.0001` (`< 0.0001`) | `p < 0.0001` (`< 0.0001`) | **İSTATİSTİKSEL OLARAK GEÇEN TEK KURAL** — ancak `TOM` zaten elenmiş/yardımcı bir takvim kuralı (ayda 1 işlem) ve bu da ön-kayıtsız keşif. |
+| **5. `TOM > SMA20`** | `p < 0.0001` | `p = 0.0121` (`0.1694`) | `p < 0.0001` (`< 0.0001`) | `TOM IBS ≥ 0.50` ile örtüşüyor (ön-kayıtsız keşif). |
+
+### Bağlayıcı Sonuç
+- **`HUMAN_5M_CHECKLIST` (`+$514` / `+$144`) satırı post-hoc seçim yanlılığı içerdiği için GEÇERSİZDİR ve KULLANILAMAZ.**
+- Manuel icrada geçerli ve dürüst olan rakamlar yalnızca **filtresiz `EXACT_T0` (2 dk ön-uyarıyla zamanında giriş: FundYourFX 5K `+$451/yıl`, FN 2K `+$131/yıl`)** ve **filtresiz `HUMAN_5M` (5 dk gecikmeli giriş: FundYourFX 5K `+$335/yıl`, FN 2K `+$91/yıl`)** aralığıdır.
